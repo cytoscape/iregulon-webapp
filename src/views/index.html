@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1" />
+
+    <meta name="description" content="iRegulon : Identify regulons using motif and track discovery in a set of co-regulated genes." />
+    <meta name="keywords" content="quick, easy, publication, ready, figure, genes, regulon, motif, transcription factor, experiment, biology, network, analysis" />
+
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="/og.jpg">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="512">
+    <meta property="og:title" content="iRegulon">
+    <meta property="og:description" content="Identify regulons using motif and track discovery in a set of co-regulated genes.">
+
+    <link type="text/css" rel="stylesheet" href="/deps.css" />
+    <link type="text/css" rel="stylesheet" href="/main.css" />
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="/favicon-128x128.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="msapplication-TileColor" content="#2d89ef">
+    <meta name="theme-color" content="#ffffff">
+
+    <script>
+      (function() {
+        var needPolyfills = !('fetch' in window && 'assign' in Object);
+        if (needPolyfills) {
+          var script = document.createElement('script');
+          script.defer = true;
+          script.src = '/polyfills.js';
+          document.head.appendChild(script);
+        }
+      })();
+    </script>
+    <script defer src="/deps.js"></script>
+    <script defer src="/main.js"></script>
+
+    <style>
+      .hidden {
+        display: none;
+      }
+      #loading-container {
+        height: 100%;
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+      #loading-icon {
+        width: 92px;
+        height: 92px;
+        margin-bottom: 10px;
+        animation: spin-animation 2s infinite;
+      }
+      #loading-text {
+        font-size: 1rem;
+        color: #121212;
+        animation: blinker 2s alternate infinite;
+      }
+      @keyframes spin-animation {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(359deg);
+        }
+      }
+      @keyframes blinker {
+        from { opacity: 1.0; }
+        to { opacity: 0.5; }
+      }
+    </style>
+
+    <title>iRegulon</title>
+  </head>
+
+  <body>
+    <div id="loading-container">
+      <div id="loading-icon">
+        <svg viewBox="0 0 552 552">
+          <g id="edge-9">
+            <path d="M344.364,326.14 L417.162,344.373" fillOpacity="0" stroke="#666666" strokeWidth="8.318" strokeLinecap="square" strokeMiterlimit="10"/>
+            <path d="M422.214,324.201 L457.505,354.477 L412.11,364.544 z" fill="#666666"/>
+          </g>
+          <g id="edge-8">
+            <path d="M310.331,368.504 L334.671,417.305" fillOpacity="0" stroke="#666666" strokeWidth="8.318" strokeLinecap="square" strokeMiterlimit="10"/>
+            <path d="M353.279,408.024 L353.233,454.522 L316.062,426.586 z" fill="#666666"/>
+          </g>
+          <g id="edge-7">
+            <path d="M281.66,375.334 L281.923,426.76" fillOpacity="0" stroke="#666666" strokeWidth="8.318" strokeLinecap="square" strokeMiterlimit="10"/>
+            <path d="M302.718,426.654 L282.136,468.349 L261.129,426.866 z" fill="#666666"/>
+          </g>
+          <g id="edge-6">
+            <path d="M252.911,368.793 L229.121,417.717" fillOpacity="0" stroke="#666666" strokeWidth="8.318" strokeLinecap="square" strokeMiterlimit="10"/>
+            <path d="M247.822,426.81 L210.934,455.119 L210.42,408.623 z" fill="#666666"/>
+          </g>
+          <g id="edge-5">
+            <path d="M218.437,326.71 L146.089,345.529" fillOpacity="0" stroke="#666666" strokeWidth="8.318" strokeLinecap="square" strokeMiterlimit="10"/>
+            <path d="M151.323,365.654 L105.839,355.998 L140.854,325.404 z" fill="#666666"/>
+          </g>
+          <g id="edge-4">
+            <path d="M216.995,301.186 L129.738,288.754" fillOpacity="0" stroke="#666666" strokeWidth="8.318" strokeLinecap="square" strokeMiterlimit="10"/>
+            <path d="M126.804,309.34 L88.564,282.887 L132.671,268.167 z" fill="#666666"/>
+          </g>
+          <g id="edge-3">
+            <path d="M239.688,260.463 L168.488,175.161" fillOpacity="0" stroke="#666666" strokeWidth="8.318" strokeLinecap="square" strokeMiterlimit="10"/>
+            <path d="M152.523,188.486 L141.838,143.232 L184.452,161.836 z" fill="#666666"/>
+          </g>
+          <g id="edge-2">
+            <path d="M302.964,249.076 L342.215,137.912" fillOpacity="0" stroke="#666666" strokeWidth="8.318" strokeLinecap="square" strokeMiterlimit="10"/>
+            <path d="M322.607,130.989 L356.062,98.696 L361.823,144.836 z" fill="#666666"/>
+          </g>
+          <g id="edge-1">
+            <path d="M322.577,260.139 L393.227,174.133" fillOpacity="0" stroke="#666666" strokeWidth="8.318" strokeLinecap="square" strokeMiterlimit="10"/>
+            <path d="M377.159,160.933 L419.626,141.996 L409.295,187.332 z" fill="#666666"/>
+          </g>
+          <g id="node-14">
+            <path d="M534.239,364.581 C534.239,384.679 517.947,400.972 497.849,400.972 C477.751,400.972 461.458,384.679 461.458,364.581 C461.458,344.483 477.751,328.19 497.849,328.19 C517.947,328.19 534.239,344.483 534.239,364.581 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M534.239,364.581 C534.239,384.679 517.947,400.972 497.849,400.972 C477.751,400.972 461.458,384.679 461.458,364.581 C461.458,344.483 477.751,328.19 497.849,328.19 C517.947,328.19 534.239,344.483 534.239,364.581 z" fill="#666666"/>
+          </g>
+          <g id="node-13">
+            <path d="M483.859,440.697 C483.859,460.795 467.567,477.088 447.469,477.088 C427.371,477.088 411.078,460.795 411.078,440.697 C411.078,420.599 427.371,404.306 447.469,404.306 C467.567,404.306 483.859,420.599 483.859,440.697 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M483.859,440.697 C483.859,460.795 467.567,477.088 447.469,477.088 C427.371,477.088 411.078,460.795 411.078,440.697 C411.078,420.599 427.371,404.306 447.469,404.306 C467.567,404.306 483.859,420.599 483.859,440.697 z" fill="#FFFFFF"/>
+          </g>
+          <g id="node-12">
+            <path d="M408.186,491.739 C408.186,511.837 391.893,528.13 371.795,528.13 C351.697,528.13 335.404,511.837 335.404,491.739 C335.404,471.641 351.697,455.349 371.795,455.349 C391.893,455.349 408.186,471.641 408.186,491.739 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M408.186,491.739 C408.186,511.837 391.893,528.13 371.795,528.13 C351.697,528.13 335.404,511.837 335.404,491.739 C335.404,471.641 351.697,455.349 371.795,455.349 C391.893,455.349 408.186,471.641 408.186,491.739 z" fill="#666666"/>
+          </g>
+          <g id="node-11">
+            <path d="M318.739,509.937 C318.739,530.035 302.447,546.328 282.349,546.328 C262.251,546.328 245.958,530.035 245.958,509.937 C245.958,489.839 262.251,473.547 282.349,473.547 C302.447,473.547 318.739,489.839 318.739,509.937 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M318.739,509.937 C318.739,530.035 302.447,546.328 282.349,546.328 C262.251,546.328 245.958,530.035 245.958,509.937 C245.958,489.839 262.251,473.547 282.349,473.547 C302.447,473.547 318.739,489.839 318.739,509.937 z" fill="#666666"/>
+          </g>
+          <g id="node-10">
+            <path d="M229.138,492.521 C229.138,512.619 212.845,528.911 192.747,528.911 C172.649,528.911 156.357,512.619 156.357,492.521 C156.357,472.423 172.649,456.13 192.747,456.13 C212.845,456.13 229.138,472.423 229.138,492.521 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M229.138,492.521 C229.138,512.619 212.845,528.911 192.747,528.911 C172.649,528.911 156.357,512.619 156.357,492.521 C156.357,472.423 172.649,456.13 192.747,456.13 C212.845,456.13 229.138,472.423 229.138,492.521 z" fill="#666666"/>
+          </g>
+          <g id="node-9">
+            <path d="M153.022,442.141 C153.022,462.239 136.729,478.531 116.631,478.531 C96.533,478.531 80.24,462.239 80.24,442.141 C80.24,422.043 96.533,405.75 116.631,405.75 C136.729,405.75 153.022,422.043 153.022,442.141 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M153.022,442.141 C153.022,462.239 136.729,478.531 116.631,478.531 C96.533,478.531 80.24,462.239 80.24,442.141 C80.24,422.043 96.533,405.75 116.631,405.75 C136.729,405.75 153.022,422.043 153.022,442.141 z" fill="#FFFFFF"/>
+          </g>
+          <g id="node-8">
+            <path d="M101.979,366.467 C101.979,386.565 85.687,402.858 65.589,402.858 C45.491,402.858 29.198,386.565 29.198,366.467 C29.198,346.369 45.491,330.076 65.589,330.076 C85.687,330.076 101.979,346.369 101.979,366.467 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M101.979,366.467 C101.979,386.565 85.687,402.858 65.589,402.858 C45.491,402.858 29.198,386.565 29.198,366.467 C29.198,346.369 45.491,330.076 65.589,330.076 C85.687,330.076 101.979,346.369 101.979,366.467 z" fill="#666666"/>
+          </g>
+          <g id="node-7">
+            <path d="M83.781,277.021 C83.781,297.119 67.489,313.411 47.391,313.411 C27.293,313.411 11,297.119 11,277.021 C11,256.923 27.293,240.63 47.391,240.63 C67.489,240.63 83.781,256.923 83.781,277.021 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M83.781,277.021 C83.781,297.119 67.489,313.411 47.391,313.411 C27.293,313.411 11,297.119 11,277.021 C11,256.923 27.293,240.63 47.391,240.63 C67.489,240.63 83.781,256.923 83.781,277.021 z" fill="#666666"/>
+          </g>
+          <g id="node-6">
+            <path d="M101.198,187.419 C101.198,207.517 84.905,223.81 64.807,223.81 C44.709,223.81 28.417,207.517 28.417,187.419 C28.417,167.321 44.709,151.028 64.807,151.028 C84.905,151.028 101.198,167.321 101.198,187.419 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M101.198,187.419 C101.198,207.517 84.905,223.81 64.807,223.81 C44.709,223.81 28.417,207.517 28.417,187.419 C28.417,167.321 44.709,151.028 64.807,151.028 C84.905,151.028 101.198,167.321 101.198,187.419 z" fill="#FFFFFF"/>
+          </g>
+          <g id="node-5">
+            <path d="M151.578,111.303 C151.578,131.401 135.286,147.694 115.188,147.694 C95.09,147.694 78.797,131.401 78.797,111.303 C78.797,91.205 95.09,74.912 115.188,74.912 C135.286,74.912 151.578,91.205 151.578,111.303 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M151.578,111.303 C151.578,131.401 135.286,147.694 115.188,147.694 C95.09,147.694 78.797,131.401 78.797,111.303 C78.797,91.205 95.09,74.912 115.188,74.912 C135.286,74.912 151.578,91.205 151.578,111.303 z" fill="#666666"/>
+          </g>
+          <g id="node-4">
+            <path d="M227.252,60.261 C227.252,80.359 210.959,96.651 190.861,96.651 C170.763,96.651 154.47,80.359 154.47,60.261 C154.47,40.163 170.763,23.87 190.861,23.87 C210.959,23.87 227.252,40.163 227.252,60.261 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M227.252,60.261 C227.252,80.359 210.959,96.651 190.861,96.651 C170.763,96.651 154.47,80.359 154.47,60.261 C154.47,40.163 170.763,23.87 190.861,23.87 C210.959,23.87 227.252,40.163 227.252,60.261 z" fill="#FFFFFF"/>
+          </g>
+          <g id="node-3">
+            <path d="M316.698,42.063 C316.698,62.161 300.405,78.453 280.307,78.453 C260.209,78.453 243.917,62.161 243.917,42.063 C243.917,21.965 260.209,5.672 280.307,5.672 C300.405,5.672 316.698,21.965 316.698,42.063 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M316.698,42.063 C316.698,62.161 300.405,78.453 280.307,78.453 C260.209,78.453 243.917,62.161 243.917,42.063 C243.917,21.965 260.209,5.672 280.307,5.672 C300.405,5.672 316.698,21.965 316.698,42.063 z" fill="#FFFFFF"/>
+          </g>
+          <g id="node-2">
+            <path d="M406.3,59.479 C406.3,79.577 390.007,95.87 369.909,95.87 C349.811,95.87 333.518,79.577 333.518,59.479 C333.518,39.381 349.811,23.089 369.909,23.089 C390.007,23.089 406.3,39.381 406.3,59.479 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M406.3,59.479 C406.3,79.577 390.007,95.87 369.909,95.87 C349.811,95.87 333.518,79.577 333.518,59.479 C333.518,39.381 349.811,23.089 369.909,23.089 C390.007,23.089 406.3,39.381 406.3,59.479 z" fill="#666666"/>
+          </g>
+          <g id="node-1">
+            <path d="M482.416,109.859 C482.416,129.957 466.123,146.25 446.025,146.25 C425.927,146.25 409.634,129.957 409.634,109.859 C409.634,89.761 425.927,73.469 446.025,73.469 C466.123,73.469 482.416,89.761 482.416,109.859 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeOpacity="0.784" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M482.416,109.859 C482.416,129.957 466.123,146.25 446.025,146.25 C425.927,146.25 409.634,129.957 409.634,109.859 C409.634,89.761 425.927,73.469 446.025,73.469 C466.123,73.469 482.416,89.761 482.416,109.859 z" fill="#666666"/>
+          </g>
+          <g id="node-0">
+            <path d="M341.113,310.352 C341.113,343.37 314.346,370.137 281.328,370.137 C248.31,370.137 221.544,343.37 221.544,310.352 C221.544,277.334 248.31,250.568 281.328,250.568 C314.346,250.568 341.113,277.334 341.113,310.352 z" fillOpacity="0" stroke="#121212" strokeWidth="10.397" strokeLinecap="round" strokeMiterlimit="10"/>
+            <path d="M341.113,310.352 C341.113,343.37 314.346,370.137 281.328,370.137 C248.31,370.137 221.543,343.37 221.543,310.352 C221.543,277.334 248.31,250.568 281.328,250.568 C314.346,250.568 341.113,277.334 341.113,310.352 z" fill="#3A88FE"/>
+          </g>
+        </svg>
+      </div>
+      <div id="loading-text">Loading...</div>
+    </div>
+    <div id="root" class="hidden"><!-- The React component will be rendered here --></div>
+  </body>
+
+</html>

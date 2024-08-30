@@ -1,0 +1,19 @@
+{
+  "presets": [
+    [ "@babel/preset-env", 
+      {
+        "modules": "auto",
+        "useBuiltIns": false
+      }
+    ],
+    ["@babel/preset-react"]
+  ],
+  "plugins": [
+    [ "babel-plugin-import", { "libraryName": "lodash", "libraryDirectory": "", "camel2DashComponentName": false }, "lodash" ],
+    [ "babel-plugin-import", { "libraryName": "@mui/lab", "libraryDirectory": "", "camel2DashComponentName": false }, "mui-lab" ],
+    [ "babel-plugin-import", { "libraryName": "@mui/material", "libraryDirectory": "", "camel2DashComponentName": false }, "mui-core" ],
+    [ "babel-plugin-import", { "libraryName": "@mui/icons-material", "libraryDirectory": "", "camel2DashComponentName": false }, "mui-icons" ],
+    [ "babel-plugin-import", { "libraryName": "@mui/system", "libraryDirectory": "", "camel2DashComponentName": false }, "mui-system" ]
+  ],
+  "ignore": ["node_modules/**/*"]
+}

@@ -1,0 +1,42 @@
+/* Default light theme */
+html,
+body {
+  height: 100%;
+  width: 100%;
+  /* fixes scroll bar colour in safari */
+  background: #fff;
+  color-scheme: light;
+}
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    height: 100%;
+    width: 100%;
+    /* fixes scroll bar colour in safari */
+    background-color: #242424;
+    color-scheme: dark;
+  }
+}
+
+body {
+  font-family: "Open Sans", "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 0.875rem;
+
+  &.content-page {
+    margin: 0.5em;
+  }
+}
+
+a {
+  cursor: pointer;
+}
+
+* {
+  outline: none !important;
+}
+
+path.unhighlighted {
+  visibility: hidden;
+}
