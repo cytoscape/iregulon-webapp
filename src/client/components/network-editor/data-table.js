@@ -167,6 +167,7 @@ const COLUMNS = [
     numeric: true,
     hideOnMobile: false,
     label: 'Rank',
+    tooltip: (type) => `The ${type.toLowerCase()} is ranked using the Normalized Enrichment Score (NES)`,
     show: (type) => type !== 'CLUSTER',
     render: (row, col, classes) => {
       return (
@@ -222,7 +223,7 @@ const COLUMNS = [
     numeric: true, 
     hideOnMobile: false,
     label: 'NES',
-    tooltip: "Normalized Enrichment Score",
+    tooltip: (type) => type === 'CLUSTER' ? "The highest NES of the cluster's motifs/tracks" : 'Normalized Enrichment Score (the higher the score, the better)',
     show: () => true,
     render: (row, col, classes, controller) => {
       const node = controller.cy.nodes(`[id = "${row.id}"]`);
@@ -258,7 +259,7 @@ const COLUMNS = [
     numeric: true,
     hideOnMobile: false,
     label: 'Targets',
-    tooltip: "Number of unique target genes",
+    tooltip: (type) => type === 'CLUSTER' ? "Number of unique target genes detected by the TF's motifs/tracks (UNION)" : 'Number of unique target genes',
     show: () => true,
     render: (row, col) => (
       <Tooltip title={row[col.id].map((tf) => tf.geneID.name).sort((a, b) => a.localeCompare(b)).join(', ')}>
@@ -275,6 +276,19 @@ const COLUMNS = [
     show: (type) => type !== 'CLUSTER',
     render: (row, col) => (
       <Tooltip title={row[col.id].map((tf) => tf.geneID.name).sort((a, b) => a.localeCompare(b)).join(', ')}>
+        <span>{ row[col.id].length }</span>
+      </Tooltip>
+    )
+  },
+  {
+    id: 'motifsAndTracks',
+    numeric: true,
+    hideOnMobile: false,
+    label: 'Motifs/Tracks',
+    tooltip: 'Number of motifs/tracks that can be associated with the TF',
+    show: (type) => type === 'CLUSTER',
+    render: (row, col) => (
+      <Tooltip title={row[col.id].map((mt) => mt.name).sort((a, b) => a.localeCompare(b)).join(', ')}>
         <span>{ row[col.id].length }</span>
       </Tooltip>
     )

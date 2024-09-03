@@ -625,7 +625,7 @@ export class NetworkEditorController {
    * Needed by the gene sidebar.
    */
   async fetchGeneList() {
-    return this.searchController.queryGenes();
+    return this.searchController.getGenes();
   }
 
   fetchResults(type) {

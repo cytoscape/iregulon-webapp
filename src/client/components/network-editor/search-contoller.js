@@ -34,11 +34,6 @@ export class SearchController {
     return this.resultsReady;
   }
 
-  queryGenes() {
-    const genes = Object.values(this.geneMiniSearch.toJSON().storedFields);
-    return genes;
-  }
-
   searchGenes(query) {
     if (!this.isGeneListIndexed()) {
       throw "The gene list hasn't been fecthed yet!";
@@ -119,8 +114,8 @@ export class SearchController {
           'description',
           'auc',
           'nes',
-          'clusterNumber',
           'clusterCode',
+          'clusterNumber',
           'candidateTargetGenes',
           'candidateTargetRanks',
           'transcriptionFactors',
@@ -147,6 +142,7 @@ export class SearchController {
         'type',
         'resultType',
         'name',
+        'nes',
         'clusterCode',
         'clusterNumber',
         'motifsAndTracks',
@@ -155,7 +151,7 @@ export class SearchController {
       ]
     });
 
-    const geneNames = this.queryGenes().map(g => g.name);
+    const geneNames = this.getGenes().map(g => g.name);
     const documents = this._getMotifAndTrackClusters(this.getResults(), geneNames);
     console.log('Search docs (CLUSTERS)', documents);
     this.clustersMiniSearch.addAll(documents);
@@ -181,33 +177,33 @@ export class SearchController {
   
     // 2. Sort clusters according to maximum NESCore.
     const getMaxNES = (motifsAndTracks) => {
-      return Math.min(...motifsAndTracks.map((mt) => mt.nes));
+      return Math.max(...motifsAndTracks.map((mt) => mt.nes));
     };
     const clusters = Array.from(cluster2motifsAndTracks.values());
     clusters.sort((a, b) =>  getMaxNES(b) - getMaxNES(a));
   
     // 3. Iterate motifs and tracks and translate them to MotifAndTrackCluster objects.
-    const alreadyProcessedTFIDsForMotifs = new Set();
-    const alreadyProcessedTFIDsForTracks = new Set();
+    const visitedMotifTFs = new Set();
+    const visitedTrackTFs = new Set();
     const mtClusters = [];
     
     for (const motifsAndTracks of clusters) {
-      const clusterCode = motifsAndTracks[0].clusterCode;
-      const sortedMotifsOrTracks = [...motifsAndTracks].sort((a, b) => a.nes - b.nes);
       const transcriptionFactors = this._combineTranscriptionFactors(motifsAndTracks, geneNames);
       
       if (transcriptionFactors.length === 0) continue;
   
-      const curTFID = transcriptionFactors[0].geneID.name;
+      const tfName = transcriptionFactors[0].geneID.name;
       const type = motifsAndTracks[0].type;
   
       if (type === 'MOTIF') {
-        if (alreadyProcessedTFIDsForMotifs.has(curTFID)) continue;
+        if (visitedMotifTFs.has(tfName)) continue;
       } else if (type === 'TRACK') {
-        if (alreadyProcessedTFIDsForTracks.has(curTFID)) continue;
+        if (visitedTrackTFs.has(tfName)) continue;
       }
 
       const clusterNumber = motifsAndTracks[0].clusterNumber;
+      const clusterCode = motifsAndTracks[0].clusterCode;
+      const sortedMotifsOrTracks = [...motifsAndTracks].sort((a, b) => b.nes - a.nes);
       const candidateTargetGenes = this._combineTargetGenes(motifsAndTracks);
       const cluster = {
         type: 'CLUSTER',
@@ -215,6 +211,7 @@ export class SearchController {
         name: transcriptionFactors[0].geneID.name,
         clusterCode,
         clusterNumber,
+        nes: getMaxNES(motifsAndTracks),
         motifsAndTracks: sortedMotifsOrTracks,
         transcriptionFactors,
         candidateTargetGenes,
@@ -222,15 +219,14 @@ export class SearchController {
       mtClusters.push(cluster);
   
       if (type === 'MOTIF') {
-        alreadyProcessedTFIDsForMotifs.add(curTFID);
+        visitedMotifTFs.add(tfName);
       } else if (type === 'TRACK') {
-        alreadyProcessedTFIDsForTracks.add(curTFID);
+        visitedTrackTFs.add(tfName);
       }
     }
   
     return mtClusters;
   }
-
   
   _combineTranscriptionFactors(motifsAndTracks, geneNames) {
     const tf2attributes = new Map();
@@ -280,7 +276,6 @@ export class SearchController {
   
     return result;
   }
-  
   
   _combineTargetGenes(motifsAndTracks) {
     const geneID2attributes = new Map();

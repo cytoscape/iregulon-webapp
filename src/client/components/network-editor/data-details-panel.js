@@ -105,20 +105,25 @@ export function DataDetailsPanel({
     return { name: geneID.name, maxFDR: maxMotifSimilarityFDR, minOrthologousId: minOrthologousIdentity };
   });
   console.log('data', data);
-  console.log('targetRows', targetRows);
-  console.log('tfRows', tfRows);
 
   const type = data.type;
   const targetColumns = TARGET_COLUMNS.filter(col => (!col.hideOnMobile || !isMobile) && (!col.type || col.type === type));
   const tfColumns = TF_COLUMNS.filter(col => (!col.hideOnMobile || !isMobile) && (!col.type || col.type === type));
 
+  let description = data.description;
   let logoImgPath;
 
   if (type === 'MOTIF') {
     logoImgPath = logoPath(data.nameWithCollection);
-    console.log('nameWithCollection', data.nameWithCollection);
-    console.log('logoPath 1', logoPath(data.nameWithCollection));
-    console.log('logoPath 2', data.logoPath);
+  } else if (type === 'CLUSTER') {
+    // TODO: temporary solution!
+    // Show the name and description of the first motif/track in the cluster, which is the one with the highest NES.
+    if (data.motifsAndTracks.length > 0) {
+      description = data.motifsAndTracks[0].name + ' -- ' + data.motifsAndTracks[0].description;
+      if (data.motifsAndTracks[0].type === 'MOTIF') {
+        logoImgPath = logoPath(data.motifsAndTracks[0].name);
+      }
+    }
   }
   
   return (
@@ -130,7 +135,7 @@ export function DataDetailsPanel({
               variant="outlined"
               sx={{p: theme.spacing(0.25, 1, 0.25, 1), overflowY: 'auto', maxHeight: 100, borderRadius: 2}}
             >
-              <Typography variant="caption">{data.description}</Typography>
+              <Typography variant="caption">{description}</Typography>
             </Paper>
           {logoImgPath && (
             <Paper

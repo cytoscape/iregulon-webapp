@@ -51,7 +51,9 @@ function toTableRow(obj, type) {
   row.type = type;
   row.db = linkOut ? linkOut.db : null;
   row.name = type === 'MOTIF' ? motifName(name) : name;
-  if (type !== 'CLUSTER') {
+  if (type === 'CLUSTER') {
+    row.motifsAndTracks = obj.motifsAndTracks;
+  } else {
     row.nameWithCollection = obj.name;
     row.rank = obj.rank;
   }
