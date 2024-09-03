@@ -278,29 +278,35 @@ export class SearchController {
   }
   
   _combineTargetGenes(motifsAndTracks) {
-    const geneID2attributes = new Map();
+    const gene2attributes = new Map();
   
-    for (const motifOrTrack of motifsAndTracks) {
-      for (const targetGene of motifOrTrack.candidateTargetGenes) {
-        if (geneID2attributes.has(targetGene.geneID)) {
-          const attributes = geneID2attributes.get(targetGene.geneID);
-          const rank = targetGene.rank;
-          attributes.minRank = Math.min(rank, attributes.minRank);
-          attributes.motifAndTrackCount++;
+    for (const mt of motifsAndTracks) {
+      for (const targetGene of mt.candidateTargetGenes) {
+        const key = targetGene.geneID.name;
+
+        if (gene2attributes.has(key)) {
+          const attributes = gene2attributes.get(key);
+          attributes.minRank = Math.min(targetGene.rank, attributes.minRank);
         } else {
-          const attributes = { minRank: targetGene.rank, motifAndTrackCount: 1 };
-          geneID2attributes.set(targetGene.geneID, attributes);
+          gene2attributes.set(key, { geneID: targetGene.geneID, minRank: targetGene.rank });
         }
       }
     }
   
     const targetGenes = [];
-    for (const geneID of geneID2attributes.keys()) {
-      const attributes = geneID2attributes.get(geneID);
-      const candidateTargetGene = { geneID, rank: attributes.minRank, motifAndTrackCount: attributes.motifAndTrackCount };
+
+    for (const key of gene2attributes.keys()) {
+      const attributes = gene2attributes.get(key);
+      const candidateTargetGene = { geneID: attributes.geneID, rank: attributes.minRank };
       targetGenes.push(candidateTargetGene);
     }
-    targetGenes.sort();
+
+    targetGenes.sort((a, b) => {
+      if (a.rank !== b.rank) {
+        return a.rank - b.rank;
+      }
+      return a.geneID.name.localeCompare(b.geneID.name, undefined, { sensitivity: 'accent' });
+    });
   
     return targetGenes;
   }
