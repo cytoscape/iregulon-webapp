@@ -11,8 +11,7 @@ import PopoverMenu from './popover-menu';
 
 import makeStyles from '@mui/styles/makeStyles';
 
-import { AppBar, Box, IconButton, Divider, Tooltip,  Toolbar } from '@mui/material';
-import { ToggleButton } from '@mui/material';
+import { AppBar, Box, Divider, IconButton, ToggleButton, Tooltip,  Toolbar } from '@mui/material';
 
 import { AppLogoIcon } from '../svg-icons';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
@@ -114,8 +113,13 @@ export function Header({
         )}
           <Box component="div">
             <Tooltip placement="bottom" title="Home">
-              <IconButton aria-label='home' size="large" onClick={() => location.href = '/'}>
-                <AppLogoIcon style={{ fontSize: 26 }} />
+              <IconButton
+                aria-label='home'
+                size="large"
+                sx={{ width: '1.75em', height: '1.75em', p: 0 }}
+                onClick={() => location.href = '/'}
+              >
+                <AppLogoIcon sx={{ fontSize: 40 }} />
               </IconButton>
             </Tooltip>
           </Box>
