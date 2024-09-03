@@ -479,7 +479,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
               visible={open && currentRow == null}
               data={data}
               type={type}
-              checkedRows={checkedRows}
+              checkedRows={checkedRows.filter(r => r.type === type)}
               selectedRows={filteredSelectedRows}
               currentRow={currentRow}
               gotoCurrentNode={gotoCurrentNode}

@@ -13,8 +13,9 @@ import { TableVirtuoso } from 'react-virtuoso';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel } from '@mui/material';
 import { Paper, Typography, Link, Tooltip } from '@mui/material';
 import { List, ListSubheader, ListItem, ListItemIcon, ListItemText } from '@mui/material';
-import { Checkbox } from '@mui/material';
+import { Checkbox, IconButton } from '@mui/material';
 
+import IndeterminateCheckBoxOutlinedIcon from '@mui/icons-material/IndeterminateCheckBoxOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SadFaceIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import KeyboardReturnIcon from '@mui/icons-material/KeyboardReturn';
@@ -535,6 +536,26 @@ export function DataTable({
     onRowCheckChange?.(row, checked);
   };
 
+  const handleUncheckAllClick = (evt) => {
+    if (sortedDataRef.current) {
+      sortedDataRef.current.forEach(row => {
+        isRowChecked(row) && handleRowCheck(row);
+      });
+    }
+    evt.stopPropagation();
+  };
+
+  const columnTooltip = (col) => {
+    if (col.id === 'inNetwork') {
+      const typeLabel = type === 'CLUSTER' ? 'TF' : type.toLowerCase();
+      return noneChecked ?
+        `Select one or more ${typeLabel}s to add their associated genes to the network` :
+        `Select none (remove all ${typeLabel} genes from network)`;
+    } else {
+      return typeof col.tooltip === 'function' ? col.tooltip(type) : col.tooltip;
+    }
+  };
+
   if (data.length === 0 && searchTerms && searchTerms.length > 0) {
     return (
       <Paper className={classes.noResultsBox} sx={{height: dataTableHeight(theme)}}>
@@ -580,6 +601,8 @@ export function DataTable({
   const totalSelectedRows = selectedRows.length;
   const allSelected = totalSelectedRows > 0 && totalSelectedRows === totalRows;
 
+  const noneChecked = checkedRows.length === 0;
+
   // Find the "current" id
   let currentId = currentRow ? currentRow.id : null;
   // Find the "initial" index, which is where the table must auto-scroll to
@@ -616,28 +639,38 @@ export function DataTable({
           (!isMobile || !col.hideOnMobile) && col.show(type) && (
             <Tooltip
               key={col.id}
-              title={typeof col.tooltip === 'function' ? col.tooltip(type) : col.tooltip}
+              title={columnTooltip(col)}
             >
               <TableCell
                 align="left"
                 sortDirection={orderBy === col.id ? order : false}
                 className={clsx(classes[col.id + 'Cell'], { [classes.tableCell]: true, [classes.tableHeaderCell]: true })}
               >
+              {col.id === 'inNetwork' ?
+                <IconButton
+                  disabled={data.length === 0 || noneChecked}
+                  sx={{color: theme.palette.text.primary}}
+                  onClick={handleUncheckAllClick}
+                >
+                  <IndeterminateCheckBoxOutlinedIcon className={classes.selectAllIcon} />
+                </IconButton>
+              :
                 <TableSortLabel 
                   active={orderBy === col.id}
                   direction={orderBy === col.id ? order : 'asc'}
                   onClick={(event) => handleRequestSort(event, col.id)}
                 >
-                      { typeof col.label === 'function' ? col.label(type) : col.label }
-                    {col.id === 'name' && data && (
-                      <Typography component="span" variant="body2" color="textSecondary">
-                        &nbsp;&#40;{totalSelectedRows > 0 ? 
-                          (allSelected ? 'all' : totalSelectedRows) + ' selected of '
-                          :
-                        ''}{ data.length }&#41;
-                      </Typography>
-                    )}
+                  { typeof col.label === 'function' ? col.label(type) : col.label }
+                {col.id === 'name' && data && (
+                  <Typography component="span" variant="body2" color="textSecondary">
+                    &nbsp;&#40;{totalSelectedRows > 0 ? 
+                      (allSelected ? 'all' : totalSelectedRows) + ' selected of '
+                      :
+                    ''}{ data.length }&#41;
+                  </Typography>
+                )}
                 </TableSortLabel>
+              }
               </TableCell>
             </Tooltip>
           )
