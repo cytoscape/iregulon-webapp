@@ -125,10 +125,10 @@ const RightDrawer = ({ menu, open, onClose }) => {
 
   // The transition must always exit before it enters again,
   // so we need to use this 'exitedRef' flag to trigger an 'exited' event before another 'entered'.
-  const onEntered = () => {
+  const onEnter = () => {
     exitedRef.current = false;
   };
-  const onExited = () => {
+  const onExit = () => {
     // Make sure this is set to true before calling the next function
     exitedRef.current = true;
     // Now the next function can be executed and the transition can run (enter) again
@@ -164,8 +164,10 @@ const RightDrawer = ({ menu, open, onClose }) => {
           {menuStack.length > 1 && (
             <Tooltip title="Previous Menu">
               <Button
+                color="inherit" 
                 size="small"
-                startIcon={<ArrowBackIcon size="small" />}
+                sx={{mr: 1}}
+                startIcon={<ArrowBackIcon />}
                 onClick={() => goBackward()}
               >
                 Back
@@ -179,8 +181,8 @@ const RightDrawer = ({ menu, open, onClose }) => {
         in={!exit}
         direction={forward ? 'left' : 'right'}
         timeout={{ enter: (exit ? 0 : 250) }} // To look like we turned off the animation when just exiting the transition
-        onEntered={onEntered}
-        onExited={onExited}
+        onEnter={onEnter}
+        onExit={onExit}
       >
         <div className={classes.content}>
         {currentMenu.map(({title, icon, onClick, subMenu, isSelected}, idx) =>

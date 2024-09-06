@@ -22,7 +22,7 @@ import { Button, IconButton, ToggleButtonGroup, ToggleButton } from '@mui/materi
 
 import ExpandIcon from '@mui/icons-material/ExpandLess';
 import CollapseIcon from '@mui/icons-material/ExpandMore';
-import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 
 export const NODE_COLOR_SVG_ID = 'node-color-legend-svg';
@@ -388,15 +388,11 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
           )}
           {open && (
             currentRow ?
-              <Button
-                variant="outlined"
-                color="inherit" 
-                startIcon={!isMobile && <NavigateBeforeIcon />}
-                sx={{marginRight: 2}}
+              <ToolbarButton
+                title="Back"
+                icon={<ArrowBackIcon fontSize="medium" />}
                 onClick={() => setCurrentRow(null)}
-              >
-                {isMobile ? <NavigateBeforeIcon /> : 'Back'}
-              </Button>
+              />
             :
               <SearchBar
                 style={{width: 294}}
@@ -407,7 +403,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
               />
           )}
           {currentRow && (
-            <Typography component="span" variant="subtitle2" color="textPrimary">
+            <Typography component="span" variant="subtitle2" color="textPrimary" sx={{ml: 2}}>
               {currentRow.name}
             {currentRow.db && (
               <Typography component="span" variant="caption" color="textSecondary">
@@ -469,7 +465,6 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
             <ToolbarButton
               title="Results"
               icon={open ? <CollapseIcon fontSize="large" /> : <ExpandIcon fontSize="large" />}
-              edge="start"
               disabled={disabled}
               onClick={() => onToggle(!open)}
             />
