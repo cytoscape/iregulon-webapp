@@ -16,7 +16,7 @@ import * as Sentry from "@sentry/node";
 import { ExtraErrorData } from "@sentry/integrations";
 import * as Tracing from "@sentry/tracing";
 
-import { NODE_ENV, PORT, UPLOAD_LIMIT, TESTING, SENTRY, SENTRY_ENVIRONMENT } from './env.js';
+import { NODE_ENV, PORT, TESTING, SENTRY, SENTRY_ENVIRONMENT } from './env.js';
 import indexRouter from './routes/index.js';
 import apiRouter from './routes/api/index.js';
 import createRouter, { createRouterErrorHandler } from './routes/api/create.js';
@@ -100,8 +100,8 @@ if (!TESTING) {
   }));
 }
 
-app.use(bodyParser.json({ limit: UPLOAD_LIMIT }));
-app.use(bodyParser.urlencoded({ extended: false }));
+// app.use(bodyParser.json({ limit: UPLOAD_LIMIT }));
+// app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../..', 'public')));
 

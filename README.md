@@ -12,7 +12,7 @@
 - Windows Cloning
 
   - The `public` directory includes symlinks, which most versions of Windows Git will not correctly clone by default. Make sure to clone using the following command:
-    - `git clone -c core.symlinks=true https://github.com/cytoscape/enrichment-map-webapp.git`
+    - `git clone -c core.symlinks=true https://github.com/cytoscape/iregulon-webapp.git`
 
 - Prerequisites:
   - Node.js
@@ -35,8 +35,6 @@
   - The server will automatically reload when you change the server code. That way new HTTP requests from the client will use the updated code right away.
 - <span id="dependent-services">Dependent services</span>:
   - MongoDB: If you have MongoDB running locally on the default port, you don't need to configure any environment variables to get things working. The defaults are preset for local development. 
-  - [Java service](https://github.com/cytoscape/enrichmentmap-service):  This app depends on the Java webservice.  The project is set up to point to a local instance of the Java service by default.  A public instance is available at https://service.em.baderlab.org
-  - [FGSEA service](https://github.com/cytoscape/fgsea-service):  This app depends on the FSGEA service.  The project is set up to point to a local instance of FGSEA by default.  A public instance is available at https://fgsea.em.baderlab.org
   - **N.b. you can use public service instances for your local development to obviate local service dependencies.  It is recommended to use a local instance of MongoDB, where possible, to avoid conflicts.  You can use [an `.env` file in the root of this project](https://github.com/BaderLab/sysadmin/blob/master/websites/em.env) with [the proper values](https://github.com/BaderLab/sysadmin/blob/master/websites/em.env) for remote services.  Do not commit the linked environment variables in public GitHub repositories.**
 - The Chrome debugger can be used for the clientside code (Chrome > View > Developer > Developer Tools) or the serverside code (`npm run inspect` and go to [chrome://inspect](chrome://inspect)). There is also an included launch config file that allows you to debug the client or the server directly in VSC.
 
@@ -61,11 +59,12 @@ The following environment variables can be used to configure the server:
 - `PORT` : the port on which the server runs (default 3000)
 - `LOG_LEVEL` : the log level for `out.log`
 - `BASE_URL` : the base url of the server (e.g. `https://example.com`)
-- `UPLOAD_LIMIT` : max network upload size (e.g. `20kb`)
-- `NDEX_API_URL`: the URL for the NDEx web application
+- `IREGULON_JOB_SERVICE_URL` : the full path of the iRegulon `submitJob` service
+- `IREGULON_STATE_SERVICE_URL` : the full path of the iRegulon `stateCheck` service
+- `IREGULON_RESULTS_SERVICE_URL` : the full path of the iRegulon `results` service
+- `MOTIF_RANKINGS_DATABASE` : the name of the Motif Rankings database
+- `TRACK_RANKINGS_DATABASE` : the name of the Track Rankings database
 - `MONGO_URL`: the MongoDB connection URL
-- `FGSEA_SERVICE_URL`: the full path of the [FGSEA service](https://github.com/cytoscape/fgsea-service) (i.e. for a query, not the root URL)
-- `EM_SERVICE_URL`: the pull path of the [Java service](https://github.com/cytoscape/enrichmentmap-service) (i.e. for a query, not the root URL)
 - `MONGO_ROOT_NAME`: the name of the app's DB in Mongo
 - `MONGO_COLLECTION_QUERIES`: the name of the query collection
 - `SENTRY_ENVIRONMENT`: the Sentry environment name to use (automatic in prod mode, set to `test*` like `test_joe` to get Sentry reports in debug instances)
@@ -85,17 +84,16 @@ The following environment variables can be used to configure the server:
 
 ## Running via Docker
 
-Build the container. Here, `enrichment-map` is used as the container name.
+Build the container. Here, `iregulon` is used as the container name.
 
 ```
-cd enrichment-map
-docker build -t enrichment-map .
+docker build -t iregulon .
 ```
 
 Run the container:
 
 ```
-docker run -it -p 12345:3000 -e "NODE_ENV=production" --name "my-enrichment-map" enrichment-map
+docker run -it -p 12345:3000 -e "NODE_ENV=production" --name "my-iregulon" iregulon
 ```
 
 Notes:

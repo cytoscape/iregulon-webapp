@@ -1,7 +1,6 @@
 import Express from 'express';
 import fs from 'fs/promises';
 import * as Sentry from "@sentry/node";
-import bodyParser from 'body-parser';
 import fetch from 'node-fetch';
 import Datastore from '../../datastore.js';
 import { annotateGenes, parseMotifsAndTracks } from '../../util.js';
@@ -21,12 +20,6 @@ const IREGULON_USER_AGENT = 'iRegulon/1.4 (build: 2024-08-06; Cytoscape: 3.11.0-
 
 const http = Express.Router();
 
-
-// Endpoints accept TSV or CSV
-const dataParser = bodyParser.text({ 
-  type: ['text/tab-separated-values', 'text/csv'],
-  limit: '50mb' 
-});
 
 /*
  * Submit a job to the iRegulon service, then returns the jobID.

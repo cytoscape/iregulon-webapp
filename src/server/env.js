@@ -12,7 +12,6 @@ export const NODE_ENV = process.env.NODE_ENV;
 export const PORT = parseInt(process.env.PORT, 10);
 export const LOG_LEVEL = process.env.LOG_LEVEL;
 export const BASE_URL = process.env.BASE_URL;
-export const UPLOAD_LIMIT = process.env.UPLOAD_LIMIT;
 export const TESTING = ('' + process.env.TESTING).toLowerCase() === 'true';
 export const REPORT_SECRET = process.env.REPORT_SECRET;
 
