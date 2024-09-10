@@ -7,7 +7,7 @@
 
 ## Getting started
 
-**N.b. you can use [public service instances](https://github.com/BaderLab/sysadmin/blob/master/websites/em.env) for your local development to obviate local service dependencies.**  [See below for details.](#dependent-services)
+**N.b. you can use [public service instances](https://github.com/BaderLab/sysadmin/blob/master/websites/iregulon.env) for your local development to obviate local service dependencies.**  [See below for details.](#dependent-services)
 
 - Windows Cloning
 
@@ -35,7 +35,7 @@
   - The server will automatically reload when you change the server code. That way new HTTP requests from the client will use the updated code right away.
 - <span id="dependent-services">Dependent services</span>:
   - MongoDB: If you have MongoDB running locally on the default port, you don't need to configure any environment variables to get things working. The defaults are preset for local development. 
-  - **N.b. you can use public service instances for your local development to obviate local service dependencies.  It is recommended to use a local instance of MongoDB, where possible, to avoid conflicts.  You can use [an `.env` file in the root of this project](https://github.com/BaderLab/sysadmin/blob/master/websites/em.env) with [the proper values](https://github.com/BaderLab/sysadmin/blob/master/websites/em.env) for remote services.  Do not commit the linked environment variables in public GitHub repositories.**
+  - **N.b. you can use public service instances for your local development to obviate local service dependencies.  It is recommended to use a local instance of MongoDB, where possible, to avoid conflicts.  You can use [an `.env` file in the root of this project](https://github.com/BaderLab/sysadmin/blob/master/websites/iregulon.env) with [the proper values](https://github.com/BaderLab/sysadmin/blob/master/websites/iregulon.env) for remote services.  Do not commit the linked environment variables in public GitHub repositories.**
 - The Chrome debugger can be used for the clientside code (Chrome > View > Developer > Developer Tools) or the serverside code (`npm run inspect` and go to [chrome://inspect](chrome://inspect)). There is also an included launch config file that allows you to debug the client or the server directly in VSC.
 
 ## Editor

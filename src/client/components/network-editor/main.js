@@ -289,7 +289,7 @@ const Main = ({
 
   const handleExport = async () => {
     setExportEnabled(false);
-    snack.showSpinner("Preparing enrichment data and network images...");
+    snack.showSpinner("Preparing iRegulon data and network images...");
     await controller.exportController.exportArchive();
     snack.close();
     setExportEnabled(true);

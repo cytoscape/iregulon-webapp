@@ -30,7 +30,7 @@ import Datastore from './datastore.js';
 console.info('Starting Express');
 await Datastore.connect();
 // Set up the debug log
-const debugLog = debug('enrichment-map');
+const debugLog = debug('iregulon');
 // Set up the express app
 const app = express();
 const server = http.createServer(app);

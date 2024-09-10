@@ -16,13 +16,13 @@ export const ImageSize = {
 
 const Path = {
   IMAGE_FOLDER:  'images',
-  IMAGE_SMALL:   'images/enrichment_map_small.png',
-  IMAGE_MEDIUM:  'images/enrichment_map_medium.png',
-  IMAGE_LARGE:   'images/enrichment_map_large.png',
-  IMAGE_PDF:     'images/enrichment_map.pdf',
+  IMAGE_SMALL:   'images/iregulon_small.png',
+  IMAGE_MEDIUM:  'images/iregulon_medium.png',
+  IMAGE_LARGE:   'images/iregulon_large.png',
+  IMAGE_PDF:     'images/iregulon.pdf',
   IMAGE_LEGEND:  'images/node_color_legend_NES.svg',
   DATA_FOLDER:   'data',
-  DATA_ENRICH:   'data/enrichment_results.txt',
+  DATA_ENRICH:   'data/iregulon_results.txt',
   DATA_RANKS:    'data/ranks.txt',
   DATA_GENESETS: 'data/gene_sets.gmt',
   DATA_JSON:     'data/network.json',
@@ -77,7 +77,7 @@ export class ExportController {
     zip.file(Path.DATA_GENESETS, files[2]);
     zip.file(Path.README,        readme);
   
-    const fileName = this._getZipFileName('enrichment');
+    const fileName = this._getZipFileName('iregulon');
     this._saveZip(zip, fileName);
   }
 
@@ -186,7 +186,7 @@ export class ExportController {
         return `${networkName}_${suffix}.zip`;
       }
     }
-    return `enrichment_map_${suffix}.zip`;
+    return `iregulon_${suffix}.zip`;
   }
 
   async _saveZip(zip, fileName) {

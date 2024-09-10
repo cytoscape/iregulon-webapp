@@ -3,7 +3,7 @@ let expressServer;
 before(async function() {
   this.timeout(15000);
 
-  process.env.MONGO_ROOT_NAME = 'enrichment-map-test';
+  process.env.MONGO_ROOT_NAME = 'iregulon-test';
   console.log("using DB: " + process.env.MONGO_ROOT_NAME);
 
   // Need to initialize express only once for the entire test suite.
