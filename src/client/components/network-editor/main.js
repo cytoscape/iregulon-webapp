@@ -30,6 +30,10 @@ import UndoIcon from '@mui/icons-material/Undo';
 import RestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import KeyboardReturnIcon from '@mui/icons-material/KeyboardReturn';
 import { DragSelectIcon, DownloadIcon, ShareIcon } from '../svg-icons';
+import ConcentricLayoutIcon from '@mui/icons-material/Adjust';
+import LayeredLayoutIcon from '@mui/icons-material/FormatAlignCenter';
+import ClustersLayoutIcon from '@mui/icons-material/WorkspacesOutlined';
+import PhysicsLayoutIcon from '@mui/icons-material/Grain';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -295,6 +299,31 @@ const Main = ({
     setExportEnabled(true);
   };
 
+  const createClusterArrays = () => {
+    const clusters = window.cy.elements().markovClustering();
+    for (var i = 0; i < clusters.length; i++) {
+      for (var j = 0; j < clusters[i].length; j++) {
+        clusters[i][j]._private.data.clusterID = i;
+      }
+    }
+    
+    const arrayOfClusterArrays = [];
+    const uniqueClusterIDs = clusters.map(cluster => cluster[0].data('clusterID'));
+    controller.cy.nodes().forEach(node => {
+     const clusterID = node.data('clusterID');
+     if (uniqueClusterIDs.includes(clusterID)) {
+       if (arrayOfClusterArrays[clusterID] == undefined) {
+         arrayOfClusterArrays[clusterID] = [];
+       } else {
+         arrayOfClusterArrays[clusterID].push(node.data('id'));
+       }
+     } else {
+       arrayOfClusterArrays.push([node.data('id')]);
+     }
+    });
+    return arrayOfClusterArrays;
+  };
+
   const menuDef = [ 
     {
       title: "Zoom to Fit",
@@ -329,10 +358,52 @@ const Main = ({
     //   onClick: () => controller.deleteSelectedNodes(),
     // },
     {
-      title: "Restore Network Layout",
+      title: "Apply Network Layout",
       icon: <RestoreIcon />,
       onClick: handleNetworkRestore,
       unrelated: true,
+      subMenu: [
+        {
+          title: "Layered - Circle",
+          icon: <ConcentricLayoutIcon />,
+          onClick: () => controller.applyLayout({ name: 'breadthfirst', circle: true }),
+        },
+        {
+          title: "Layered - Top Down",
+          icon: <LayeredLayoutIcon />,
+          onClick: () => controller.applyLayout({ name: 'breadthfirst', circle: false, grid: false }),
+        },
+        {
+          title: "Concentric",
+          icon: <ConcentricLayoutIcon />,
+          onClick: () => controller.applyLayout({ name: 'concentric' }),
+        },
+        {
+          title: "Clusters",
+          icon: <ClustersLayoutIcon />,
+          onClick: () => controller.applyLayout({ name: 'cise', clusters: createClusterArrays() }),
+        },
+        {
+          title: "Physics Simulation",
+          icon: <PhysicsLayoutIcon />,
+          onClick: () => controller.applyLayout({ 
+            name: 'euler',
+            animate: false,
+            mass: (n) => n.data('regulatoryFunction') === 'regulator' ? 100 : 10,
+            springLength: () => 120,
+          }),
+        },
+        // {
+        //   title: "CoSE",
+        //   icon: <RestoreIcon />,
+        //   onClick: () => controller.applyLayout({ name: 'cose', animate: false, nodeRepulsion: 100000 }),
+        // },
+        // {
+        //   title: "Cola",
+        //   icon: <RestoreIcon />,
+        //   onClick: () => controller.applyLayout({ name: 'cola', animate: false }),
+        // },
+      ],
     }, {
       title: "Download Data and Images",
       icon: <DownloadIcon />,

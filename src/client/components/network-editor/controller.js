@@ -227,39 +227,11 @@ export class NetworkEditorController {
   }
 
 
-  async applyLayout() {
+  async applyLayout(options) {
     const { cy } = this;
 
-    // const merge = (components) => {
-    //   const collection = cy.collection();
-    //   components.forEach(comp => {
-    //     collection.merge(comp);
-    //   });
-    //   return collection;
-    // };
-
-    // const [ posComponents, negComponents ] = this._partitionComponentsByNES(cy.elements());
-    // const negEles = merge(negComponents);
-    // const posEles = merge(posComponents);
-
-    await this._applyLayoutToEles(cy.elements());
-    // Partitioned layout, blue on left, red on right
-    // await this._applyLayoutToEles(negEles, clusterLabels, clusterAttr); // blue
-    // await this._applyLayoutToEles(posEles, clusterLabels, clusterAttr); // red
-
-     // Shift over
-    // const negBB = negEles.boundingBox();
-    // const posBB = posEles.boundingBox();
-    // const dx = negBB.w + 50; // padding
-    // const dy = negBB.y2 - posBB.y2;
-    
-    // posEles.nodes().positions(node => {
-    //   const pos = node.position();
-    //   return {
-    //     x: pos.x + dx,
-    //     y: pos.y + dy
-    //   };
-    // });
+    await this._applyLayoutToEles(cy.elements(), options);
+    cy.fit(DEFAULT_PADDING);
   }
 
   _partitionComponentsByNES(eles) {
@@ -277,7 +249,7 @@ export class NetworkEditorController {
   /**
    * Stops the currently running layout, if there is one, and apply the new layout options.
    */
-  async _applyLayoutToEles(eles) {
+  async _applyLayoutToEles(eles, options) {
     if (this.layout) {
       this.layout.stop();
     }
@@ -294,10 +266,13 @@ export class NetworkEditorController {
     //   // idealEdgeLength: edge => idealLengths.get(edge.data('id')) || 50,
     //   nodeRepulsion: 100000
     // };
-    const options = {
+    options = options || {
       name: 'breadthfirst',
-      animate: false,
-      circle: true, 
+      circle: true,
+      // grid: true,
+      // avoidOverlap: true,
+      // nodeDimensionsIncludeLabels: true,
+      // roots: eles.filter(n => n.data('regulatoryFunction') === 'regulator').map(n => n.id()),
     };
     // const options = {
     //   name: 'concentric',

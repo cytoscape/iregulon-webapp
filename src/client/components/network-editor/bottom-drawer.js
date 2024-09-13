@@ -327,7 +327,6 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
       const result = controller.fetchResults(row.type).find(r => r.type === row.type && r[idField] === row[idField]);
       controller.addToNetwork([result]);
       await controller.applyLayout();
-      cy.fit(DEFAULT_PADDING);
     } else {
       // Remove from the network
       const idx = newCheckedRows.findIndex(r => r.id === row.id);
