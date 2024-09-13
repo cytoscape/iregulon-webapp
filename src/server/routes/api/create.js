@@ -6,7 +6,6 @@ import Datastore from '../../datastore.js';
 import { annotateGenes, parseMotifsAndTracks } from '../../util.js';
 import { rankedGeneListToDocument, fgseaServiceGeneRanksToDocument } from '../../datastore.js';
 import { performance } from 'perf_hooks';
-import { saveUserUploadFileToS3 } from './s3.js';
 import { 
   IREGULON_JOB_SERVICE_URL,
   IREGULON_STATE_SERVICE_URL,
