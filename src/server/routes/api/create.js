@@ -21,67 +21,90 @@ const http = Express.Router();
 
 
 /*
- * Submit a job to the iRegulon service, then returns the jobID.
+ * Endpoint to submit a job to the iRegulon service--returns the "jobID".
  */
-http.post('/', async function(req, res, next) {
-  const perf = createPeformanceHook();
+http.post('/submitJob', async function(req, res) {
+  const params = new URLSearchParams();
+  Object.entries(req.body).forEach(([key, value]) => params.append(key, value));
 
-  try {
-    // 1. Submit the job
-    const params = new URLSearchParams();
-    Object.entries(req.body).forEach(([key, value]) => params.append(key, value));
+  const response = await fetch(IREGULON_JOB_SERVICE_URL, {
+    method: 'POST',
+    headers: {
+      'User-Agent': IREGULON_USER_AGENT,
+    },
+    body: params
+  });
 
-    const jobID = await submitJob(params, perf);
-
-    if (jobID && jobID.length > 0) {
-      // 2. Check the job status
-      let state;
-      let i = 1;
-      const myLoop = () => {
-        setTimeout(async () => {
-          console.log(`Checking state of job ${jobID} (attempt #${i})...`);
-          state = await checkJobState(jobID);
-          console.log(`- ${jobID}: ${state}`);
-          i++;
-
-          if (i < 50 && state !== 'FINISHED' && state !== 'ERROR') {
-            myLoop();
-          } else {
-             // 3. Get the results
-            if (state === 'FINISHED') {
-              try {
-                const results = await fetchJobResults(jobID, perf);
-                
-                perf.mark('genes');
-
-                const geneSymbols = req.body.genes.split(';').map(name => name.trim()).filter(name => name.length > 0);
-                const genes = geneSymbols.map(name => ({ name }));
-                annotateGenes(genes, results);
-
-                perf.mark('mongo');
-
-                const networkID = await Datastore.saveResults(genes, results);
-
-                perf.mark('end');
-
-                console.log(networkID);
-                res?.send(networkID);
-              } finally {
-                console.log('[ DONE ] Elapsed Time:', perf.measure({ from: 'submit', to: 'genes' }));
-                perf.dispose();
-              }
-            } else {
-              perf.dispose();
-              // TODO handle error
-            }
-          } 
-        }, 10_000);
-      };
-      myLoop();
-    }
-  } catch (err) {
-    next(err);
+  if (!response.ok) {
+    const body = await response.text();
+    const status = response.status;
+    throw new CreateError({ step: 'submitJob', body, status });
   }
+
+  const txt = await response.text();
+  const jobID = txt?.replace('jobID:', '').trim();
+
+  // Return the job ID to the client
+  res.json({ jobID });
+});
+
+/*
+ * Endpoint to check the status of a job.
+ */
+http.get('/checkStatus/:jobID', async function(req, res) {
+  const jobID = req.params.jobID;
+  const params = new URLSearchParams({ jobID });
+
+  const response = await fetch(IREGULON_STATE_SERVICE_URL, {
+    method: 'POST',
+    headers: {
+      'User-Agent': IREGULON_USER_AGENT,
+    },
+    body: params
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    const status = response.status;
+    throw new CreateError({ step: 'checkStatus', body, status });
+  }
+
+  let status = 'UNKNOWN';
+  const txt = await response.text();
+  const lines = txt.split('\n');
+
+  for (const line of lines) {
+    const entry = line.split('\t');
+    
+    if (entry.length === 2 && entry[0] === 'jobState:') {
+      status = entry[1].toUpperCase();
+      break;
+    }
+  }
+  
+  // Return the current status of the job
+  res.json({ jobID, status });
+});
+
+/*
+ * Endpoint to get the job result once completed, which is then saved in the DB.
+ */
+http.post('/', async function(req, res) {
+  const jobID = req.body.jobID;
+  const params = req.body.params;
+  
+  console.log('Fetching results for job ' + jobID + '...');
+  const results = await fetchJobResults(jobID);
+                
+  const geneSymbols = params.genes.split(';').map(name => name.trim()).filter(name => name.length > 0);
+  const genes = geneSymbols.map(name => ({ name }));
+  annotateGenes(genes, results);
+
+  const networkID = await Datastore.saveResults(genes, results);
+  console.log(networkID);
+
+  // Return the result of the job
+  res.json({ jobID, networkID });
 });
 
 /*
@@ -111,62 +134,9 @@ http.post('/demo', async function(req, res, next) {
   }
 });
 
-async function submitJob(params, perf) {
-  perf.mark('submit');
 
-  const res = await fetch(IREGULON_JOB_SERVICE_URL, {
-    method: 'POST',
-    headers: {
-      'User-Agent': IREGULON_USER_AGENT,
-    },
-    body: params
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    const status = res.status;
-    throw new CreateError({ step: 'submitJob', body, status });
-  }
-
-  const txt = await res.text();
-  const jobID = txt?.replace('jobID:', '').trim();
-
-  return jobID;
-}
-
-async function checkJobState(jobID) {
-  const params = new URLSearchParams({ jobID });
-  const res = await fetch(IREGULON_STATE_SERVICE_URL, {
-    method: 'POST',
-    headers: {
-      'User-Agent': IREGULON_USER_AGENT,
-    },
-    body: params
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    const status = res.status;
-    throw new CreateError({ step: 'checkJobState', body, status });
-  }
-
-  const txt = await res.text();
-  const lines = txt.split('\n');
-
-  for (const line of lines) {
-    const entry = line.split('\t');
-    
-    if (entry.length === 2 && entry[0] === 'jobState:') {
-      return entry[1].toUpperCase();
-    }
-  }
-  
-  return 'UNKNOWN';
-}
-
-async function fetchJobResults(jobID, perf) {
+async function fetchJobResults(jobID) {
   console.log('Fetching results for job ' + jobID + '...');
-  perf.mark('results');
 
   const params = new URLSearchParams({ jobID });
   const res = await fetch(IREGULON_RESULTS_SERVICE_URL, {
