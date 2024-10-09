@@ -184,7 +184,7 @@ export class QueryController {
 
     if (res.ok) {
       const { jobID } = await res.json();
-      console.log(jobID);
+      console.log('New job submitted', jobID);
       this.jobs.set(jobID, { status: 'UNKNOWN', params });
 
       return jobID;

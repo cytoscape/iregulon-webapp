@@ -276,7 +276,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     search('');
   };
 
-  const onResultsIndexed = () => {
+  const onResultsIndexed = () => {console.log('BOTTOM-DRAWER -- onResultsIndexed...');
     const results = controller.fetchResults(type);
     setData(toTableData(results, type));
     setDisabled(false);

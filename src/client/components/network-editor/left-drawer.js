@@ -210,7 +210,7 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
   const onNetworkLoaded = () => {
     setNetworkLoaded(true);
   };
-  const onGeneListIndexed = () => {
+  const onGeneListIndexed = () => {console.log('LEFT-DRAWER -- onGeneListIndexed...');
     setGeneListIndexed(true);
     debouncedSelectionHandler();
   };
