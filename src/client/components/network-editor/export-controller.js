@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import dedent from 'dedent';
+import { logoPath } from '../util';
 // eslint-disable-next-line no-unused-vars
 import { NetworkEditorController } from './controller';
 
@@ -39,7 +40,6 @@ export class ExportController {
   }
 
   async exportArchive() {
-    console.log('Exporting archive...');
     const netID = this.cy.data('id');
   
     const fetchExport = async path => {
@@ -54,29 +54,43 @@ export class ExportController {
     //   fetchExport(`/api/export/gmt/${netID}`),
     // ]);
 
-    // Let image generation run in parallel with fetching data from server
+    // // Let image generation run in parallel with fetching data from server
     const blob0 = await this._createNetworkImageBlob(ImageSize.SMALL);
     const blob1 = await this._createNetworkImageBlob(ImageSize.MEDIUM);
     const blob2 = await this._createNetworkImageBlob(ImageSize.LARGE);
     const blob3 = await this._createNetworkPDFBlob();
-    // const blob5 = await this._createNetworkJSONBlob();
-    // const files = await filesPromise;
-    // const readme = createREADME(this.controller);
+    const motifBlobs = await this._getMotifImageBlobs();
+    // // const readme = createREADME(this.controller);
   
     const zip = new JSZip();
     zip.file(Path.IMAGE_SMALL,   blob0);
     zip.file(Path.IMAGE_MEDIUM,  blob1);
     zip.file(Path.IMAGE_LARGE,   blob2);
     zip.file(Path.IMAGE_PDF,     blob3);
-    // zip.file(Path.DATA_JSON,     blob5);
-    // zip.file(Path.DATA_ENRICH,   files[0]);
-    // zip.file(Path.DATA_RANKS,    files[1]);
-    // zip.file(Path.DATA_GENESETS, files[2]);
-    // zip.file(Path.README,        readme);
-  
+    // // zip.file(Path.README,        readme);
+
+    for(const { path, blob } of motifBlobs) {
+      zip.file(path, blob);
+    }
+
     const fileName = this._getZipFileName('iregulon');
     this._saveZip(zip, fileName);
   }
+
+
+  async _getMotifImageBlobs() {
+    const motifs = this.controller.getSelectedMotifs();
+    const paths = motifs.map(logoPath);
+    
+    return Promise.all(
+      paths.map(path => 
+        fetch(path)
+        .then(r => r.blob())
+        .then(blob => ({ path, blob }))
+      )
+    );
+  }
+
 
   async exportGeneList(genesJSON, pathways) { // used by the gene list panel (actually left-drawer.js)
     if(pathways.length == 0)
@@ -103,7 +117,6 @@ export class ExportController {
 
     this._saveZip(zip, fileName);
   }
-
 
   async _createNetworkImageBlob(imageSize) {
     const { cy } = this.controller;
