@@ -68,7 +68,6 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
     return;
   }
   const networkJson = await networkResult.json();
-  console.log(networkJson);
 
   cy.add(networkJson.network.elements);
   cy.data({ 
@@ -190,10 +189,8 @@ function Root({ id, theme, recentNetworksController }) {
       // This `genes` array is used to filter the genes from the results (TFs and targets)
       // that must be added to the network
       const genes = controller.fetchGeneList(true);
-      console.log('genes', genes);
       // Get the top clusters
       const results = controller.fetchResults(DEFAULT_NETWORK_TYPE_SELECTION);
-      console.log('results', results.length); 
       const maxResults = Math.min(results.length, DEFAULT_NETWORK_TOTAL_SELECTION);
       let count = 0;
       const filteredResults = results.filter(ele => { 
@@ -208,8 +205,7 @@ function Root({ id, theme, recentNetworksController }) {
       filteredResults.forEach(ele => {
         const tfName = ele.transcriptionFactors[0].geneID.name;
         if (genes.find(g => g.name === tfName) === undefined) {
-          const gene = controller.getGene(tfName);
-          console.log('gene by name', tfName, gene);
+          const gene = controller.fetchGene(tfName);
           if (gene) {
             genes.push(gene);
           }

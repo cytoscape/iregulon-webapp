@@ -614,7 +614,7 @@ export class NetworkEditorController {
     return this.searchController.getResults(type);
   }
 
-  getGene(name) {
+  fetchGene(name) {
     const genes = this.searchController.searchGenes(name);
     return genes.length > 0 ? genes[0] : null;
   }

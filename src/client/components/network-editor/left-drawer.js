@@ -9,9 +9,7 @@ import GeneListPanel from './gene-list-panel';
 
 import makeStyles from '@mui/styles/makeStyles';
 
-import { Box, Drawer, Grid, Typography, Toolbar, Tooltip } from '@mui/material';
-import { FormControl, IconButton, Select, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
-import { ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Drawer, Grid, IconButton, Typography, Toolbar, Tooltip } from '@mui/material';
 import SearchBar from './search-bar';
 
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
@@ -140,6 +138,18 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
     return await controller.fetchGeneList();
   };
 
+  const fetchGeneListFromElements = (eles) => {
+    const genes = [];
+    eles.forEach(el => {
+      const name = el.data('name');
+      const gene = controller.fetchGene(name);
+      if (gene) {
+        genes.push(gene);
+      }
+    });
+    return genes;
+  };
+
   const getGeneSetNames = (eles) => {
     const nodes = eles.nodes();
 
@@ -171,29 +181,9 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
   const debouncedSelectionHandler = _.debounce(async () => {
     const eles = cy.nodes(':selected');
     if (eles.length > 0) {
-      // TODO Do we want to sync the node selection with the gene list?
-      // // The sorting must be the same as the colour of the selection (one or more nodes),
-      // // but only if all the nodes in the selection are the same colour
-      // let hasPositive = false;
-      // let hasNegative = false;
-      // for (let i = 0; i < eles.length; i++) {
-      //   const nes = eles[i].data('NES');
-      //   if (nes > 0) {
-      //     hasPositive = true;
-      //   } else if (nes < 0) {
-      //     hasNegative = true;
-      //   }
-      //   if (hasPositive && hasNegative)
-      //     break;
-      // }
-      // if (hasPositive && !hasNegative) {
-      //   setSort('down');
-      // } else if (hasNegative && !hasPositive) {
-      //   setSort('up');
-      // }
-      // // Update the sorted gene list
-      // const newGenes = await fetchGeneListFromElements(eles);
-      // flashAndSetGenes(sortGenes(newGenes, sortRef.current));
+      // Sync the node selection with the gene list, by filtering the genes that are in the selection
+      const newGenes = fetchGeneListFromElements(eles);
+      flashAndSetGenes(sortGenes(newGenes, sortRef.current));
     } else if (_.isEmpty(searchValueRef.current)) {
       const newGenes = await fetchAllGenes();
       flashAndSetGenes(sortGenes(newGenes, sortRef.current));
@@ -272,7 +262,7 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
       cancelSearch();
     }, 128);
     
-    // cyEmitter.on('select unselect', onCySelectionChanged);
+    cyEmitter.on('select unselect', onCySelectionChanged);
     cyEmitter.on('select', () => clearSearch());
     cyEmitter.on('tap', evt => {
       if (evt.target === cy && selectedGeneRef.current != null) {
@@ -318,17 +308,9 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
       setInitialIndex(0); // Always reset the scroll when sorting has changed
   }, [sort]);
 
-  const handleSort = (evt, value) => {
-    if (value != null) {
-      setSort(value);
-      setGenes(sortGenes(genes, value));
-    }
-  };
-
   const selectedNodes = cy.nodes(':selected');
   const isSearch = !_.isEmpty(searchValue);
   const totalGenes = genes != null ? genes.length : -1;
-  const sortDisabled = totalGenes <= 0;
   
   const drawerVariant = isMobile || isTablet ? 'temporary' : 'persistent';
   
@@ -406,32 +388,6 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
                 onCancelSearch={cancelSearch}
               />
             </Grid>
-            {/* <Grid item>
-              <Grid container direction="row" justifyContent="space-between" className={classes.controlsRow2}>
-                <Grid item />
-                <Grid item>
-                  <ToggleButtonGroup
-                    value={sort}
-                    exclusive
-                    onChange={handleSort}
-                  >
-                  {Object.entries(sortOptions).map(([k, { label, icon }]) => (
-                    <ToggleButton
-                      key={`sort-${k}`}
-                      value={k}
-                      disabled={sortDisabled}
-                      size="small"
-                      className={classes.sortButton}
-                    >
-                      <Tooltip placement="top" title={label}>
-                        { icon }
-                      </Tooltip>
-                    </ToggleButton>
-                  ))}
-                  </ToggleButtonGroup>
-                </Grid>
-              </Grid>
-            </Grid> */}
           </Grid>
         </div>
         <div className={classes.content}>
