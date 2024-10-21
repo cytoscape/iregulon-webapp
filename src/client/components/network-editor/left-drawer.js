@@ -17,6 +17,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import { DownloadIcon } from '../svg-icons';
 
 
+const filterQueryGenes = true;
+
 const sortOptions = {
   up: {
     label: 'Sort by RANK (from lowest to highest)',
@@ -135,7 +137,7 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
   };
 
   const fetchAllGenes = async () => {
-    return await controller.fetchGeneList();
+    return await controller.fetchGeneList(filterQueryGenes);
   };
 
   const fetchGeneListFromElements = (eles) => {
