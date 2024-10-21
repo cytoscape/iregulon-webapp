@@ -39,8 +39,15 @@ export class SearchController {
     return [];
   }
 
-  getGenes() {
-    return Object.values(this.geneMiniSearch.toJSON().storedFields);
+  getGenes(isQuery) {
+    if (!this.isGeneListIndexed()) {
+      throw "The gene list hasn't been fecthed yet!";
+    }
+    let genes = Object.values(this.geneMiniSearch.toJSON().storedFields);
+    if (isQuery) {
+      genes = genes.filter(g => g.query === true);
+    }
+    return genes;
   }
 
   searchResults(query) {
@@ -55,10 +62,15 @@ export class SearchController {
 
   getResults(type) {
     if (type === 'CLUSTER') {
+      // Return only clusters
       return Object.values(this.clustersMiniSearch.toJSON().storedFields);
     }
-    const results = Object.values(this.resultsMiniSearch.toJSON().storedFields);
-    if (type != null) {
+    let results = Object.values(this.resultsMiniSearch.toJSON().storedFields);
+    if (type == null) {
+      // Return all results, including clusters
+      results.push(...Object.values(this.clustersMiniSearch.toJSON().storedFields));
+    } else {
+      // Return motifs or tracks
       return results.filter(r => r.type === type);
     }
     return results;

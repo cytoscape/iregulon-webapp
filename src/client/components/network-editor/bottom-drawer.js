@@ -3,22 +3,20 @@ import PropTypes from 'prop-types';
 import _ from 'lodash';
 import clsx from 'clsx';
 
-import { LEFT_DRAWER_WIDTH, BOTTOM_DRAWER_HEIGHT, DEFAULT_PADDING } from '../defaults';
+import { LEFT_DRAWER_WIDTH, BOTTOM_DRAWER_HEIGHT, DEFAULT_NETWORK_TYPE_SELECTION } from '../defaults';
 import { EventEmitterProxy } from '../../../model/event-emitter-proxy';
 import { NetworkEditorController } from './controller';
-import { REG_COLOR_RANGE } from './network-style';
 import DataTable, { DEF_SORT_FN } from './data-table';
 import DataDetailsPanel from './data-details-panel';
 import SearchBar from './search-bar';
 import { motifName, motifTrackLinkOut, rowId, rowTypeIdField } from '../util';
-import { UpDownLegend, numToText } from './charts';
 
 import makeStyles from '@mui/styles/makeStyles';
 
 import Collapse from '@mui/material/Collapse';
 import { AppBar, Toolbar, Divider, Grid } from '@mui/material';
 import { Drawer, Tooltip, Typography } from '@mui/material';
-import { Button, IconButton, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { IconButton, ToggleButtonGroup, ToggleButton } from '@mui/material';
 
 import ExpandIcon from '@mui/icons-material/ExpandLess';
 import CollapseIcon from '@mui/icons-material/ExpandMore';
@@ -170,7 +168,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const [ disabled, setDisabled ] = useState(true);
   const [ searchValue, setSearchValue ] = useState('');
   const [ data, setData ] = useState([]);
-  const [ type, setType ] = useState('MOTIF');
+  const [ type, setType ] = useState(DEFAULT_NETWORK_TYPE_SELECTION);
   const [ searchTerms, setSearchTerms ] = useState();
   const [ checkedRows, setCheckedRows ] = useState([]);
   const [ currentRow, setCurrentRow ] = useState();
@@ -312,7 +310,8 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const handleTypeChange = (evt, value) => {
     if (value != null) {
       setType(value);
-      setData(toTableData(controller.fetchResults(value), value, sortFnRef.current));
+      const results = controller.fetchResults(value);
+      setData(toTableData(results, value, sortFnRef.current));
     }
   };
 
@@ -352,7 +351,6 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   };
 
   const shiftDrawer = leftDrawerOpen && !isMobile && !isTablet; 
-  const magNES = controller.style ? controller.style.magNES : undefined;
   const total = disabled ? 0 : data.length;
   const filteredSelectedRows = [];//selectedRows.filter(a => data.some(b => a.id === b.id)); // TODO
   const totalSelected = filteredSelectedRows.length;
