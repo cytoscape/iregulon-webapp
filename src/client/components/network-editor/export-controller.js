@@ -1,8 +1,7 @@
 import JSZip from 'jszip';
-import { Canvg, presets } from 'canvg';
 import { saveAs } from 'file-saver';
-import { getLegendSVG } from './legend-svg';
 import dedent from 'dedent';
+import { logoPath } from '../util';
 // eslint-disable-next-line no-unused-vars
 import { NetworkEditorController } from './controller';
 
@@ -49,37 +48,49 @@ export class ExportController {
     };
   
     // Let the fethching happen in the background while we generate the images
-    const filesPromise = Promise.all([
-      fetchExport(`/api/export/enrichment/${netID}`),
-      fetchExport(`/api/export/ranks/${netID}`),
-      fetchExport(`/api/export/gmt/${netID}`),
-    ]);
+    // const filesPromise = Promise.all([
+    //   fetchExport(`/api/export/enrichment/${netID}`),
+    //   fetchExport(`/api/export/ranks/${netID}`),
+    //   fetchExport(`/api/export/gmt/${netID}`),
+    // ]);
 
-    // Let image generation run in parallel with fetching data from server
+    // // Let image generation run in parallel with fetching data from server
     const blob0 = await this._createNetworkImageBlob(ImageSize.SMALL);
     const blob1 = await this._createNetworkImageBlob(ImageSize.MEDIUM);
     const blob2 = await this._createNetworkImageBlob(ImageSize.LARGE);
     const blob3 = await this._createNetworkPDFBlob();
-    const blob4 = await this._createSVGLegendBlob();
-    // const blob5 = await this._createNetworkJSONBlob();
-    const files = await filesPromise;
-    const readme = createREADME(this.controller);
+    const motifBlobs = await this._getMotifImageBlobs();
+    // // const readme = createREADME(this.controller);
   
     const zip = new JSZip();
     zip.file(Path.IMAGE_SMALL,   blob0);
     zip.file(Path.IMAGE_MEDIUM,  blob1);
     zip.file(Path.IMAGE_LARGE,   blob2);
     zip.file(Path.IMAGE_PDF,     blob3);
-    zip.file(Path.IMAGE_LEGEND,  blob4);
-    // zip.file(Path.DATA_JSON,     blob5);
-    zip.file(Path.DATA_ENRICH,   files[0]);
-    zip.file(Path.DATA_RANKS,    files[1]);
-    zip.file(Path.DATA_GENESETS, files[2]);
-    zip.file(Path.README,        readme);
-  
+    // // zip.file(Path.README,        readme);
+
+    for(const { path, blob } of motifBlobs) {
+      zip.file(path, blob);
+    }
+
     const fileName = this._getZipFileName('iregulon');
     this._saveZip(zip, fileName);
   }
+
+
+  async _getMotifImageBlobs() {
+    const motifs = this.controller.getSelectedMotifs();
+    const paths = motifs.map(logoPath);
+    
+    return Promise.all(
+      paths.map(path => 
+        fetch(path)
+        .then(r => r.blob())
+        .then(blob => ({ path, blob }))
+      )
+    );
+  }
+
 
   async exportGeneList(genesJSON, pathways) { // used by the gene list panel (actually left-drawer.js)
     if(pathways.length == 0)
@@ -107,48 +118,14 @@ export class ExportController {
     this._saveZip(zip, fileName);
   }
 
-
   async _createNetworkImageBlob(imageSize) {
-    const { cy, bubbleSets } = this.controller;
-    const renderer = cy.renderer();
-  
-    // render the network to a buffer canvas
-    const cyoptions = {
+    const { cy } = this.controller;
+    return await cy.png({
       output: 'blob',
       bg: 'white',
-      full: true, // full must be true for the calculations below to work
+      full: true, 
       scale: imageSize.scale,
-    };
-    const cyCanvas = renderer.bufferCanvasImage(cyoptions);
-    const { width, height } = cyCanvas;
-  
-    // compute the transform to be applied to the bubbleSet svg layer
-    // this code was adapted from the code in renderer.bufferCanvasImage()
-    var bb = cy.elements().boundingBox();
-    const pxRatio = renderer.getPixelRatio();
-    const scale = imageSize.scale * pxRatio;
-    const dx = -bb.x1 * scale;
-    const dy = -bb.y1 * scale;
-    const transform = `translate(${dx},${dy})scale(${scale})`;
-  
-    // get the bubbleSet svg element
-    const svgElem = bubbleSets.layer.node.parentNode.cloneNode(true);
-    svgElem.firstChild.setAttribute('transform', transform); // firstChild is a <g> tag
-  
-    // render the bubbleSet svg layer using Canvg library
-    const svgCanvas = new OffscreenCanvas(width, height);
-    const ctx = svgCanvas.getContext('2d');
-    const svgRenderer = await Canvg.from(ctx, svgElem.innerHTML, presets.offscreen());
-    await svgRenderer.render();
-  
-    // combine the layers
-    const combinedCanvas = new OffscreenCanvas(width, height);
-    const combinedCtx = combinedCanvas.getContext('2d');
-    combinedCtx.drawImage(cyCanvas,  0, 0);
-    combinedCtx.drawImage(svgCanvas, 0, 0);
-  
-    const blob = await combinedCanvas.convertToBlob();
-    return blob;
+    });
   }
 
   async _createNetworkJSONBlob() {
@@ -167,16 +144,11 @@ export class ExportController {
       paperSize: 'LETTER',
       orientation: 'LANDSCAPE',
       full: true, // ignore zoom level
-      includeSvgLayers: true, // include bubbles
+      includeSvgLayers: false, // there are no bubbles like in EM
     });
     return blob;
   }
 
-  async _createSVGLegendBlob() {
-    const svg = getLegendSVG(this.controller);
-    return new Blob([svg], { type: 'text/plain;charset=utf-8' });
-  }
-   
   _getZipFileName(suffix) {
     const networkName = this.cy.data('name');
     if(networkName) {
@@ -195,7 +167,6 @@ export class ExportController {
   }
 
 }
-
 
 
 function createREADME(controller) {
