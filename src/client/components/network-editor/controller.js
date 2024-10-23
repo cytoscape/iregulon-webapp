@@ -54,6 +54,8 @@ export class NetworkEditorController {
     /** @type {String} */
     this.networkIDStr = cy.data('id');
 
+    this.selectedMotifs = new Set();
+
     this.searchController = new SearchController(cy, this.bus);
     this.exportController = new ExportController(this);
     this.undoHandler = new UndoHandler(this);
@@ -116,6 +118,15 @@ export class NetworkEditorController {
     if (genes) {
       genes.forEach(g => geneMap.set(g.name, g));
     }
+
+    results.forEach(ele => {
+      const type = ele.type;
+      if(type === 'MOTIF') {
+        this.selectedMotifs.add(ele.name);
+      } else if(type === 'CLUSTER') {
+        this.selectedMotifs.add(ele.motifsAndTracks[0].name);
+      }
+    });
 
     /** Get an existing node by its name or create one and return it */
     const getNode = (name, type, typeId, isQuery) => {
@@ -184,6 +195,15 @@ export class NetworkEditorController {
 
     results.forEach(ele => {
       const type = ele.type;
+      if(type === 'MOTIF') {
+        this.selectedMotifs.delete(ele.name);
+      } else if(type === 'CLUSTER') {
+        this.selectedMotifs.delete(ele.motifsAndTracks[0].name);
+      }
+    });
+
+    results.forEach(ele => {
+      const type = ele.type;
       const typeId = ele[rowTypeIdField(type)];
       const clusterId = rowId(type, typeId);
       const genesArr = [...ele.transcriptionFactors, ...ele.candidateTargetGenes];
@@ -205,6 +225,10 @@ export class NetworkEditorController {
         }
       });
     });
+  }
+
+  getSelectedMotifs() {
+    return [...this.selectedMotifs];
   }
 
   _computeFCOSEidealEdgeLengthMap(clusterLabels, clusterAttr) {
