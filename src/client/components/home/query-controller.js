@@ -3,20 +3,18 @@ import { SENTRY } from '../../env';
 import * as Sentry from "@sentry/browser";
 import { replace } from 'lodash';
 
-export const RNA_SEQ = 'rnaseq';
-export const PRE_RANKED = 'ranks';
 
-
-export class UploadController {
+export class QueryController {
   
   /**
    * Create an instance of the controller
    * @param {EventEmitter} bus The event bus that the controller emits on after every operation
    */
   constructor(bus) {
-
     /** @type {EventEmitter} */
     this.bus = bus || new EventEmitter();
+
+    this.jobs = new Map();
   }
   
   captureNondescriptiveErrorInSentry(errorMessage) {
@@ -26,7 +24,6 @@ export class UploadController {
     //   console.error('Reporting browser error to Sentry: ' + errorMessage);
     // }
   }
-
 
   async fetchSampleData(fileName) {
     const dataurl = `/sample-data/${fileName}`;
@@ -123,24 +120,10 @@ export class UploadController {
   //   }
   // }
   
-  async submitJob({ organism, genes, requestID }) {
-    const res = await this._submitJobToService(organism, genes, requestID);
-          
-    if (res.errors) {
-      this.bus.emit('error', { errors: res.errors, requestID });
-      // TODO: Is this necessary? Errors on the server should get logged by the server, right?
-      this.captureNondescriptiveErrorInSentry('Error in iRegulon service with input data'); 
-      return;
-    }
-
-    console.log('finished', { networkID: res.netID, requestID });
-    this.bus.emit('finished', { networkID: res.netID, requestID });
-  }
-
-  async _submitJobToService(organism, genes, requestID) {
-    const url = '/api/create';
+  async submitQuery({ organism, genes, requestID }) {
+    // 1. Submit the job
     const params = {
-      // == TODO: Create advanced options for the user to set these values ==
+      // == TODO: Create advanced options for the user to set these values (?) ==
       jobName: 'iRegulon-Web_' + requestID,
       AUCThreshold: 0.03,
       rankThreshold: 5000,
@@ -154,6 +137,43 @@ export class UploadController {
       genes: genes.join(';'),
     };
 
+    const jobID = await this._submitJob(organism, params, requestID);
+          
+    if (jobID && jobID.length > 0) {
+      // 2. Check the job status
+      let status;
+      let i = 1;
+      const myLoop = () => {
+        setTimeout(async () => {
+          console.log(`Checking state of job ${jobID} (attempt #${i})...`);
+          status = await this._checkJobStatus(jobID);
+          console.log(`- ${jobID}: ${status}`);
+          i++;
+
+          if (i < 50 && status !== 'FINISHED' && status !== 'ERROR') {
+            myLoop();
+          } else {
+            // 3. Get the results
+            if (status === 'FINISHED') {
+              const networkID = await this._fetchJobResults(jobID);
+              
+              console.log('finished', { networkID, requestID });
+              this.bus.emit('finished', { networkID, requestID });
+            } else {
+              // TODO handle error
+            }
+          } 
+        }, 10000);
+      };
+      myLoop();
+    } else {
+      // TODO handle error
+    }
+  }
+
+  async _submitJob(organism, params) {
+    const url = '/api/create/submitJob';
+
     const res = await fetch(url, {
       method: 'POST',
       headers: {
@@ -163,23 +183,56 @@ export class UploadController {
     });
 
     if (res.ok) {
-      const jobID = await res.text();
-      console.log(jobID);
-      return { netID: jobID };
+      const { jobID } = await res.json();
+      console.log('New job submitted', jobID);
+      this.jobs.set(jobID, { status: 'UNKNOWN', params });
+
+      return jobID;
     } else {
       console.log(await res.text());
     }
-    // else if (res.status == 413) {
-    //   // Max file size for uploads is defined in the dataParser in the server/routes/api/index.js file.
-    //   return { errors: ["The uploaded file is too large. The maximum file size is 50 MB."] };
-    // } else if (res.status == 450) {
-    //   // custom status code, error while running create data pipeline
-    //   const body = await res.json();
-    //   const errors = this.errorMessagesForCreateError(body.details);
-    //   return { errors };
-    // } else {
-    //   return { errors: [] }; // empty array shows generic error message
-    // }
+  }
+
+  async _checkJobStatus(jobID) {
+    const url = `/api/create/checkStatus/${jobID}`;
+
+    const res = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    });
+
+    if (res.ok) {
+      const { status } = await res.json();
+      const job = this.jobs.get(jobID);
+      job && (job.status = status);
+      console.log(job);
+
+      return status;
+    } else {
+      console.log(await res.text());
+    }
+  }
+
+  async _fetchJobResults(jobID) {
+    const url = '/api/create';
+    const job = this.jobs.get(jobID);
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ jobID, params: job.params })
+    });
+
+    if (res.ok) {
+      const { networkID } = await res.json();
+      console.log(networkID);
+      return networkID;
+    } else {
+      console.log(await res.text());
+    }
   }
 
   errorMessagesForCreateError(details) {

@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from "react-query";
 
 import makeStyles from '@mui/styles/makeStyles';
 
-import { BOTTOM_DRAWER_OPEN } from '../defaults';
+import { BOTTOM_DRAWER_OPEN, DEFAULT_NETWORK_TYPE_SELECTION, DEFAULT_NETWORK_TOTAL_SELECTION } from '../defaults';
 import { currentTheme } from '../../theme';
 import { isMobile, isTablet } from '../util';
 import { NetworkEditorController } from './controller';
@@ -68,7 +68,6 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
     return;
   }
   const networkJson = await networkResult.json();
-  console.log(networkJson);
 
   cy.add(networkJson.network.elements);
   cy.data({ 
@@ -77,18 +76,6 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
     geneSetCollection: networkJson.geneSetCollection,
     demo: Boolean(networkJson.demo)
   });
-
-  // For now, just update the network with the top results
-  const maxResults = Math.min(networkJson.results.length, 4);
-  let count = 0;
-  const filteredResults = networkJson.results.filter(ele => { 
-    if (ele.transcriptionFactors.length > 0 && count < maxResults) {
-      ++count;
-      return true;
-    }
-    return false;
-  });
-  controller.updateNetwork(filteredResults, networkJson.genes);
 
   // Apply layout
   let layoutWasRun = false;
@@ -196,9 +183,47 @@ function Root({ id, theme, recentNetworksController }) {
     }
   };
 
+  const onResultsIndexed = () => {console.log('resultsIndexed...');
+    // If the loaded network is empty (no nodes), then update it with the top clusters
+    if (cy.nodes().length === 0) {
+      // This `genes` array is used to filter the genes from the results (TFs and targets)
+      // that must be added to the network
+      const genes = controller.fetchGeneList(true);
+      // Get the top clusters
+      const results = controller.fetchResults(DEFAULT_NETWORK_TYPE_SELECTION);
+      const maxResults = Math.min(results.length, DEFAULT_NETWORK_TOTAL_SELECTION);
+      let count = 0;
+      const filteredResults = results.filter(ele => { 
+        if (ele.transcriptionFactors.length > 0 && count < maxResults) {
+          ++count;
+          return true;
+        }
+        return false;
+      });
+      // Check whether this TF is in the gene list and, if not, get the gene object
+      // that has all the fields and add it to the list
+      filteredResults.forEach(ele => {
+        const tfName = ele.transcriptionFactors[0].geneID.name;
+        if (genes.find(g => g.name === tfName) === undefined) {
+          const gene = controller.fetchGene(tfName);
+          if (gene) {
+            genes.push(gene);
+          }
+        }
+      });
+
+      controller.addToNetwork(filteredResults, genes);
+      controller.applyLayout();
+    }
+  };
+
   useEffect(() => {
+    controller.bus.on('resultsIndexed', onResultsIndexed);
     loadNetwork(id, cy, controller, recentNetworksController);
-    return () => cy.destroy();
+    return () => {
+      controller.bus.removeListener('resultsIndexed', onResultsIndexed);
+      cy.destroy();
+    };
   }, []);
 
   useEffect(() => {

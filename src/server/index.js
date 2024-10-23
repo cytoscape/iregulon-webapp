@@ -100,8 +100,8 @@ if (!TESTING) {
   }));
 }
 
-// app.use(bodyParser.json({ limit: UPLOAD_LIMIT }));
-// app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json({ limit: '200kb' }));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../..', 'public')));
 

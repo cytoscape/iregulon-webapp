@@ -1,8 +1,6 @@
-import React from 'react';
 import EventEmitter from 'eventemitter3';
 import Cytoscape from 'cytoscape'; // eslint-disable-line
 import _ from 'lodash';
-import ReactDOMServer from 'react-dom/server';
 
 import { DEFAULT_PADDING } from '../defaults';
 import { rowId, rowTypeIdField } from '../util';
@@ -10,6 +8,7 @@ import { monkeyPatchMathRandom, restoreMathRandom } from '../../rng';
 import { SearchController } from './search-contoller';
 import { ExportController } from './export-controller';
 import { UndoHandler } from './undo-stack';
+
 
 // Clusters that have this many nodes get optimized.
 // Note we are using number of nodes as a proxy for number of edges, assuming large clusters are mostly complete.
@@ -130,10 +129,13 @@ export class NetworkEditorController {
     });
 
     /** Get an existing node by its name or create one and return it */
-    const getNode = (name, type, typeId) => {
+    const getNode = (name, type, typeId, isQuery) => {
       let node = cy.getElementById(name);
       if (node.length === 0) {
         const gene = geneMap.get(name);
+        if (isQuery && !gene.query) {
+          return null;
+        }
         let query = gene?.query;
         const data = {
           id: name,
@@ -163,23 +165,28 @@ export class NetworkEditorController {
       const tfArr = ele.transcriptionFactors;
       const tgtArr = ele.candidateTargetGenes;
 
-      tfArr?.forEach((g1) => {
+      // Use only the first TF
+      if (tfArr.length > 0) {
+        const g1 = tfArr[0];
         const name1 = g1.geneID.name;
-        const node1 = getNode(name1, type, typeId);
+        console.log('map', geneMap.values());
+        const node1 = getNode(name1, type, typeId, false); // A TF must be added even if it's not a query gene
         // Update the 'regulatoryFunction' data field
         node1.data('regulatoryFunction', 'regulator');
 
         tgtArr?.forEach((g2) => {
           const name2 = g2.geneID.name;
-          const node2 = getNode(name2, type, typeId);
-          // Update the 'regulatoryFunction' data field, but only if it's not already set to 'regulator'
-          if (node2.data('regulatoryFunction') !== 'regulator') {
-            node2.data('regulatoryFunction', 'regulated');
+          const node2 = getNode(name2, type, typeId, true); // Use only the query genes for target nodes
+          if (node2) {
+            // Update the 'regulatoryFunction' data field, but only if it's not already set to 'regulator'
+            if (node2.data('regulatoryFunction') !== 'regulator') {
+              node2.data('regulatoryFunction', 'regulated');
+            }
+            // Add an edge between the TF and the target node
+            cy.add({ group: 'edges', data: { source: name1, target: name2, clusterNumber } });
           }
-          // Add an edge between the TF and the target node
-          cy.add({ group: 'edges', data: { source: name1, target: name2, clusterNumber } });
         });
-      });
+      }
     });
   }
 
@@ -621,13 +628,18 @@ export class NetworkEditorController {
 
 
   /**
-   * Needed by the gene sidebar.
+   * @param {boolean} isQuery if `true`, the returned list will contain only query genes
    */
-  async fetchGeneList() {
-    return this.searchController.getGenes();
+  fetchGeneList(isQuery) {
+    return this.searchController.getGenes(isQuery);
   }
 
   fetchResults(type) {
     return this.searchController.getResults(type);
+  }
+
+  fetchGene(name) {
+    const genes = this.searchController.searchGenes(name);
+    return genes.length > 0 ? genes[0] : null;
   }
 }

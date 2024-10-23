@@ -11,7 +11,7 @@ import { useTheme } from '@mui/material/styles';
 import makeStyles from '@mui/styles/makeStyles';
 
 import { RecentNetworksController } from '../recent-networks-controller';
-import { UploadController, RNA_SEQ, PRE_RANKED } from './upload-controller';
+import { QueryController } from './query-controller';
 import RecentNetworksList from './recent-networks-list';
 import Header from './header';
 import Footer from './footer';
@@ -197,9 +197,9 @@ export function Content({ recentNetworksController }) {
 
   /** State */
 
-  // the UploadController interacts with this component via an event bus
+  // the QueryController interacts with this component via an event bus
   const [ bus ] = useState(() => new EventEmitter());
-  const [ uploadController ] = useState(() => new UploadController(bus));
+  const [ controller ] = useState(() => new QueryController(bus));
   const [ sampleFiles, setSampleFiles ] = useState({ sampleRankFiles: [], sampleExprFiles: [] });
   // state for component interaction
   const [ mobile, setMobile ] = useState(() => isMobileWidth(theme));
@@ -255,9 +255,9 @@ export function Content({ recentNetworksController }) {
   const loadSampleNetwork = async (fileName, format) => {
     if (uploadState.step == STEP.LOADING)
       return;
-    const file = await uploadController.fetchSampleData(fileName);
+    const file = await controller.fetchSampleData(fileName);
     if (file) {
-      await uploadController.upload([file], format);
+      await controller.upload([file], format);
     }
   };
 
@@ -271,7 +271,7 @@ export function Content({ recentNetworksController }) {
         .map(item => item.getAsFile());
 
     setDroppingFile(false);
-    await uploadController.upload(files);
+    await controller.upload(files);
   };
 
   const onDragOverUpload = (event) => {
@@ -298,7 +298,7 @@ export function Content({ recentNetworksController }) {
 
   const onUpload = async () => { // start of upload
     const files = await showFileDialog();
-    await uploadController.upload(files);
+    await controller.upload(files);
   };
 
   const onLoading = () => {
@@ -328,12 +328,12 @@ export function Content({ recentNetworksController }) {
     updateUploadState({ step: STEP.LOADING });
 
     if (demo) {
-      await uploadController.createDemoNetwork(requestID);
+      await controller.createDemoNetwork(requestID);
       return;
     }
 
     // If validation fails it will call the onError event handler below
-    await uploadController.submitJob({ organism, genes, requestID });
+    await controller.submitQuery({ organism, genes, requestID });
   };
  
   const onError = ({ errors, requestID }) => {
@@ -623,7 +623,7 @@ function Debug({ sampleFiles, onLoadSampleNetwork }) {
   return (
     <DebugMenu>
       <h3>Example rank input files</h3>
-      <ul>
+      {/* <ul>
       {
         sampleRankFiles.length > 0 ?
         sampleRankFiles.map(file => (
@@ -631,17 +631,7 @@ function Debug({ sampleFiles, onLoadSampleNetwork }) {
         )) :
         <li>Loading...</li>
       }
-      </ul>
-      <h3>Example expression input files</h3>
-      <ul>
-      {
-        sampleExprFiles.length > 0 ?
-        sampleExprFiles.map(file => (
-          <li key={file}><Link onClick={() => onLoadSampleNetwork(file, RNA_SEQ)}>{file}</Link></li>
-        )) :
-        <li>Loading...</li>
-      }
-      </ul>
+      </ul> */}
     </DebugMenu>
   );
 }

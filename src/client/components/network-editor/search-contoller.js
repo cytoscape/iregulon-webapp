@@ -17,12 +17,7 @@ export class SearchController {
       Promise.all([
         this._fetchAllGenes(),
         this._fetchResults(),
-      ]).then(() => {
-        this._indexClusters();
-      }).then(() => {
-        this.genesReady = true;
-        this.bus.emit('geneListIndexed');
-      });
+      ]);
     });
   }
 
@@ -44,8 +39,15 @@ export class SearchController {
     return [];
   }
 
-  getGenes() {
-    return Object.values(this.geneMiniSearch.toJSON().storedFields);
+  getGenes(isQuery) {
+    if (!this.isGeneListIndexed()) {
+      throw "The gene list hasn't been fecthed yet!";
+    }
+    let genes = Object.values(this.geneMiniSearch.toJSON().storedFields);
+    if (isQuery) {
+      genes = genes.filter(g => g.query === true);
+    }
+    return genes;
   }
 
   searchResults(query) {
@@ -60,10 +62,15 @@ export class SearchController {
 
   getResults(type) {
     if (type === 'CLUSTER') {
+      // Return only clusters
       return Object.values(this.clustersMiniSearch.toJSON().storedFields);
     }
-    const results = Object.values(this.resultsMiniSearch.toJSON().storedFields);
-    if (type != null) {
+    let results = Object.values(this.resultsMiniSearch.toJSON().storedFields);
+    if (type == null) {
+      // Return all results, including clusters
+      results.push(...Object.values(this.clustersMiniSearch.toJSON().storedFields));
+    } else {
+      // Return motifs or tracks
       return results.filter(r => r.type === type);
     }
     return results;
@@ -91,6 +98,10 @@ export class SearchController {
       const documents = await res.json();
       console.log('Search docs (GENES)', documents);
       this.geneMiniSearch.addAll(documents);
+
+      console.log('Gene list indexed:', documents.length);
+      this.genesReady = true;
+      this.bus.emit('geneListIndexed');
     }
   }
 
@@ -101,40 +112,54 @@ export class SearchController {
     const res = await fetch(`/api/${this.networkIDStr}/results`);
 
     if (res.ok) {
-      this.resultsMiniSearch = new MiniSearch({
-        idField: 'name',
-        fields: ['name', 'description'],
-        storeFields: [
-          'type',
-          'nomenclatureCode',
-          'rankingsDatabase',
-          'rank',
-          'name',
-          'featureID',
-          'description',
-          'auc',
-          'nes',
-          'clusterCode',
-          'clusterNumber',
-          'candidateTargetGenes',
-          'candidateTargetRanks',
-          'transcriptionFactors',
-          'motifSimilarityFDR',
-          'orthologousIdentity',
-          'similarMotifName',
-          'similarMotifDescription',
-          'orthologousGeneName',
-          'orthologousSpecies',
-        ]
-      });
-
       const documents = await res.json();
-      console.log('Search docs (RESULTS)', documents);
-      this.resultsMiniSearch.addAll(documents);
+
+      if (documents) {
+        this._indexMotifsAndTracks(documents);
+
+        const geneNames = this.getGenes().map(g => g.name);
+        const clusterDocuments = this._getMotifAndTrackClusters(documents, geneNames);
+        this._indexClusters(clusterDocuments);
+
+        console.log('Results indexed:', documents.length, '--', clusterDocuments.length);
+        this.resultsReady = true;
+        this.bus.emit('resultsIndexed');
+      }
     }
   }
 
-  _indexClusters() {
+  _indexMotifsAndTracks(documents) {
+    this.resultsMiniSearch = new MiniSearch({
+      idField: 'name',
+      fields: ['name', 'description'],
+      storeFields: [
+        'type',
+        'nomenclatureCode',
+        'rankingsDatabase',
+        'rank',
+        'name',
+        'featureID',
+        'description',
+        'auc',
+        'nes',
+        'clusterCode',
+        'clusterNumber',
+        'candidateTargetGenes',
+        'candidateTargetRanks',
+        'transcriptionFactors',
+        'motifSimilarityFDR',
+        'orthologousIdentity',
+        'similarMotifName',
+        'similarMotifDescription',
+        'orthologousGeneName',
+        'orthologousSpecies',
+      ]
+    });
+    console.log('Search docs (RESULTS)', documents);
+    this.resultsMiniSearch.addAll(documents);
+  }
+
+  _indexClusters(documents) {
     this.clustersMiniSearch = new MiniSearch({
       idField: 'name',
       fields: ['name'],
@@ -150,14 +175,8 @@ export class SearchController {
         'transcriptionFactors',
       ]
     });
-
-    const geneNames = this.getGenes().map(g => g.name);
-    const documents = this._getMotifAndTrackClusters(this.getResults(), geneNames);
     console.log('Search docs (CLUSTERS)', documents);
     this.clustersMiniSearch.addAll(documents);
-
-    this.resultsReady = true;
-    this.bus.emit('resultsIndexed');
   }
 
   _getMotifAndTrackClusters(results, geneNames) {

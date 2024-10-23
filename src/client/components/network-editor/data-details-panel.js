@@ -104,7 +104,6 @@ export function DataDetailsPanel({
   const tfRows = data.transcriptionFactors?.map(({ geneID, maxMotifSimilarityFDR, minOrthologousIdentity }) => {
     return { name: geneID.name, maxFDR: maxMotifSimilarityFDR, minOrthologousId: minOrthologousIdentity };
   });
-  console.log('data', data);
 
   const type = data.type;
   const targetColumns = TARGET_COLUMNS.filter(col => (!col.hideOnMobile || !isMobile) && (!col.type || col.type === type));
