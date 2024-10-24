@@ -5,7 +5,6 @@ import { REPORT_SECRET } from '../../env.js';
 
 const http = Express.Router();
 
-// Return enrichment results in TSV format
 http.get(`/count/:secret`, async function(req, res, next) {
   
   try {
@@ -15,7 +14,7 @@ http.get(`/count/:secret`, async function(req, res, next) {
       return;
     }
 
-    const counts = await Datastore.getNetworkCounts();
+    const counts = await Datastore.getResultCounts();
     res.send(JSON.stringify(counts));
 
   } catch(err) {
@@ -23,8 +22,7 @@ http.get(`/count/:secret`, async function(req, res, next) {
   }
 });
 
-// Return enrichment results in TSV format
-http.get(`/networks/:secret`, async function(req, res, next) {
+http.get(`/results/:secret`, async function(req, res, next) {
   try {
     const { secret } = req.params;
     if(secret !== REPORT_SECRET) {
@@ -32,7 +30,7 @@ http.get(`/networks/:secret`, async function(req, res, next) {
       return;
     }
 
-    const cursor = await Datastore.getNetworkStatsCursor();
+    const cursor = await Datastore.getResultStatsCursor();
     await writeCursorToResult(cursor, res);
     cursor.close();
 

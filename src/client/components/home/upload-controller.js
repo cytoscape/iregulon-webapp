@@ -168,6 +168,7 @@ export class UploadController {
       return { netID: jobID };
     } else {
       console.log(await res.text());
+      return { errors: [] }; // empty array shows generic error message
     }
     // else if (res.status == 413) {
     //   // Max file size for uploads is defined in the dataParser in the server/routes/api/index.js file.

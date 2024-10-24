@@ -70,7 +70,7 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   const networkJson = await networkResult.json();
   console.log(networkJson);
 
-  cy.add(networkJson.network.elements);
+  // cy.add(networkJson.network.elements);
   cy.data({ 
     name: networkJson.networkName, 
     parameters: networkJson.parameters,

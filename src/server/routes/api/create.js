@@ -1,10 +1,8 @@
 import Express from 'express';
-import fs from 'fs/promises';
 import * as Sentry from "@sentry/node";
 import fetch from 'node-fetch';
 import Datastore from '../../datastore.js';
 import { annotateGenes, parseMotifsAndTracks } from '../../util.js';
-import { rankedGeneListToDocument, fgseaServiceGeneRanksToDocument } from '../../datastore.js';
 import { performance } from 'perf_hooks';
 import { 
   IREGULON_JOB_SERVICE_URL,
@@ -60,12 +58,13 @@ http.post('/', async function(req, res, next) {
 
                 perf.mark('mongo');
 
-                const networkID = await Datastore.saveResults(genes, results);
+                const name = null; // TODO, what should be the default name?
+                const id = await Datastore.saveResults(genes, results, name);
 
                 perf.mark('end');
 
-                console.log(networkID);
-                res?.send(networkID);
+                console.log(id);
+                res?.send(id);
               } finally {
                 console.log('[ DONE ] Elapsed Time:', perf.measure({ from: 'submit', to: 'genes' }));
                 perf.dispose();
@@ -85,8 +84,6 @@ http.post('/', async function(req, res, next) {
 });
 
 /*
- * Runs the FGSEA/EnrichmentMap algorithms, saves the 
- * created network, then returns its ID.
  */
 http.post('/demo', async function(req, res, next) {
   const perf = createPeformanceHook();
@@ -189,6 +186,11 @@ async function fetchJobResults(jobID, perf) {
   return parseMotifsAndTracks(txt);
 }
 
+
+
+
+
+
 function createPeformanceHook() {
   const tag = Date.now();
   const markNames = [];
@@ -210,179 +212,6 @@ function createPeformanceHook() {
   };
 }
 
-// async function runDataPipeline({ networkName, contentType, type, classes, body, demo, perf }, res) {
-//   console.log('/api/create/');
-//   // n.b. no await so as to not block
-//   saveUserUploadFileToS3(body, `${networkName}.csv`, contentType);
-
-//   const preranked = type === 'preranked';
-
-//   perf.mark('bridgedb');
-//   const needIdMapping = isEnsembl(body);
-//   if(needIdMapping) {
-//     body = await runEnsemblToHGNCMapping(body, contentType);
-//   }
-
-//   perf.mark('fgsea');
-//   let rankedGeneList;
-//   let pathwaysForEM;
-//   if(preranked) {
-//     const fgseaRes = await runFGSEApreranked(body, contentType);
-//     const { pathways, gmtFile } = fgseaRes;
-//     if(gmtFile !== GMT_FILE) {
-//       throw new CreateError({ step: 'fgsea', detail: 'gmt', message: `FGSEA: wrong GMT. Expected '${GMT_FILE}', got '${gmtFile}'.` });
-//     }
-//     const delim = contentType === 'text/csv' ? ',' : '\t';
-//     rankedGeneList = rankedGeneListToDocument(body, delim);
-//     pathwaysForEM = pathways;
-//   } else {
-//     // Messages from FGSEA are basically just warning about non-finite ranks
-//     const fgseaRes = await runFGSEArnaseq(body, classes, contentType);
-//     const { ranks, pathways, messages, gmtFile } = fgseaRes;
-//     if(gmtFile !== GMT_FILE) {
-//       throw new CreateError({ step: 'fgsea', detail: 'gmt', message: `FGSEA: wrong GMT. Expected '${GMT_FILE}', got '${gmtFile}'.` });
-//     }
-//     sendMessagesToSentry('fgsea', messages);
-//     rankedGeneList = fgseaServiceGeneRanksToDocument(ranks);
-//     pathwaysForEM = pathways;
-//   }
-
-//   perf.mark('em');
-//   const networkJson = await runEM(pathwaysForEM, demo);
-//   if(isEmptyNetwork(networkJson)) {
-//     throw new CreateError({ step: 'em', detail: 'empty' });
-//   }
-//   if(networkJson.gmtFile !== GMT_FILE) {
-//     throw new CreateError({ step: 'em', detail: 'gmt', message: `EM-Service: wrong GMT. Expected '${GMT_FILE}', got '${networkJson.gmtFile}'.` });
-//   }
-
-//   let networkID;
-//   try {
-//     perf.mark('mongo');
-//     networkID = await Datastore.createNetwork(networkJson, networkName, type, GMT_FILE, demo);
-//     await Datastore.initializeGeneRanks(GMT_FILE, networkID, rankedGeneList);
-//     res?.send(networkID);
-//   } catch(e) {
-//     throw new CreateError({ step: 'mongo', cause: e });
-//   }
-//
-//   perf.mark('end');
-//
-//   Datastore.createPerfDocument(networkID, {
-//     startTime: perf.startTime,
-//     emptyNetwork: typeof networkID === 'undefined',
-//     geneCount: rankedGeneList?.genes?.length,
-//     steps: [ {
-//       step: 'bridgedb',
-//       needIdMapping,
-//       url: BRIDGEDB_URL,
-//       timeTaken: perf.measure({ from:'bridgedb', to:'fgsea' }),
-//     }, {
-//       step: 'fgsea',
-//       type,
-//       url: preranked ? FGSEA_PRERANKED_SERVICE_URL : FGSEA_RNASEQ_SERVICE_URL,
-//       timeTaken: perf.measure({ from:'fgsea', to:'em' }),
-//     }, {
-//       step: 'em',
-//       url: EM_SERVICE_URL,
-//       timeTaken: perf.measure({ from:'em', to:'mongo' }),
-//     }, {
-//       step: 'mongo',
-//       url: MONGO_URL,
-//       timeTaken: perf.measure({ from:'mongo', to:'end' }),
-//     }]
-//   });
-  
-//   return networkID;
-// }
-
-
-function isEmptyNetwork(networkJson) {
-  return !(networkJson.network?.elements?.nodes?.length) 
-      || !(networkJson.summaryNetwork?.elements?.nodes?.length);
-}
-
-
-// async function runFGSEApreranked(ranksData, contentType) {
-//   let response;
-//   try {
-//     response = await fetch(FGSEA_PRERANKED_SERVICE_URL, {
-//       method: 'POST',
-//       headers: { 'Content-Type': contentType },
-//       body: ranksData
-//     });
-//   } catch(e) {
-//     throw new CreateError({ step: 'fgsea', type: 'preranked', cause: e });
-//   }
-//   if(!response.ok) {
-//     const body = await response.text();
-//     const status = response.status;
-//     throw new CreateError({ step: 'fgsea', type: 'preranked', body, status });
-//   }
-//   return await response.json();
-// }
-
-
-// async function runFGSEArnaseq(countsData, classes, contentType) {
-//   const url = FGSEA_RNASEQ_SERVICE_URL + '?' + new URLSearchParams({ classes });
-//   let response;
-//   try {
-//     response = await fetch(url, {
-//       method: 'POST',
-//       headers: { 'Content-Type': contentType },
-//       body: countsData
-//     });
-//   } catch(e) {
-//     throw new CreateError({ step: 'fgsea', type: 'rnaseq', cause: e });
-//   }
-//   if(!response.ok) {
-//     const body = await response.text();
-//     const status = response.status;
-//     throw new CreateError({ step: 'fgsea', type: 'rnaseq', body, status });
-//   }
-//   return await response.json();
-// }
-
-
-// async function runEM(fgseaResults, demo) {
-//   const body = {
-//     // We only support one dataSet
-//     dataSets: [{
-//       name: "EM Web",
-//       method: "FGSEA",
-//       fgseaResults
-//     }],
-//     parameters: {
-//       // These parameters correspond to the fields in EMCreationParametersDTO
-//       // similarityMetric: "JACCARD", 
-//       // similarityCutoff: 0.25,
-
-//       // parameters only used by the demo network
-//       ...(demo && { 
-//         qvalue: 0.0001,
-//         similarityMetric: "JACCARD", 
-//         similarityCutoff: 0.5,
-//       })
-//     }
-//   };
-
-//   let response;
-//   try {
-//     response = await fetch(EM_SERVICE_URL, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify(body)
-//     });
-//   } catch(e) {
-//     throw new CreateError({ step: 'em', cause: e });
-//   }
-//   if(!response.ok) {
-//     const body = await response.text();
-//     const status = response.status;
-//     throw new CreateError({ step: 'em', body, status });
-//   }
-//   return await response.json();
-// }
 
 
 /**

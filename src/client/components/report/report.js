@@ -24,7 +24,7 @@ async function fetchReport(secret) {
     if(!countRes.ok) {
       return 'error';
     }
-    const networkRes = await fetch(`/api/report/networks/${secret}`);
+    const networkRes = await fetch(`/api/report/results/${secret}`);
     if(!networkRes.ok) {
       return 'error';
     }
@@ -68,7 +68,7 @@ export function Report({ secret }) {
       Sort:
       &nbsp;&nbsp;
       <Select value={orderBy} onChange={(event) => setOrderBy(event.target.value)} className={classes.orderBy}>
-        <MenuItem value="networkName">Name</MenuItem>
+        <MenuItem value="name">Name</MenuItem>
         <MenuItem value="creationTime">Creation Time</MenuItem>
         <MenuItem value="lastAccessTime">Last Accessed Time</MenuItem>
       </Select>
@@ -84,9 +84,6 @@ export function Report({ secret }) {
         <TableHead>
           <TableRow>
             <TableCell><b>Network Name</b></TableCell>
-            <TableCell align="right"><b>Nodes</b></TableCell>
-            <TableCell align="right"><b>Edges</b></TableCell>
-            <TableCell align="right"><b>Type</b></TableCell>
             <TableCell align="right"><b>Creation Time</b></TableCell>
             <TableCell align="right"><b>Last Access Time</b></TableCell>
             <TableCell align="right"> </TableCell>
@@ -101,10 +98,7 @@ export function Report({ secret }) {
                 key={network._id}
                 sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
               >
-                <TableCell component="th" scope="row">{network.networkName}</TableCell>
-                <TableCell align="right">{network.nodeCount}</TableCell>
-                <TableCell align="right">{network.edgeCount}</TableCell>
-                <TableCell align="right">{network.inputType}</TableCell>
+                <TableCell component="th" scope="row">{network.name}</TableCell>
                 <TableCell align="right">{createTime}</TableCell>
                 <TableCell align="right">{accessTime}</TableCell>
                 <TableCell align="right"><a href={`/document/${network._id}`} target="_blank" rel = "noopener noreferrer">open</a></TableCell>

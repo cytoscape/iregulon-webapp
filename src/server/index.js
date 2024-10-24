@@ -28,7 +28,8 @@ import Datastore from './datastore.js';
 
 // Connect to the database
 console.info('Starting Express');
-await Datastore.connect();
+await Datastore.initialize();
+
 // Set up the debug log
 const debugLog = debug('iregulon');
 // Set up the express app
@@ -100,8 +101,8 @@ if (!TESTING) {
   }));
 }
 
-// app.use(bodyParser.json({ limit: UPLOAD_LIMIT }));
-// app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json({}));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../..', 'public')));
 

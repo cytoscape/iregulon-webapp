@@ -502,7 +502,7 @@ export class NetworkEditorController {
     fetch(`/api/${this.networkIDStr}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ networkName })
+      body: JSON.stringify({ name: networkName })
     });
   }
 
