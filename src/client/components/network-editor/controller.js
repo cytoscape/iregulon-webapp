@@ -102,20 +102,15 @@ export class NetworkEditorController {
     return Boolean(this.cy.data('demo'));
   }
 
-  updateNetwork(results, genes) {
-    const cy = this.cy;
-    cy.remove(cy.elements());
-    this.addToNetwork(results, genes);
-  }
-
-  addToNetwork(results, genes) {
+  /**
+   * @param {*} results Only the 'transcriptionFactors' that have the 'inNetwork' flag set to true will be added
+   */
+  addToNetwork(results) {
     const cy = this.cy;
 
-    if (!genes && this.searchController.isGeneListIndexed()) {
-      genes = this.searchController.getGenes();
-    }
     const geneMap = new Map();
-    if (genes) {
+    if (this.searchController.isGeneListIndexed()) {
+      const genes  = this.fetchGeneList();
       genes.forEach(g => geneMap.set(g.name, g));
     }
 
@@ -165,25 +160,28 @@ export class NetworkEditorController {
       const tfArr = ele.transcriptionFactors;
       const tgtArr = ele.candidateTargetGenes;
 
-      // Use only the first TF
+      // The TF to be added must have the 'inNetwork' flag set to true
       if (tfArr.length > 0) {
-        const g1 = tfArr[0];
-        const name1 = g1.geneID.name;
-        console.log('map', geneMap.values());
-        const node1 = getNode(name1, type, typeId, false); // A TF must be added even if it's not a query gene
-        // Update the 'regulatoryFunction' data field
-        node1.data('regulatoryFunction', 'regulator');
+        tfArr.forEach((g1) => {
+          if (g1.inNetwork) {
+            // const g1 = tfArr[0];
+            const name1 = g1.geneID.name;
+            const node1 = getNode(name1, type, typeId, false); // A TF must be added even if it's not a query gene
+            // Update the 'regulatoryFunction' data field
+            node1.data('regulatoryFunction', 'regulator');
 
-        tgtArr?.forEach((g2) => {
-          const name2 = g2.geneID.name;
-          const node2 = getNode(name2, type, typeId, true); // Use only the query genes for target nodes
-          if (node2) {
-            // Update the 'regulatoryFunction' data field, but only if it's not already set to 'regulator'
-            if (node2.data('regulatoryFunction') !== 'regulator') {
-              node2.data('regulatoryFunction', 'regulated');
-            }
-            // Add an edge between the TF and the target node
-            cy.add({ group: 'edges', data: { source: name1, target: name2, clusterNumber } });
+            tgtArr?.forEach((g2) => {
+              const name2 = g2.geneID.name;
+              const node2 = getNode(name2, type, typeId, true); // Use only the query genes for target nodes
+              if (node2) {
+                // Update the 'regulatoryFunction' data field, but only if it's not already set to 'regulator'
+                if (node2.data('regulatoryFunction') !== 'regulator') {
+                  node2.data('regulatoryFunction', 'regulated');
+                }
+                // Add an edge between the TF and the target node
+                cy.add({ group: 'edges', data: { source: name1, target: name2, clusterNumber } });
+              }
+            });
           }
         });
       }

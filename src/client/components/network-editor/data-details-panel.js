@@ -2,22 +2,17 @@ import React, { forwardRef, useRef, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
-import { DEFAULT_PADDING, dataTableHeight } from '../defaults';
+import { dataTableHeight } from '../defaults';
 import { NetworkEditorController } from './controller';
-import { UpDownHBar, PValueStarRating } from './charts';
 import { logoPath } from '../util';
 
 import { useTheme } from '@mui/material/styles';
 
 import makeStyles from '@mui/styles/makeStyles';
 
-import { TableContainer, Table, TableHead, TableBody, TableCell, TableRow, TableSortLabel } from '@mui/material';
-import { Box, Grid, Paper, Typography, Link, Tooltip } from '@mui/material';
-import { List, ListSubheader, ListItem, ListItemIcon, ListItemText } from '@mui/material';
-import { Button, Checkbox } from '@mui/material';
-
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import LabelImportantIcon from '@mui/icons-material/LabelImportant';
+import { Table, TableHead, TableBody, TableCell, TableRow, TableSortLabel } from '@mui/material';
+import { Box, Grid, Paper, Typography, Tooltip } from '@mui/material';
+import { Checkbox } from '@mui/material';
 
 
 const TARGET_COLUMNS = [
@@ -39,6 +34,14 @@ const TARGET_COLUMNS = [
 ];
 
 const TF_COLUMNS = [
+  {
+    id: 'inNetwork', // Special column for checkboxes
+    numeric: false,
+    hideOnMobile: false,
+    label: '',
+    show: () => true,
+    render: () => <></>,
+  },
   { 
     id: 'name',
     numeric: false,
@@ -94,15 +97,17 @@ export function DataDetailsPanel({
   data, // Track, Motif or TF
   controller,
   isMobile,
+  onTFCheckChange,
 }) {
   const classes = useDataDetailsPanelStyles();
   const theme = useTheme();
+  console.log('data (DataDetailsPanel):', data);
   
   const targetRows = data.candidateTargetGenes?.map(({ geneID, rank }) => {
     return { rank, name: geneID.name };
   });
-  const tfRows = data.transcriptionFactors?.map(({ geneID, maxMotifSimilarityFDR, minOrthologousIdentity }) => {
-    return { name: geneID.name, maxFDR: maxMotifSimilarityFDR, minOrthologousId: minOrthologousIdentity };
+  const tfRows = data.transcriptionFactors?.map(({ geneID, maxMotifSimilarityFDR, minOrthologousIdentity, inNetwork }) => {
+    return { name: geneID.name, maxFDR: maxMotifSimilarityFDR, minOrthologousId: minOrthologousIdentity, inNetwork };
   });
 
   const type = data.type;
@@ -124,6 +129,10 @@ export function DataDetailsPanel({
       }
     }
   }
+
+  const handleRowCheck = (row, checked) => {
+    onTFCheckChange?.(row, checked, data.id);
+  };
   
   return (
     <Paper className={classes.root} sx={{display: visible ? 'block' : 'none'}}>
@@ -157,7 +166,7 @@ export function DataDetailsPanel({
       )}
       {tfRows && tfRows.length > 0 && (
         <Grid item xs={type === 'MOTIF' ? 6 : 4} sx={{height: '100%'}}>
-          <GeneTable columns={tfColumns} data={tfRows} isMobile={isMobile} />
+          <GeneTable columns={tfColumns} data={tfRows} isMobile={isMobile} onRowCheckChange={handleRowCheck} />
         </Grid>
       )}
       </Grid>
@@ -169,6 +178,7 @@ DataDetailsPanel.propTypes = {
   data: PropTypes.object.isRequired,
   controller: PropTypes.instanceOf(NetworkEditorController).isRequired,
   isMobile: PropTypes.bool,
+  onTFCheckChange: PropTypes.func,
 };
 
 //==[ GeneTable ]=====================================================================================================
@@ -213,7 +223,7 @@ const useGeneTableStyles = makeStyles((theme) => ({
     maxWidth: 68,
   },
   nameCell: {
-    width: '30%',
+    width: '95%',
     maxWidth: 0,
   },
   minOrthologousIdCell: {
@@ -222,39 +232,18 @@ const useGeneTableStyles = makeStyles((theme) => ({
   maxFDRCell: {
     width: '35%',
   },
-  // nesCell: {
-  //   minWidth: 75,
-  //   maxWidth: 80,
-  // },
-  // candidateTargetGenesCell: {
-  //   minWidth: 70,
-  //   maxWidth: 75,
-  // },
-  // transcriptionFactorsCell: {
-  //   minWidth: 48,
-  //   maxWidth: 52,
-  //   paddingRight: `${theme.spacing(0.5)} !important`,
-  // },
-  // selectedCell: {
-  //   backgroundColor: theme.palette.action.selected,
-  // },
-  // link: {
-  //   marginLeft: theme.spacing(0.5),
-  //   "&[disabled]": {
-  //     color: theme.palette.text.secondary,
-  //     cursor: "default",
-  //     "&:hover": {
-  //       textDecoration: "none"
-  //     }
-  //   }
-  // },
-  // openInNewIcon: {
-  //   fontSize: '1rem',
-  // },
 }));
 
-function GeneTable({ columns, data, isMobile }) {
+function GeneTable({ columns, data, isMobile, onRowCheckChange }) {
   const classes = useGeneTableStyles();
+
+  const isRowChecked = (row) => {
+    return Boolean(row['inNetwork']);
+  };
+  const handleRowCheck = (row) => {
+    const checked = isRowChecked(row);
+    onRowCheckChange?.(row, !checked);
+  };
 
   return (
     <Paper variant="outlined" className={classes.paper} sx={{height: '100%'}}>
@@ -283,15 +272,24 @@ function GeneTable({ columns, data, isMobile }) {
         <TableBody>
         {data?.map((row, rowIdx) => (
           <TableRow key={`row-${rowIdx}`} className={classes.tableRow}>
-          {columns.map((col, idx) => (
+          {columns.map((col, idx) => 
             <TableCell
               key={rowIdx + '_' + idx}
               align={col.numeric ? 'right' : 'left'}
-               className={clsx(classes[col.id + 'Cell'], { [classes.tableCell]: true })}
+              className={clsx(classes[col.id + 'Cell'], { [classes.tableCell]: true })}
             >
-              {col.render(row, col, classes)}
+            {col.id === 'inNetwork' ?
+              <Checkbox
+                sx={{ width: 24, height: 24 }}
+                // disabled={row['transcriptionFactors'].length === 0}
+                checked={isRowChecked(row)}
+                onClick={() => handleRowCheck(row)}
+              />
+            :
+              col.render(row, col, classes)
+            }
             </TableCell>
-          ))}
+          )}
           </TableRow>
         ))}
         </TableBody>
@@ -318,6 +316,7 @@ GeneTable.propTypes = {
   columns: PropTypes.array.isRequired,
   data: PropTypes.array.isRequired,
   isMobile: PropTypes.bool,
+  onRowCheckChange: PropTypes.func,
 };
 
 export default DataDetailsPanel;

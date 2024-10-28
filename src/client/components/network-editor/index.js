@@ -184,11 +184,9 @@ function Root({ id, theme, recentNetworksController }) {
   };
 
   const onResultsIndexed = () => {console.log('resultsIndexed...');
+// TODO: do not inspect the network here--instead, check the server results and always rebuild the network from them
     // If the loaded network is empty (no nodes), then update it with the top clusters
     if (cy.nodes().length === 0) {
-      // This `genes` array is used to filter the genes from the results (TFs and targets)
-      // that must be added to the network
-      const genes = controller.fetchGeneList(true);
       // Get the top clusters
       const results = controller.fetchResults(DEFAULT_NETWORK_TYPE_SELECTION);
       const maxResults = Math.min(results.length, DEFAULT_NETWORK_TOTAL_SELECTION);
@@ -203,16 +201,18 @@ function Root({ id, theme, recentNetworksController }) {
       // Check whether this TF is in the gene list and, if not, get the gene object
       // that has all the fields and add it to the list
       filteredResults.forEach(ele => {
-        const tfName = ele.transcriptionFactors[0].geneID.name;
-        if (genes.find(g => g.name === tfName) === undefined) {
-          const gene = controller.fetchGene(tfName);
-          if (gene) {
-            genes.push(gene);
+        ele.transcriptionFactors.forEach((tf, idx) => {
+          // Add only the first TF by default
+          if (idx === 0) {
+            tf.inNetwork = true;
+          } else {
+            tf.inNetwork = false;
           }
-        }
+        });
       });
 
-      controller.addToNetwork(filteredResults, genes);
+  // TODO do not add to network here (?), but let the data-table do it from the cheked results (TF's 'inNetwork' field)
+      controller.addToNetwork(filteredResults);
       controller.applyLayout();
     }
   };

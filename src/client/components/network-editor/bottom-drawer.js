@@ -14,7 +14,7 @@ import { motifName, motifTrackLinkOut, rowId, rowTypeIdField } from '../util';
 import makeStyles from '@mui/styles/makeStyles';
 
 import Collapse from '@mui/material/Collapse';
-import { AppBar, Toolbar, Divider, Grid } from '@mui/material';
+import { AppBar, Toolbar, Divider } from '@mui/material';
 import { Drawer, Tooltip, Typography } from '@mui/material';
 import { IconButton, ToggleButtonGroup, ToggleButton } from '@mui/material';
 
@@ -57,6 +57,7 @@ function toTableRow(obj, type) {
   }
   row.description = obj.description;
   row.href = linkOut?.href;
+  row.clusterNumber = obj.clusterNumber;
   row.clusterCode = obj.clusterCode;
   row.nes = obj.nes;
   row.auc = obj.auc;
@@ -73,6 +74,18 @@ function toTableData(results, type, sortFn) {
     data.push(row);
   }
   return sortFn ? sortFn(data) : data;
+}
+
+function rowsInNetwork(data) {
+  const rows = [];
+  data.forEach(r => {
+    r.transcriptionFactors && r.transcriptionFactors.forEach(tf => {
+      if (tf.inNetwork) {
+        rows.push(r);
+      }
+    });
+  });
+  return rows;
 }
 
 //==[ BottomDrawer ]==================================================================================================
@@ -172,7 +185,6 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const [ searchTerms, setSearchTerms ] = useState();
   const [ checkedRows, setCheckedRows ] = useState([]);
   const [ currentRow, setCurrentRow ] = useState();
-  const [ gotoCurrentNode, setGotoCurrentNode ] = useState(true);
   const [ scrollToId, setScrollToId ] = useState();
 
   const classes = useBottomDrawerStyles();
@@ -186,14 +198,13 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const disabledRef = useRef(true);
   disabledRef.current = disabled;
 
-  const lastClickedRowRef = useRef(); // Will be used to prevent clearing the search when clicking a table row
-
   const currentRowRef = useRef();
   currentRowRef.current = currentRow;
   
   const cy = controller.cy;
   const cyEmitter = new EventEmitterProxy(cy);
 
+  // TODO -- remove this
   const updateCheckedRowsFromNetwork = () => {
     const nodes = cy.nodes();
     const newCheckedRows = [];
@@ -207,7 +218,15 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
             const type = parts[0].toUpperCase();
             const typeId = parts[1];
             const id = rowId(type, typeId);
-            map.get(id) || (map.set(id, { id, type }) && newCheckedRows.push(map.get(id)));
+            let row = map.get(id);
+            if (!row) {
+              row = { id, type, transcriptionFactors: [] };
+              map.set(id, row);
+              newCheckedRows.push(row);
+            }
+            if (n.data('regulatoryFunction') === 'regulator') {
+              row.transcriptionFactors.push(n.data('name'));
+            }
           }
         });
       });
@@ -274,7 +293,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     search('');
   };
 
-  const onResultsIndexed = () => {console.log('BOTTOM-DRAWER -- onResultsIndexed...');
+  const onResultsIndexed = () => {
     const results = controller.fetchResults(type);
     setData(toTableData(results, type));
     setDisabled(false);
@@ -316,44 +335,52 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   };
 
   const onRowCheckChange = async (row, checked) => {
-    lastClickedRowRef.current = row.id;
-    const newCheckedRows = [...checkedRows];
-    const idField = rowTypeIdField(row.type);
+    // Update the TF in the row (UI object)
+    const tfs = row.transcriptionFactors || [];
+    if (tfs.length === 0) return;
+    // Reset all TFs and the first one to be added to the network (if checked===true)
+    tfs.forEach((el, idx) => el.inNetwork = (idx === 0 && checked));
+    // Update the UI checked state
+    const newCheckedRows = rowsInNetwork(data);
+    setCheckedRows(newCheckedRows);
+    // Update the network
     if (checked) {
-      // Add to the network
-      newCheckedRows.push(row);
-      setCheckedRows(newCheckedRows);
-      const result = controller.fetchResults(row.type).find(r => r.type === row.type && r[idField] === row[idField]);
-      controller.addToNetwork([result]);
+      controller.addToNetwork([row]);
       await controller.applyLayout();
     } else {
-      // Remove from the network
-      const idx = newCheckedRows.findIndex(r => r.id === row.id);
-      if (idx >= 0) {
-        newCheckedRows.splice(idx, 1)[0];
-        setCheckedRows(newCheckedRows);
-        const result = controller.fetchResults(row.type).find(r => r.type === row.type && r[idField] === row[idField]);
-        controller.removeFromNetwork([result]);
-      }
+      controller.removeFromNetwork([row]);
     }
   };
-  const onRowClick = (row, selected, preventGotoNode = false) => {
-    lastClickedRowRef.current = row.id;
-    if (selected) {
-      setGotoCurrentNode(!preventGotoNode);
-      setCurrentRow(row);
-    } else {
-      setCurrentRow(null);
-    }
+  const onRowClick = (row) => {
+    setCurrentRow(row);
   };
   const onDataSort = (sortFn) => {
     sortFnRef.current = sortFn; // Save the current sort function for later use
   };
 
+  const onTFCheckChange = async (tfInfo, checked, rowId) => {
+    // Find the row to update
+    let row = data.find(r => r.type === type && r.id === rowId);
+    // Update the actual TF object in the row
+    const tfs = row.transcriptionFactors || [];
+    const tf = tfs.find(el => el.geneID.name === tfInfo.name);
+    tf.inNetwork = checked;
+    // Update the UI checked state
+    const newCheckedRows = rowsInNetwork(data);
+    setCheckedRows(newCheckedRows);
+    // Update the network
+    // (do not pass the actual row, but clone it and filter out the other TFs, so only the checked/unchecked one is added/removed)
+    row = { ...row, transcriptionFactors: [tf] };
+    if (checked) {
+      controller.addToNetwork([row]);
+      await controller.applyLayout();
+    } else {
+      controller.removeFromNetwork([row]);
+    }
+  };
+
   const shiftDrawer = leftDrawerOpen && !isMobile && !isTablet; 
   const total = disabled ? 0 : data.length;
-  const filteredSelectedRows = [];//selectedRows.filter(a => data.some(b => a.id === b.id)); // TODO
-  const totalSelected = filteredSelectedRows.length;
 
   return (
     <Drawer
@@ -378,7 +405,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
               {type === 'CLUSTER' ? 'Transcription Factor' : type.toLowerCase()}s&nbsp;
             {total >= 0 && (
               <Typography display="inline" component="span" variant="body2" color="textSecondary">
-                &nbsp;({!isMobile && totalSelected > 0 ? totalSelected + ' selected of ' : ''}{ total })
+                &nbsp;&#40;{ total }&#41;
               </Typography>
             )}
             </Typography>
@@ -431,33 +458,6 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
             ))}
             </ToggleButtonGroup>
           )}
-          {/* {!(open && isMobile) && magNES && (
-            <Grid container direction="column" spacing={0} style={{minWidth: 40, maxWidth: 300, width: '100%', marginTop: 16}}>
-              <Grid item>
-                <UpDownLegend
-                  values={selectedNESValues}
-                  minValue={-magNES}
-                  maxValue={magNES}
-                  downColor={REG_COLOR_RANGE.downMax}
-                  zeroColor={REG_COLOR_RANGE.zero}
-                  upColor={REG_COLOR_RANGE.upMax}
-                  height={16}
-                  tooltip="Normalized Enrichment Score (NES)"
-                  style={{width: '100%'}}
-                />
-              </Grid>
-              <Grid item>
-                <Grid container direction="row" spacing={0} justifyContent="space-between">
-                  <Tooltip title={`Downregulated (-${numToText(magNES)})`}>
-                    <Typography variant="body2" component="div" className={classes.legendText}>DOWN</Typography>
-                  </Tooltip>
-                  <Tooltip title={`Upregulated (+${numToText(magNES)})`}>
-                    <Typography variant="body2" component="div" className={classes.legendText}>UP</Typography>
-                  </Tooltip>
-                </Grid>
-              </Grid>
-            </Grid>
-          )} */}
             <ToolbarDivider />
             <ToolbarButton
               title="Results"
@@ -472,9 +472,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
               data={data}
               type={type}
               checkedRows={checkedRows.filter(r => r.type === type)}
-              selectedRows={filteredSelectedRows}
               currentRow={currentRow}
-              gotoCurrentNode={gotoCurrentNode}
               scrollToId={scrollToId}
               searchTerms={searchTerms}
               controller={controller}
@@ -488,6 +486,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
               data={currentRow || {}}
               controller={controller}
               isMobile={isMobile}
+              onTFCheckChange={onTFCheckChange}
             />
           </Collapse>
         </AppBar>
