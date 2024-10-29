@@ -52,6 +52,30 @@ function createCy(id) {
 }
 
 
+function getInitialResults(results) {
+  // For now, just update the network with the top results
+  // NOTE: there are no 'CLUSTER' results in the results object
+  const maxResults = Math.min(results.length, 4);
+
+  const filteredResults = [];
+  for(const ele of results) {
+    if(ele.transcriptionFactors.length > 0) {
+      filteredResults.push(ele);
+    } 
+    if(filteredResults.length >= maxResults) {
+      break;
+    }
+  }
+  return filteredResults;
+}
+
+function getSavedResults(results, selected) {
+  return results.filter(result => 
+    selected.some(({ type, name }) => type === result.type && name === result.name)
+  );
+}
+
+
 /**
  * @param { NetworkEditorController } controller
  */
@@ -71,44 +95,34 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
 
   // cy.add(networkJson.network.elements);
   cy.data({ 
-    name: networkJson.networkName, 
-    parameters: networkJson.parameters,
-    geneSetCollection: networkJson.geneSetCollection,
+    name: networkJson.networkName || networkJson.name, 
     demo: Boolean(networkJson.demo)
   });
-
-  // For now, just update the network with the top results
-  const maxResults = Math.min(networkJson.results.length, 4);
-  let count = 0;
-  const filteredResults = networkJson.results.filter(ele => { 
-    if (ele.transcriptionFactors.length > 0 && count < maxResults) {
-      ++count;
-      return true;
-    }
-    return false;
-  });
-  controller.updateNetwork(filteredResults, networkJson.genes);
-
-  // Apply layout
-  let layoutWasRun = false;
-
-  // TODO
-  const positionsResult = await positionsAndStatePromise;
-  if (positionsResult.status == 404) {
-    console.log('running layout');
-    await controller.applyLayout();
-    layoutWasRun = true;  
-  } else {
-    console.log('got positions and state from server');
-    const positionsJson = await positionsResult.json();
-    const { positions, selected } = positionsJson;
-    controller.applyPositionsAndState(positions, selected);
-  }
 
   // Set network style
   const style = createNetworkStyle(cy);
   cy.style().fromJson(style.cyJSON);
   controller.style = style; // Make available to components
+
+  controller.initializeResults(networkJson);
+
+  const positionsResult = await positionsAndStatePromise;
+
+  // Apply layout and select rows in the table
+  if (positionsResult.status == 404) {
+    console.log('no positions and state found on server, initializing');
+    const filteredResults = getInitialResults(networkJson.results); 
+    controller.updateNetwork(filteredResults, networkJson.genes);
+    await controller.applyLayout();
+  } else {
+    console.log('got positions and state from server');
+    const positionsJson = await positionsResult.json();
+    const { positions, selected } = positionsJson;
+    const allResults = controller.fetchResults();
+    const filteredResults = getSavedResults(allResults, selected);
+    controller.updateNetwork(filteredResults, networkJson.genes);
+    controller.applyPositions(positions);
+  }
 
   // Make sure to call cy.fit() after the network is ready
   cy.ready(() => {
@@ -118,9 +132,8 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
 
   const updateServerState   = _.debounce(() => controller.savePositionsAndState(), 4000);
   const updateRecentNetwork = _.debounce(() => recentNetworksController.updateRecentNetwork(cy), 1000);
-
+  
   cy.on('position remove', 'node', updateRecentNetwork);
-
   // same debounced function "updateServerState" used for both events, makes sure it doesn't get called twice
   cy.on('position remove', 'node', updateServerState);
   controller.bus.on('selectedResultsChanged', updateServerState); 
@@ -138,7 +151,7 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   // Notify listeners that the network has been loaded
   console.log('Loaded');
   cy.data({ loaded: true });
-  controller.bus.emit('networkLoaded', { layoutWasRun }); 
+  controller.bus.emit('networkLoaded'); 
 
   console.log('Successful Network Load');
 

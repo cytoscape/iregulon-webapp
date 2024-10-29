@@ -12,19 +12,19 @@ export class SearchController {
 
     this.genesReady = false;
     this.resultsReady = false;
-
-    this.bus.on('networkLoaded', () => {
-      Promise.all([
-        this._fetchAllGenes(),
-        this._fetchResults(),
-      ]).then(() => {
-        this._indexClusters();
-      }).then(() => {
-        this.genesReady = true;
-        this.bus.emit('geneListIndexed');
-      });
-    });
   }
+
+  initializeResults(resultsJson) {
+    console.log('SearchController.initializeResults', resultsJson);
+    this._initializeAllGenes(resultsJson.genes);
+    this._initializeResults(resultsJson.results);
+    this._indexClusters();
+    this.genesReady = true;
+    this.bus.emit('geneListIndexed');
+    this.resultsReady = true;
+    this.bus.emit('resultsIndexed');
+  }
+
 
   isGeneListIndexed() {
     return this.genesReady;
@@ -59,79 +59,69 @@ export class SearchController {
   }
 
   getResults(type) {
-    if (type === 'CLUSTER') {
-      return Object.values(this.clustersMiniSearch.toJSON().storedFields);
+    const resultFields  = () => Object.values(this.resultsMiniSearch.toJSON().storedFields);
+    const clusterFields = () => Object.values(this.clustersMiniSearch.toJSON().storedFields);
+
+    if(type === undefined || type === null) {
+      return resultFields().concat(clusterFields());
     }
-    const results = Object.values(this.resultsMiniSearch.toJSON().storedFields);
-    if (type != null) {
-      return results.filter(r => r.type === type);
+    if(type === 'CLUSTER') {
+      return clusterFields();
     }
-    return results;
+    return resultFields().filter(r => r.type === type);
   }
 
   /**
    * Fetches all genes (query + results).
    */
-  async _fetchAllGenes() {
-    const res = await fetch(`/api/${this.networkIDStr}/genesforsearch`);
+  _initializeAllGenes(genes) {
+    this.geneMiniSearch = new MiniSearch({
+      idField: 'name',
+      fields: ['name'],
+      storeFields: [
+        'name',
+        'query',
+        'regulatoryFunction',
+        'motifs',
+        'tracks',
+      ]
+    });
 
-    if (res.ok) {
-      this.geneMiniSearch = new MiniSearch({
-        idField: 'name',
-        fields: ['name'],
-        storeFields: [
-          'name',
-          'query',
-          'regulatoryFunction',
-          'motifs',
-          'tracks',
-        ]
-      });
-
-      const documents = await res.json();
-      console.log('Search docs (GENES)', documents);
-      this.geneMiniSearch.addAll(documents);
-    }
+    this.geneMiniSearch.addAll(genes);
   }
 
   /**
    * Fetches and indexes the iRegulon results.
    */
-  async _fetchResults() {
-    const res = await fetch(`/api/${this.networkIDStr}/results`);
+  _initializeResults(results) {
+    this.resultsMiniSearch = new MiniSearch({
+      idField: 'name',
+      fields: ['name', 'description'],
+      storeFields: [
+        'type',
+        'nomenclatureCode',
+        'rankingsDatabase',
+        'rank',
+        'name',
+        'featureID',
+        'description',
+        'auc',
+        'nes',
+        'clusterCode',
+        'clusterNumber',
+        'candidateTargetGenes',
+        'candidateTargetRanks',
+        'transcriptionFactors',
+        'motifSimilarityFDR',
+        'orthologousIdentity',
+        'similarMotifName',
+        'similarMotifDescription',
+        'orthologousGeneName',
+        'orthologousSpecies',
+      ]
+    });
 
-    if (res.ok) {
-      this.resultsMiniSearch = new MiniSearch({
-        idField: 'name',
-        fields: ['name', 'description'],
-        storeFields: [
-          'type',
-          'nomenclatureCode',
-          'rankingsDatabase',
-          'rank',
-          'name',
-          'featureID',
-          'description',
-          'auc',
-          'nes',
-          'clusterCode',
-          'clusterNumber',
-          'candidateTargetGenes',
-          'candidateTargetRanks',
-          'transcriptionFactors',
-          'motifSimilarityFDR',
-          'orthologousIdentity',
-          'similarMotifName',
-          'similarMotifDescription',
-          'orthologousGeneName',
-          'orthologousSpecies',
-        ]
-      });
-
-      const documents = await res.json();
-      console.log('Search docs (RESULTS)', documents);
-      this.resultsMiniSearch.addAll(documents);
-    }
+    this.resultsMiniSearch.addAll(results);
   }
 
   _indexClusters() {
@@ -155,9 +145,6 @@ export class SearchController {
     const documents = this._getMotifAndTrackClusters(this.getResults(), geneNames);
     console.log('Search docs (CLUSTERS)', documents);
     this.clustersMiniSearch.addAll(documents);
-
-    this.resultsReady = true;
-    this.bus.emit('resultsIndexed');
   }
 
   _getMotifAndTrackClusters(results, geneNames) {

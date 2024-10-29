@@ -63,16 +63,16 @@ export class NetworkEditorController {
 
     this.networkLoaded = false;
 
-    this.bus.on('networkLoaded', (flags) => {
+    this.bus.on('networkLoaded', () => {
       this.networkLoaded = true;
       this.undoHandler.init();
-      
-      if(flags.layoutWasRun) {
-        this.savePositionsAndState();
-      }
     });
 
     window.cy = cy; // for access in the console
+  }
+
+  initializeResults(resultsJson) {
+    this.searchController.initializeResults(resultsJson);
   }
 
   isNetworkLoaded() {
@@ -581,11 +581,9 @@ export class NetworkEditorController {
    * 
    * Returns a Map object of nodeID -> position object
    */
-  applyPositionsAndState(positions, selected) {
+  applyPositions(positions) {
     const positionsMap = new Map(positions.map((obj) => [obj.id, obj]));
     this.cy.nodes().positions(node => positionsMap.get(node.data('id')));
-
-    // TODO set selected elements in the table
   }
 
 
