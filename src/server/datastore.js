@@ -15,10 +15,9 @@ const MOTIFS_AND_TRACKS_COLLECTION = 'motifsAndTracks';
 // motifsAndTracks collection. It contains mutable state data like the name
 // of the document and UI state (like whats selected in the data table).
 const STATE_DATA_COLLECTION = 'stateData';
+const STATE_DATA_RESTORE_COLLECTION = "stateDataRestore";
 
 // const PERFORMANCE_COLLECTION = 'performance';
-// const POSITIONS_COLLECTION = 'positions';
-// const POSITIONS_RESTORE_COLLECTION = "positionsRestore";
 
 export const DEMO_ID = '7cea4157-341a-4fc6-b6c4-9c7ac5bcc8d4';
 
@@ -50,6 +49,7 @@ class Datastore {
     await this.loadDemo();
   }
 
+
   async connect() {
     console.info('Connecting to MongoDB');
     const { MONGO_URL, MONGO_ROOT_NAME } = process.env;
@@ -57,6 +57,22 @@ class Datastore {
     this.db = this.mongo.db(MONGO_ROOT_NAME);
     console.info('Connected to MongoDB');
   }
+
+
+  async createIndexes() {
+    await this.db
+      .collection(STATE_DATA_COLLECTION)
+      .createIndex({ motifsAndTracksID: 1 });
+    
+    await this.db
+      .collection(STATE_DATA_COLLECTION)
+      .createIndex({ motifsAndTracksID: 1 });
+
+    await this.db
+      .collection(STATE_DATA_RESTORE_COLLECTION)
+      .createIndex({ motifsAndTracksID: 1 });
+  }
+
 
   async loadDemo() {
     if(await this.idExists(DEMO_ID)) {
@@ -98,36 +114,20 @@ class Datastore {
 
     const motifsAndTracksDocument = { 
       _id: id.bson,
+      name,
       genes, 
       results: motifsAndTracks,
       creationTime: new Date(),
       demo: Boolean(demoID),
-     };
-
-     const stateDocument = {
-      name,
-      motifsAndTracksID: id.bson,
-      selectedMotifs: [],
-      selectedTracks: [],
-     };
+    };
 
     await this.db
       .collection(MOTIFS_AND_TRACKS_COLLECTION)
       .insertOne(motifsAndTracksDocument);
 
-    await this.db
-      .collection(STATE_DATA_COLLECTION)
-      .insertOne(stateDocument);
-
     return id.string;
   }
   
-  async createIndexes() {
-    await this.db
-      .collection(STATE_DATA_COLLECTION)
-      .createIndex({ motifsAndTracksID: 1 });
-  }
-
 
   /**
    * Returns the motifs and tracks document. 
@@ -176,13 +176,13 @@ class Datastore {
    * Updates a document--only the 'name' can be updated.
    * @returns true if the network has been found and updated, false otherwise.
    */
-  async updateState(idStr, { name }) {
+  async updateName(idStr, { name }) {
     const id = makeID(idStr);
     
     const res = await this.db
-      .collection(STATE_DATA_COLLECTION)
+      .collection(MOTIFS_AND_TRACKS_COLLECTION)
       .updateOne(
-        { 'motifsAndTracksID': id.bson }, 
+        { _id: id.bson }, 
         { $set: { name: name } }
       );
 
@@ -192,59 +192,66 @@ class Datastore {
   // /**
   //  * {
   //  *   _id: 'asdf',
-  //  *   networkID: "abcdefg",
+  //  *   motifsAndTracksID: "abcdefg",
+  //  *   state: [
+  //  *     { name: "asdf", type: "MOTIF" },
+  //  *   ],
   //  *   positions: [
   //  *     {
   //  *        id: "asdf-asdf-asdf",
   //  *        x: 12.34
   //  *        y: 56.78
-  //  *        collapsed: false
   //  *     }
   //  *   ]
   //  * }
   //  * Note: Deleted nodes are not part of the positions document.
   //  */
-  // async setPositions(networkIDString, positions) {
-  //   const networkID = makeID(networkIDString);
-  //   const document = {
-  //     networkID: networkID.bson,
-  //     positions
-  //   };
+  async setPositionsAndState(idStr, positions, selected) {
+    const id = makeID(idStr);
+    const document = {
+      motifsAndTracksID: id.bson,
+      positions,
+      selected
+    };
 
-  //   // Save the document twice, the one in POSITIONS_RESTORE_COLLECTION never changes
-  //   await this.db
-  //     .collection(POSITIONS_RESTORE_COLLECTION)
-  //     .updateOne({ networkID: networkID.bson }, { $setOnInsert: document }, { upsert: true });
+    console.log("Saving positions and state", document);
 
-  //   await this.db
-  //     .collection(POSITIONS_COLLECTION)
-  //     .replaceOne({ networkID: networkID.bson }, document, { upsert: true });
-  // }
+    // Save the document twice, the one in POSITIONS_RESTORE_COLLECTION never changes
+    await this.db
+      .collection(STATE_DATA_RESTORE_COLLECTION)
+      .updateOne({ motifsAndTracksID: id.bson }, { $setOnInsert: document }, { upsert: true });
 
-  // async getPositions(networkIDString) {
-  //   const networkID = makeID(networkIDString);
+    await this.db
+      .collection(STATE_DATA_COLLECTION)
+      .replaceOne({ motifsAndTracksID: id.bson }, document, { upsert: true });
+  }
 
-  //   let result = await this.db
-  //     .collection(POSITIONS_COLLECTION)
-  //     .findOne({ networkID: networkID.bson });
+  
+  async getPositionsAndState(idStr) {
+    const id = makeID(idStr);
 
-  //   if(!result) {
-  //     console.log("Did not find positions, querying POSITIONS_RESTORE_COLLECTION");
-  //     result = await this.db
-  //       .collection(POSITIONS_RESTORE_COLLECTION)
-  //       .findOne({ networkID: networkID.bson });
-  //   }
+    let result = await this.db
+      .collection(STATE_DATA_COLLECTION)
+      .findOne({ motifsAndTracksID: id.bson });
+
+    if(!result) {
+      console.log("Did not find positions, querying POSITIONS_RESTORE_COLLECTION");
+      result = await this.db
+        .collection(STATE_DATA_RESTORE_COLLECTION)
+        .findOne({ motifsAndTracksID: id.bson });
+    }
     
-  //   return result;  
-  // }
+    return result;  
+  }
 
-  // async deletePositions(networkIDString) {
-  //   const networkID = makeID(networkIDString);
-  //   // Only delete from POSITIONS_COLLECTION, not from POSITIONS_RESTORE_COLLECTION
-  //   await this.db
-  //     .collection(POSITIONS_COLLECTION)
-  //     .deleteOne({ networkID: networkID.bson } );
-  // }
+  async deletePositionsAndState(idStr) {
+    const id = makeID(idStr);
+    // Only delete from POSITIONS_COLLECTION, not from POSITIONS_RESTORE_COLLECTION
+    await this.db
+      .collection(STATE_DATA_COLLECTION)
+      .deleteOne({ motifsAndTracksID: id.bson } 
+    );
+  }
 
 
   async getResultCounts() {

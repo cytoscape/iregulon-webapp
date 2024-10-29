@@ -78,12 +78,24 @@ export class ExportController {
   }
 
 
-  async _getMotifImageBlobs() {
-    const motifs = this.controller.getSelectedMotifs();
-    const paths = motifs.map(logoPath);
-    
+  _getMotifImageBlobs() {
+    const results = this.controller.getSelectedResults();
+
+    let names = results.reduce((acc, result) => {
+      if(result.type === 'MOTIF') {
+        acc.push(result.name);
+      } else if(result.type === 'CLUSTER') {
+        acc.push(result.motifsAndTracks[0].name);
+      }
+      return acc;
+    }, []);
+
+    names = [...new Set(names)]; // remove duplicates
+
     return Promise.all(
-      paths.map(path => 
+      names
+      .map(logoPath)
+      .map(path => 
         fetch(path)
         .then(r => r.blob())
         .then(blob => ({ path, blob }))

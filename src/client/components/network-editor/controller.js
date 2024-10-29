@@ -55,7 +55,7 @@ export class NetworkEditorController {
     /** @type {String} */
     this.networkIDStr = cy.data('id');
 
-    this.selectedMotifs = new Set();
+    this.selectedResults = new Set();
 
     this.searchController = new SearchController(cy, this.bus);
     this.exportController = new ExportController(this);
@@ -68,7 +68,7 @@ export class NetworkEditorController {
       this.undoHandler.init();
       
       if(flags.layoutWasRun) {
-        this.savePositions();
+        this.savePositionsAndState();
       }
     });
 
@@ -112,6 +112,8 @@ export class NetworkEditorController {
   addToNetwork(results, genes) {
     const cy = this.cy;
 
+    results.forEach(r => this.selectedResults.add(r));
+
     if (!genes && this.searchController.isGeneListIndexed()) {
       genes = this.searchController.getGenes();
     }
@@ -119,15 +121,6 @@ export class NetworkEditorController {
     if (genes) {
       genes.forEach(g => geneMap.set(g.name, g));
     }
-
-    results.forEach(ele => {
-      const type = ele.type;
-      if(type === 'MOTIF') {
-        this.selectedMotifs.add(ele.name);
-      } else if(type === 'CLUSTER') {
-        this.selectedMotifs.add(ele.motifsAndTracks[0].name);
-      }
-    });
 
     /** Get an existing node by its name or create one and return it */
     const getNode = (name, type, typeId) => {
@@ -181,19 +174,14 @@ export class NetworkEditorController {
         });
       });
     });
+
+    this.bus.emit('selectedResultsChanged', this.selectedMotifs);
   }
 
   removeFromNetwork(results) {
     const cy = this.cy;
 
-    results.forEach(ele => {
-      const type = ele.type;
-      if(type === 'MOTIF') {
-        this.selectedMotifs.delete(ele.name);
-      } else if(type === 'CLUSTER') {
-        this.selectedMotifs.delete(ele.motifsAndTracks[0].name);
-      }
-    });
+    results.forEach(r => this.selectedResults.delete(r));
 
     results.forEach(ele => {
       const type = ele.type;
@@ -220,8 +208,8 @@ export class NetworkEditorController {
     });
   }
 
-  getSelectedMotifs() {
-    return [...this.selectedMotifs];
+  getSelectedResults() {
+    return [...this.selectedResults];
   }
 
   _computeFCOSEidealEdgeLengthMap(clusterLabels, clusterAttr) {
@@ -307,11 +295,13 @@ export class NetworkEditorController {
     //   },
     // };
 
-    const allNodes = eles.nodes();
-    const disconnectedNodes = allNodes.filter(n => n.degree() === 0); // careful, our compound nodes have degree 0
-    const connectedNodes = allNodes.not(disconnectedNodes);
-    const networkWithoutDisconnectedNodes = eles.not(disconnectedNodes);
-    const networkToLayout = networkWithoutDisconnectedNodes;
+    // const allNodes = eles.nodes();
+    // const disconnectedNodes = allNodes.filter(n => n.degree() === 0); // careful, our compound nodes have degree 0
+    // const connectedNodes = allNodes.not(disconnectedNodes);
+    // const networkWithoutDisconnectedNodes = eles.not(disconnectedNodes);
+    // const networkToLayout = networkWithoutDisconnectedNodes;
+
+    const networkToLayout = eles;
 
     // monkeyPatchMathRandom(); // just before the FD layout starts
     
@@ -325,36 +315,36 @@ export class NetworkEditorController {
     const layoutDone = performance.now();
     console.log(`layout time: ${Math.round(layoutDone - start)}ms`);
 
-    this._packComponents(networkToLayout);
+    // this._packComponents(networkToLayout);
 
-    const packDone = performance.now();
-    console.log(`packing time: ${Math.round(packDone - layoutDone)}ms`);
+    // const packDone = performance.now();
+    // console.log(`packing time: ${Math.round(packDone - layoutDone)}ms`);
 
     // restoreMathRandom(); // after the FD layout is done
 
-    const connectedBB = connectedNodes.boundingBox();
-    // Style hasn't been applied yet, there are no labels. Filter out compound nodes.
-    const nodeWidth = disconnectedNodes.filter(n => !n.isParent()).max(n => n.boundingBox().w).value; 
-    const avoidOverlapPadding = 45;
-    const cols = Math.floor(connectedBB.w / (nodeWidth + avoidOverlapPadding));
+    // const connectedBB = connectedNodes.boundingBox();
+    // // Style hasn't been applied yet, there are no labels. Filter out compound nodes.
+    // const nodeWidth = disconnectedNodes.filter(n => !n.isParent()).max(n => n.boundingBox().w).value; 
+    // const avoidOverlapPadding = 45;
+    // const cols = Math.floor(connectedBB.w / (nodeWidth + avoidOverlapPadding));
 
-    const cmpByNES = (a, b) => b.data('NES') - a.data('NES'); // up then down
+    // const cmpByNES = (a, b) => b.data('NES') - a.data('NES'); // up then down
 
-    disconnectedNodes.sort(cmpByNES).layout({
-      name: 'grid',
-      boundingBox: {
-        x1: connectedBB.x1,
-        x2: connectedBB.x2,
-        y1: connectedBB.y2 + DEFAULT_PADDING * 3,
-        y2: connectedBB.y2 + DEFAULT_PADDING + 10000
-      },
-      avoidOverlapPadding,
-      cols,
-      condense: true,
-      avoidOverlap: true,
-      nodeDimensionsIncludeLabels: true,
-      fit: false
-    }).run();
+    // disconnectedNodes.sort(cmpByNES).layout({
+    //   name: 'grid',
+    //   boundingBox: {
+    //     x1: connectedBB.x1,
+    //     x2: connectedBB.x2,
+    //     y1: connectedBB.y2 + DEFAULT_PADDING * 3,
+    //     y2: connectedBB.y2 + DEFAULT_PADDING + 10000
+    //   },
+    //   avoidOverlapPadding,
+    //   cols,
+    //   condense: true,
+    //   avoidOverlap: true,
+    //   nodeDimensionsIncludeLabels: true,
+    //   fit: false
+    // }).run();
   }
 
 
@@ -469,30 +459,36 @@ export class NetworkEditorController {
   }
   
 
-  async savePositions() {
-    // TODO
-    // console.log("saving positions...");
+  async savePositionsAndState() {
+    console.log("saving positions and state...");
 
     // Deleted nodes are not present in the 'positions' document
-    // const positions = this.cy.nodes()
-    //   .map(node => ({ 
-    //     id: node.data('id'),
-    //     x:  node.position().x,
-    //     y:  node.position().y,
-    //     collapsed: node.data('collapsed')
-    //   }));
+    const positions = this.cy.nodes()
+      .map(node => ({ 
+        id: node.data('id'),
+        x:  node.position().x,
+        y:  node.position().y
+      }));
 
-    // const res = await fetch(`/api/${this.networkIDStr}/positions`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     positions
-    //   })
-    // });
+    const selected = this.getSelectedResults()
+      .map(r => ({
+        type: r.type,
+        name: r.name,
+      }));
 
-    // if(res.ok) {
-    //   console.log("positions saved");
-    // } 
+
+    const res = await fetch(`/api/${this.networkIDStr}/positions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        positions,
+        selected
+      })
+    });
+
+    if(res.ok) {
+      console.log("positions and state saved");
+    } 
   }
 
   renameNetwork(newName) {
@@ -585,10 +581,11 @@ export class NetworkEditorController {
    * 
    * Returns a Map object of nodeID -> position object
    */
-  applyPositions(positions) {
+  applyPositionsAndState(positions, selected) {
     const positionsMap = new Map(positions.map((obj) => [obj.id, obj]));
     this.cy.nodes().positions(node => positionsMap.get(node.data('id')));
-    return positionsMap;
+
+    // TODO set selected elements in the table
   }
 
 

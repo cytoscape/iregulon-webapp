@@ -66,8 +66,7 @@ http.put('/:id', async function(req, res, next) {
   try {
     const { id } = req.params;
     const { name } = req.body;
-    const updated = await Datastore.updateState(id, { name });
-    console.log("updated", updated);
+    const updated = await Datastore.updateName(id, { name });
     res.sendStatus(updated ? 204 : 409);
   } catch (err) {
     next(err);
@@ -115,15 +114,13 @@ http.get('/:id/positions', async function(req, res, next) {
   try {
     const { id } = req.params;
 
-    const positions = await Datastore.getPositions(id);
+    const positions = await Datastore.getPositionsAndState(id);
     if(!positions) {
       res.sendStatus(404);
     } else {
       res.send(JSON.stringify(positions));
     }
 
-    res.sendStatus(404);
-    
   } catch (err) {
     next(err);
   }
@@ -132,14 +129,14 @@ http.get('/:id/positions', async function(req, res, next) {
 http.post('/:id/positions', async function(req, res, next) {
   try {
     const { id } = req.params;
-    const { positions } = req.body;
+    const { positions, selected } = req.body;
 
     if(!Array.isArray(positions)) {
       res.sendStatus(404);
       return;
     }
 
-    await Datastore.setPositions(id, positions);
+    await Datastore.setPositionsAndState(id, positions, selected);
 
     res.send('OK');
   } catch (err) {

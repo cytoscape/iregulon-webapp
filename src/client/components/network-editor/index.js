@@ -59,8 +59,7 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   console.log('Loading...');
 
   const networkPromise = fetch(`/api/${id}`);
-  // TODO
-  // const positionsPromise = fetch(`/api/${id}/positions`);
+  const positionsAndStatePromise = fetch(`/api/${id}/positions`);
 
   const networkResult = await networkPromise;
   if (!networkResult.ok) {
@@ -94,16 +93,17 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   let layoutWasRun = false;
 
   // TODO
-  // const positionsResult = await positionsPromise;
-  // if (positionsResult.status == 404) {
+  const positionsResult = await positionsAndStatePromise;
+  if (positionsResult.status == 404) {
     console.log('running layout');
     await controller.applyLayout();
     layoutWasRun = true;  
-  // } else {
-  //   console.log('got positions from server');
-  //   const positionsJson = await positionsResult.json();
-  //   const positionsMap = controller.applyPositions(positionsJson.positions);
-  // }
+  } else {
+    console.log('got positions and state from server');
+    const positionsJson = await positionsResult.json();
+    const { positions, selected } = positionsJson;
+    controller.applyPositionsAndState(positions, selected);
+  }
 
   // Set network style
   const style = createNetworkStyle(cy);
@@ -116,13 +116,14 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
     recentNetworksController.saveRecentNetwork(cy);
   });
 
-  cy.on('position remove', 'node', _.debounce(() => {
-    controller.savePositions();
-    recentNetworksController.updateRecentNetwork(cy);
-  }, 4000));
-  cy.on('data', _.debounce(() => {
-    recentNetworksController.updateRecentNetwork(cy);
-  }, 1000));
+  const updateServerState   = _.debounce(() => controller.savePositionsAndState(), 4000);
+  const updateRecentNetwork = _.debounce(() => recentNetworksController.updateRecentNetwork(cy), 1000);
+
+  cy.on('position remove', 'node', updateRecentNetwork);
+
+  // same debounced function "updateServerState" used for both events, makes sure it doesn't get called twice
+  cy.on('position remove', 'node', updateServerState);
+  controller.bus.on('selectedResultsChanged', updateServerState); 
 
   // Selecting an edge should select its nodes, but the edge itself must never be selected
   // (this makes it easier to keep the data table selection consistent)
