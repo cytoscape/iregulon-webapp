@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from "react-query";
 
 import makeStyles from '@mui/styles/makeStyles';
 
-import { BOTTOM_DRAWER_OPEN } from '../defaults';
+import { BOTTOM_DRAWER_OPEN, DEFAULT_NETWORK_TYPE_SELECTION, DEFAULT_NETWORK_TOTAL_SELECTION } from '../defaults';
 import { currentTheme } from '../../theme';
 import { isMobile, isTablet } from '../util';
 import { NetworkEditorController } from './controller';
@@ -55,7 +55,7 @@ function createCy(id) {
 function getInitialResults(results) {
   // For now, just update the network with the top results
   // NOTE: there are no 'CLUSTER' results in the results object
-  const maxResults = Math.min(results.length, 4);
+  const maxResults = Math.min(results.length, DEFAULT_NETWORK_TOTAL_SELECTION);
 
   const filteredResults = [];
   for(const ele of results) {
@@ -91,7 +91,6 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
     return;
   }
   const networkJson = await networkResult.json();
-  console.log(networkJson);
 
   // cy.add(networkJson.network.elements);
   cy.data({ 
@@ -112,15 +111,18 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   if (positionsResult.status == 404) {
     console.log('no positions and state found on server, initializing');
     const filteredResults = getInitialResults(networkJson.results); 
-    controller.updateNetwork(filteredResults, networkJson.genes);
+    controller.addToNetwork(filteredResults, networkJson.genes);
     await controller.applyLayout();
   } else {
     console.log('got positions and state from server');
     const positionsJson = await positionsResult.json();
     const { positions, selected } = positionsJson;
+    console.log('selected', selected);
     const allResults = controller.fetchResults();
+    console.log('allResults', allResults);
     const filteredResults = getSavedResults(allResults, selected);
-    controller.updateNetwork(filteredResults, networkJson.genes);
+    console.log('filteredResults', filteredResults);
+    controller.addToNetwork(filteredResults, networkJson.genes);
     controller.applyPositions(positions);
   }
 
@@ -210,9 +212,48 @@ function Root({ id, theme, recentNetworksController }) {
     }
   };
 
+  const onResultsIndexed = () => {
+    console.log('resultsIndexed...');
+    // TODO: do not inspect the network here--instead, check the server results and always rebuild the network from them
+    // If the loaded network is empty (no nodes), then update it with the top clusters
+    if (cy.nodes().length === 0) {
+      // Get the top clusters
+      const results = controller.fetchResults(DEFAULT_NETWORK_TYPE_SELECTION);
+      const maxResults = Math.min(results.length, DEFAULT_NETWORK_TOTAL_SELECTION);
+      let count = 0;
+      const filteredResults = results.filter(ele => { 
+        if (ele.transcriptionFactors.length > 0 && count < maxResults) {
+          ++count;
+          return true;
+        }
+        return false;
+      });
+      // Check whether this TF is in the gene list and, if not, get the gene object
+      // that has all the fields and add it to the list
+      filteredResults.forEach(ele => {
+        ele.transcriptionFactors.forEach((tf, idx) => {
+          // Add only the first TF by default
+          if (idx === 0) {
+            tf.inNetwork = true;
+          } else {
+            tf.inNetwork = false;
+          }
+        });
+      });
+
+      // TODO do not add to network here (?), but let the data-table do it from the cheked results (TF's 'inNetwork' field)
+      controller.addToNetwork(filteredResults);
+      controller.applyLayout();
+    }
+  };
+
   useEffect(() => {
+    controller.bus.on('resultsIndexed', onResultsIndexed);
     loadNetwork(id, cy, controller, recentNetworksController);
-    return () => cy.destroy();
+    return () => {
+      controller.bus.removeListener('resultsIndexed', onResultsIndexed);
+      cy.destroy();
+    };
   }, []);
 
   useEffect(() => {

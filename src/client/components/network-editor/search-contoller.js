@@ -16,12 +16,18 @@ export class SearchController {
 
   initializeResults(resultsJson) {
     console.log('SearchController.initializeResults', resultsJson);
+    
     this._initializeAllGenes(resultsJson.genes);
-    this._initializeResults(resultsJson.results);
-    this._indexClusters();
     this.genesReady = true;
-    this.bus.emit('geneListIndexed');
+
+    this._initializeResults(resultsJson.results);
     this.resultsReady = true;
+
+    const geneNames = this.getGenes().map(g => g.name);
+    const clusterDocuments = this._getMotifAndTrackClusters(resultsJson.results, geneNames);
+    this._indexClusters(clusterDocuments);
+    
+    this.bus.emit('geneListIndexed');
     this.bus.emit('resultsIndexed');
   }
 
@@ -44,8 +50,15 @@ export class SearchController {
     return [];
   }
 
-  getGenes() {
-    return Object.values(this.geneMiniSearch.toJSON().storedFields);
+  getGenes(isQuery) {
+    if (!this.isGeneListIndexed()) {
+      throw "The gene list hasn't been fecthed yet!";
+    }
+    let genes = Object.values(this.geneMiniSearch.toJSON().storedFields);
+    if (isQuery) {
+      genes = genes.filter(g => g.query === true);
+    }
+    return genes;
   }
 
   searchResults(query) {
@@ -59,16 +72,19 @@ export class SearchController {
   }
 
   getResults(type) {
-    const resultFields  = () => Object.values(this.resultsMiniSearch.toJSON().storedFields);
-    const clusterFields = () => Object.values(this.clustersMiniSearch.toJSON().storedFields);
-
-    if(type === undefined || type === null) {
-      return resultFields().concat(clusterFields());
+    if (type === 'CLUSTER') {
+      // Return only clusters
+      return Object.values(this.clustersMiniSearch.toJSON().storedFields);
     }
-    if(type === 'CLUSTER') {
-      return clusterFields();
+    let results = Object.values(this.resultsMiniSearch.toJSON().storedFields);
+    if (type === null || type === undefined) {
+      // Return all results, including clusters
+      results.push(...Object.values(this.clustersMiniSearch.toJSON().storedFields));
+    } else {
+      // Return motifs or tracks
+      return results.filter(r => r.type === type);
     }
-    return resultFields().filter(r => r.type === type);
+    return results;
   }
 
   /**
@@ -124,7 +140,38 @@ export class SearchController {
     this.resultsMiniSearch.addAll(results);
   }
 
-  _indexClusters() {
+  _indexMotifsAndTracks(documents) {
+    this.resultsMiniSearch = new MiniSearch({
+      idField: 'name',
+      fields: ['name', 'description'],
+      storeFields: [
+        'type',
+        'nomenclatureCode',
+        'rankingsDatabase',
+        'rank',
+        'name',
+        'featureID',
+        'description',
+        'auc',
+        'nes',
+        'clusterCode',
+        'clusterNumber',
+        'candidateTargetGenes',
+        'candidateTargetRanks',
+        'transcriptionFactors',
+        'motifSimilarityFDR',
+        'orthologousIdentity',
+        'similarMotifName',
+        'similarMotifDescription',
+        'orthologousGeneName',
+        'orthologousSpecies',
+      ]
+    });
+    console.log('Search docs (RESULTS)', documents);
+    this.resultsMiniSearch.addAll(documents);
+  }
+
+  _indexClusters(documents) {
     this.clustersMiniSearch = new MiniSearch({
       idField: 'name',
       fields: ['name'],
@@ -140,9 +187,6 @@ export class SearchController {
         'transcriptionFactors',
       ]
     });
-
-    const geneNames = this.getGenes().map(g => g.name);
-    const documents = this._getMotifAndTrackClusters(this.getResults(), geneNames);
     console.log('Search docs (CLUSTERS)', documents);
     this.clustersMiniSearch.addAll(documents);
   }

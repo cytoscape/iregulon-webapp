@@ -17,6 +17,16 @@ export const MIN_DESKTOP_TOOLBAR_WIDTH = 1080 - LEFT_DRAWER_WIDTH;
 
 export const linkoutProps = { target: "_blank",  rel: "noreferrer", underline: "hover" };
 
+/**
+ * The type of results data ('MOTIF', 'TRACK', 'CLUSTER') that is used to create the default network.
+ * For instance, set 'CLUSTER' to pre-select the top clusters and create the network from their TFs and targets.
+ */
+export const DEFAULT_NETWORK_TYPE_SELECTION = 'CLUSTER';
+/**
+ * The number of top results data that must be pre-selected to create the default network.
+ */
+export const DEFAULT_NETWORK_TOTAL_SELECTION = 4;
+
 
 export function bottomDrawerHeight(theme) {
   // The preferred height is 1/3 of the height of the content area (excludes the header),

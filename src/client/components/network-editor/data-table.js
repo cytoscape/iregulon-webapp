@@ -227,21 +227,7 @@ const COLUMNS = [
     tooltip: (type) => type === 'CLUSTER' ? "The highest NES of the cluster's motifs/tracks" : 'Normalized Enrichment Score (the higher the score, the better)',
     show: () => true,
     render: (row, col, classes, controller) => {
-      const node = controller.cy.nodes(`[id = "${row.id}"]`);
-      const nesColor = controller.style.getNodeColor(node);
       return <>{roundNumber(row[col.id]).toFixed(PRECISION)}</>;
-      // return (
-      //   <UpDownHBar
-      //     value={row[col.id]}
-      //     minValue={-controller.style.magNES}
-      //     maxValue={controller.style.magNES}
-      //     color={nesColor}
-      //     bgColor={useTheme().palette.background.default}
-      //     height={CHART_HEIGHT}
-      //     text={roundNumber(row[col.id]).toFixed(PRECISION)}
-      //     className={classes.upDownBar}
-      //   />
-      // );
     }
   },
   {
@@ -295,8 +281,6 @@ const COLUMNS = [
     )
   },
 ];
-
-const CHART_HEIGHT = 16;
 
 const TableComponents = {
   Scroller: forwardRef((props, ref) => <TableContainer component={Paper} {...props} ref={ref} />),
@@ -383,13 +367,8 @@ const gotoNode = (id, cy) => {
 
 //==[ ContentRow ]====================================================================================================
 
-const ContentRow = ({ row, index, selected, current, controller, isMobile, onCheck, onClick }) => {
+const ContentRow = ({ row, index, controller, isMobile, onCheck, onClick }) => {
   const classes = useStyles();
-
-  // const handleClick = (evt) => {
-  //   onClick?.(row);
-  //   evt.preventDefault();
-  // };
 
   return (
     <>
@@ -421,8 +400,6 @@ const ContentRow = ({ row, index, selected, current, controller, isMobile, onChe
 ContentRow.propTypes = {
   row: PropTypes.object.isRequired,
   index: PropTypes.number.isRequired,
-  selected: PropTypes.bool,
-  current: PropTypes.bool,
   controller: PropTypes.instanceOf(NetworkEditorController).isRequired,
   isMobile: PropTypes.bool,
   onCheck: PropTypes.func.isRequired,
@@ -435,10 +412,8 @@ export function DataTable({
   visible,
   data,
   type,
-  checkedRows = [],
-  selectedRows = [],
+  checkedRows = [], // e.g. [ { id: 'CLUSTER-T1', type: 'CLUSTER', transcriptionFactors: ['HIF1A', 'ARNT'] }, ... ]
   currentRow,
-  gotoCurrentNode,
   scrollToId,
   searchTerms,
   controller,
@@ -453,12 +428,9 @@ export function DataTable({
   const classes = useStyles();
   const theme = useTheme();
   
-  const cy = controller.cy;
-  
   const virtuosoRef = useRef();
   const sortedDataRef = useRef();
   sortedDataRef.current = stableSort(data, getComparator(order, orderBy));
-  const selectedRowsRef = useRef(selectedRows); // Will be used to prevent the table from auto-scrolling to the clicked row
 
   data.forEach((row) => {
     const inNetwork = checkedRows.findIndex(r => r.id === row.id) >= 0;
@@ -480,12 +452,6 @@ export function DataTable({
       virtuosoRef.current.scrollToIndex({ index, align: 'start', offset });
     }
   }, [scrollToId]);
-  // Current item
-  useEffect(() => {
-    if (currentRow && gotoCurrentNode) {
-      gotoNode(currentRow.id, cy);
-    }
-  }, [currentRow, gotoCurrentNode]);
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -493,38 +459,8 @@ export function DataTable({
     setOrderBy(property);
   };
 
-  const isRowSelected = (row) => {
-    return selectedRows.findIndex(r => r.id === row.id) >= 0;
-  };
-
-  const handleRowClick = (row, preventGotoNode = false) => {
-    let newSelectedRows = [];
-    let selected = false;
-
-    if (!isRowSelected(row)) {
-      // Toggle: unselect this row/id
-      newSelectedRows.push(row);
-      selectedRowsRef.current = [...newSelectedRows];
-      selected = true;
-    }
-
-    onRowClick?.(row, selected, preventGotoNode);
-    // let newSelectedRows = selectedRows;
-    // let selected = false;
-
-    // if (isRowSelected(row)) {
-    //   // Toggle: unselect this row/id
-    //   newSelectedRows = newSelectedRows.filter(r => r.id !== row.id);
-    //   selectedRowsRef.current = [...newSelectedRows];
-    // } else {
-    //   // Add this id to the selection list
-    //   newSelectedRows.push(row);
-    //   newSelectedRows = stableSort(data, getComparator(order, orderBy)); // Don't forget to sort it again!
-    //   selectedRowsRef.current = [...newSelectedRows];
-    //   selected = true;
-    // }
-
-    // onRowSelectionChange?.(row, selected, preventGotoNode);
+  const handleRowClick = (row) => {
+    onRowClick?.(row);
   };
 
   const isRowChecked = (row) => {
@@ -598,9 +534,8 @@ export function DataTable({
   }
 
   const totalRows = sortedDataRef.current.length;
-  const totalSelectedRows = selectedRows.length;
-  const allSelected = totalSelectedRows > 0 && totalSelectedRows === totalRows;
-
+  const totalCheckedRows = checkedRows.length;
+  const allChecked = totalCheckedRows > 0 && totalCheckedRows === totalRows;
   const noneChecked = checkedRows.length === 0;
 
   // Find the "current" id
@@ -609,9 +544,6 @@ export function DataTable({
   let initialIndex = 0;
   let initialId = scrollToId || currentId;
   const initialTopMostItemIndex = { index: 0, align: 'start' };
-  if (!initialId && totalSelectedRows > 0) {
-    initialId = selectedRows[0].id;
-  }
   if (initialId && sortedDataRef.current) {
     initialIndex = sortedDataRef.current.findIndex(obj => obj.id === initialId);
     if (initialIndex > 0) {
@@ -663,8 +595,8 @@ export function DataTable({
                   { typeof col.label === 'function' ? col.label(type) : col.label }
                 {col.id === 'name' && data && (
                   <Typography component="span" variant="body2" color="textSecondary">
-                    &nbsp;&#40;{totalSelectedRows > 0 ? 
-                      (allSelected ? 'all' : totalSelectedRows) + ' selected of '
+                    &nbsp;&#40;{totalCheckedRows > 0 ? 
+                      (allChecked ? 'all' : totalCheckedRows) + ' selected of '
                       :
                     ''}{ data.length }&#41;
                   </Typography>
@@ -681,8 +613,6 @@ export function DataTable({
         <ContentRow
           row={row}
           index={index}
-          selected={selectedRows.findIndex(r => r.id === row.id) >= 0}
-          current={currentRow && currentRow.id === row.id}
           controller={controller}
           onClick={handleRowClick}
           onCheck={handleRowCheck}
@@ -699,13 +629,11 @@ DataTable.propTypes = {
   checkedRows: PropTypes.array,
   selectedRows: PropTypes.array,
   currentRow: PropTypes.object,
-  gotoCurrentNode: PropTypes.bool,
   scrollToId: PropTypes.string,
   searchTerms: PropTypes.array,
   controller: PropTypes.instanceOf(NetworkEditorController).isRequired,
   isMobile: PropTypes.bool,
   onRowCheckChange: PropTypes.func,
-  onRowSelectionChange: PropTypes.func,
   onRowClick: PropTypes.func,
   onDataSort: PropTypes.func,
 };

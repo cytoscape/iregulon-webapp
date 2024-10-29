@@ -37,15 +37,6 @@ const useStyles = makeStyles(theme => ({
       marginBottom: theme.spacing(2),
     },
   },
-  authorsContainer: {
-    paddingLeft: 0,
-    paddingRight: 0,
-    marginTop: theme.spacing(12),
-    marginBottom: 0,
-    [theme.breakpoints.down('sm')]: {
-      marginTop: theme.spacing(6),
-    },
-  },
   description: {
     marginBottom: theme.spacing(4),
     textAlign: 'left',
@@ -53,12 +44,6 @@ const useStyles = makeStyles(theme => ({
       marginBottom: theme.spacing(2),
       fontSize: 'unset',
     },
-  },
-  authors: {
-    textAlign: 'center',
-  },
-  linkAuthor: {
-    color: theme.palette.text.secondary,
   },
 }));
 
@@ -76,15 +61,6 @@ export function About() {
           To cite this app in a paper, for now, please cite this article &#40;an article specific to this app will be published shortly&#41;:
         </Typography>
         <Citation />
-      </Container>
-      <Container maxWidth="md" className={classes.authorsContainer}>
-        <Typography variant="body2" color="textSecondary" className={classes.authors}>
-          iRegulon is authored by:&nbsp;&nbsp;
-          <Link href="https://github.com/maxkfranz" className={classes.linkAuthor} {...linkoutProps}>Max Franz</Link>,&nbsp;&nbsp;
-          <Link href="https://github.com/mikekucera" className={classes.linkAuthor} {...linkoutProps}>Mike Kucera</Link>,&nbsp;&nbsp;
-          <Link href="https://github.com/chrtannus"className={classes.linkAuthor} {...linkoutProps}>Christian Lopes</Link>,&nbsp;&nbsp;
-          <Link href="https://baderlab.org" className={classes.linkAuthor} {...linkoutProps}>Gary Bader</Link>.
-        </Typography>
       </Container>
     </>
   );

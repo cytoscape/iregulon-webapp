@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { UploadPanel, DemoPanel, organisms } from './upload-panel';
+import { QueryPanel, DemoPanel, organisms } from './query-panel';
 
 import makeStyles from '@mui/styles/makeStyles';
 
@@ -107,7 +107,7 @@ const StartDialog = ({
         {
           'INPUT':   () => isDemo ?
                             <DemoPanel /> : 
-                            <UploadPanel isMobile={isMobile} initialOrganism={DEF_ORGANISM} onOrganismChanged={hanleOrganismChanged} onGenesChanged={hanleGenesChanged} />,
+                            <QueryPanel isMobile={isMobile} initialOrganism={DEF_ORGANISM} onOrganismChanged={hanleOrganismChanged} onGenesChanged={hanleGenesChanged} />,
           'LOADING': () => <LoadingProgress />,
           'ERROR':   () => <ErrorReport />,
         }[step]()

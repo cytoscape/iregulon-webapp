@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
-import { RNA_SEQ, PRE_RANKED } from './upload-controller';
-
 import { useTheme } from '@mui/material/styles';
 
 import makeStyles from '@mui/styles/makeStyles';
@@ -65,9 +63,9 @@ export const organisms = [
   },
 ];
 
-//==[ UploadPanel ]===================================================================================================
+//==[ QueryPanel ]====================================================================================================
 
-const useUploadPanelStyles = makeStyles((theme) => ({
+const useQueryPanelStyles = makeStyles((theme) => ({
   description: {
     marginBottom: theme.spacing(2.5),
     [theme.breakpoints.down('sm')]: {
@@ -115,10 +113,10 @@ function parseGeneList(text) {
   return [];
 }
 
-export function UploadPanel({ initialOrganism, isMobile, onOrganismChanged, onGenesChanged }) {
+export function QueryPanel({ initialOrganism, isMobile, onOrganismChanged, onGenesChanged }) {
   const [ organism, setOrganism ] = useState(organisms.indexOf(initialOrganism));
 
-  const classes = useUploadPanelStyles();
+  const classes = useQueryPanelStyles();
   const theme = useTheme();
   
   const handleOrganismChange = (event) => {
@@ -129,21 +127,9 @@ export function UploadPanel({ initialOrganism, isMobile, onOrganismChanged, onGe
   };
   const handleGenesChange = (event) => {
     const txt = event.target.value;
-    console.log(txt);
     const genes = parseGeneList(txt);
-    console.log(genes);
     onGenesChanged(genes);
   };
-
-  const linkoutProps = { target: "_blank",  rel: "noreferrer", underline: "none" };
-  const GeneIdLabel = () => (
-    <>
-      <b>Gene ID Column:</b>&nbsp;&nbsp;from&nbsp;
-      <Link href="https://www.ensembl.org/Homo_sapiens/Info/Index" className={classes.linkout} {...linkoutProps}>Ensembl</Link> or&nbsp;
-      <Link href="https://www.genenames.org/" className={classes.linkout} {...linkoutProps}>HGNC</Link>&nbsp;
-      &#40;for human&#41;
-    </>
-  );
 
   return (
     <Box display="flex" flexDirection="column" alignItems="flex-start" gap={2}>
@@ -189,7 +175,7 @@ export function UploadPanel({ initialOrganism, isMobile, onOrganismChanged, onGe
     </Box>
   );
 }
-UploadPanel.propTypes = {
+QueryPanel.propTypes = {
   initialOrganism: PropTypes.object.isRequired,
   isMobile: PropTypes.bool,
   onOrganismChanged: PropTypes.func,
