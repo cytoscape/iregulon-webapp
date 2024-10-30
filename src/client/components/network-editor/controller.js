@@ -123,7 +123,7 @@ export class NetworkEditorController {
       }
     });
 
-    /** Get an existing node by its name or create one and return it */
+    /** Get an existing node by its name or create one and return it. Either way, it also updates the `dataSources` attribute */
     const getNode = (name, type, typeId, isQuery) => {
       let node = cy.getElementById(name);
       if (node.length === 0) {
@@ -139,16 +139,16 @@ export class NetworkEditorController {
           regulatoryFunction: 'unknown',
           motifs: gene.motifs,
           tracks: gene.tracks,
-          source: []
+          dataSources: []
         };
         node = cy.add({ group: 'nodes', data })[0];
       } else {
         node = node[0];
       }
-      const sourceId = rowId(type, typeId);
-      const source = node.data('source');
-      if (!source.includes(sourceId)) {
-        source.push(sourceId);
+      const sourceId = rowId(type, typeId); // TODO: should it include the TF name?
+      const dataSources = node.data('dataSources');
+      if (!dataSources.includes(sourceId)) {
+        dataSources.push(sourceId);
       }
       return node;
     };
@@ -157,6 +157,7 @@ export class NetworkEditorController {
       const type = ele.type;
       const typeId = ele[rowTypeIdField(type)];
       const clusterNumber = ele.clusterNumber;
+      const clusterCode = ele.clusterCode;
       const tfArr = ele.transcriptionFactors;
       const tgtArr = ele.candidateTargetGenes;
 
@@ -178,8 +179,17 @@ export class NetworkEditorController {
                 if (node2.data('regulatoryFunction') !== 'regulator') {
                   node2.data('regulatoryFunction', 'regulated');
                 }
-                // Add an edge between the TF and the target node
-                cy.add({ group: 'edges', data: { source: name1, target: name2, clusterNumber } });
+                // Add an edge between the TF and the target node (prevent duplicate edges by checking the clusterCode)
+                const edge = cy.elements(`edge[source="${name1}"][target="${name2}"][clusterCode="${clusterCode}"]`);
+                if (edge.length === 0) {
+                  const data = {
+                    source: name1,
+                    target: name2,
+                    clusterNumber,
+                    clusterCode,
+                  };
+                  cy.add({ group: 'edges', data });
+                }
               }
             });
           }
@@ -211,13 +221,13 @@ export class NetworkEditorController {
         let node = cy.getElementById(name);
         if (node.length > 0) {
           node = node[0];
-          const clusters = node.data('source');
-          // Remove this cluster from the node's cluster list
-          const idx = clusters.indexOf(clusterId);
+          const dataSources = node.data('dataSources');
+          // Remove this cluster from the node's data-source list
+          const idx = dataSources.indexOf(clusterId);
           if (idx >= 0) {
-            clusters.splice(idx, 1);
+            dataSources.splice(idx, 1);
           }
-          if (clusters.length === 0) {
+          if (dataSources.length === 0) {
             cy.remove(node);
           }
         }

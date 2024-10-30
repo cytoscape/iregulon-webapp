@@ -211,8 +211,8 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     if (nodes.length > 0) {
       const map = new Map();
       nodes.forEach(n => {
-        const source = n.data('source') || [];
-        source.forEach(s => {
+        const dataSources = n.data('dataSources') || [];
+        dataSources.forEach(s => {
           const parts = s.split('-');
           if (parts.length === 2) {
             const type = parts[0].toUpperCase();
