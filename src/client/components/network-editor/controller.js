@@ -3,16 +3,11 @@ import Cytoscape from 'cytoscape'; // eslint-disable-line
 import _ from 'lodash';
 
 import { DEFAULT_PADDING } from '../defaults';
-import { rowId, rowTypeIdField } from '../util';
 import { monkeyPatchMathRandom, restoreMathRandom } from '../../rng';
 import { SearchController } from './search-contoller';
 import { ExportController } from './export-controller';
 import { UndoHandler } from './undo-stack';
 
-
-// Clusters that have this many nodes get optimized.
-// Note we are using number of nodes as a proxy for number of edges, assuming large clusters are mostly complete.
-const LARGE_CLUSTER_SIZE = 33; // approx 500 edges in a complete graph
 
 // Keys for scratch data
 export const Scratch = {
@@ -124,7 +119,7 @@ export class NetworkEditorController {
     });
 
     /** Get an existing node by its name or create one and return it. Either way, it also updates the `dataSources` attribute */
-    const getNode = (name, type, typeId, isQuery) => {
+    const getNode = (name, type, clusterCode, isQuery) => {
       let node = cy.getElementById(name);
       if (node.length === 0) {
         const gene = geneMap.get(name);
@@ -145,17 +140,15 @@ export class NetworkEditorController {
       } else {
         node = node[0];
       }
-      const sourceId = rowId(type, typeId); // TODO: should it include the TF name?
       const dataSources = node.data('dataSources');
-      if (!dataSources.includes(sourceId)) {
-        dataSources.push(sourceId);
+      if (!dataSources.includes(clusterCode)) {
+        dataSources.push(clusterCode);
       }
       return node;
     };
 
     results.forEach(ele => {
       const type = ele.type;
-      const typeId = ele[rowTypeIdField(type)];
       const clusterNumber = ele.clusterNumber;
       const clusterCode = ele.clusterCode;
       const tfArr = ele.transcriptionFactors;
@@ -167,13 +160,13 @@ export class NetworkEditorController {
           if (g1.inNetwork) {
             // const g1 = tfArr[0];
             const name1 = g1.geneID.name;
-            const node1 = getNode(name1, type, typeId, false); // A TF must be added even if it's not a query gene
+            const node1 = getNode(name1, type, clusterCode, false); // A TF must be added even if it's not a query gene
             // Update the 'regulatoryFunction' data field
             node1.data('regulatoryFunction', 'regulator');
 
             tgtArr?.forEach((g2) => {
               const name2 = g2.geneID.name;
-              const node2 = getNode(name2, type, typeId, true); // Use only the query genes for target nodes
+              const node2 = getNode(name2, type, clusterCode, true); // Use only the query genes for target nodes
               if (node2) {
                 // Update the 'regulatoryFunction' data field, but only if it's not already set to 'regulator'
                 if (node2.data('regulatoryFunction') !== 'regulator') {
@@ -211,9 +204,7 @@ export class NetworkEditorController {
     });
 
     results.forEach(ele => {
-      const type = ele.type;
-      const typeId = ele[rowTypeIdField(type)];
-      const clusterId = rowId(type, typeId);
+      const clusterCode = ele.clusterCode;
       const genesArr = [...ele.transcriptionFactors, ...ele.candidateTargetGenes];
 
       genesArr.forEach((g) => {
@@ -223,7 +214,7 @@ export class NetworkEditorController {
           node = node[0];
           const dataSources = node.data('dataSources');
           // Remove this cluster from the node's data-source list
-          const idx = dataSources.indexOf(clusterId);
+          const idx = dataSources.indexOf(clusterCode);
           if (idx >= 0) {
             dataSources.splice(idx, 1);
           }
@@ -232,6 +223,8 @@ export class NetworkEditorController {
           }
         }
       });
+      // Finally remove all isolated nodes
+      // cy.nodes('[[degree = 0]]').remove();
     });
   }
 

@@ -2,7 +2,7 @@ import React, { forwardRef, useRef, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
-import { DEFAULT_PADDING, dataTableHeight } from '../defaults';
+import { dataTableHeight } from '../defaults';
 import { NetworkEditorController } from './controller';
 
 import { useTheme } from '@mui/material/styles';
@@ -356,13 +356,8 @@ const roundNumber = (val) => {
   return val != null ? (Math.round(val * Math.pow(10, PRECISION)) / Math.pow(10, PRECISION)) : 0;
 };
 
-const gotoNode = (id, cy) => {
-  const eles = cy.nodes(`[id = "${id}"]`);
-  cy.animate({
-    fit: { eles: eles, padding: DEFAULT_PADDING },
-    easing: 'ease-out',
-    duration: 250
-  });
+const isRowChecked = (row) => {
+  return row.transcriptionFactors.some(tf => tf.inNetwork);
 };
 
 //==[ ContentRow ]====================================================================================================
@@ -385,7 +380,7 @@ const ContentRow = ({ row, index, controller, isMobile, onCheck, onClick }) => {
           <Checkbox
             sx={{ width: 24, height: 24 }}
             disabled={row['transcriptionFactors'].length === 0}
-            checked={row['inNetwork']}
+            checked={isRowChecked(row)}
             onClick={() => onCheck(row)}
           /> 
         :
@@ -412,7 +407,6 @@ export function DataTable({
   visible,
   data,
   type,
-  checkedRows = [], // e.g. [ { id: 'CLUSTER-T1', type: 'CLUSTER', transcriptionFactors: ['HIF1A', 'ARNT'] }, ... ]
   currentRow,
   scrollToId,
   searchTerms,
@@ -431,11 +425,6 @@ export function DataTable({
   const virtuosoRef = useRef();
   const sortedDataRef = useRef();
   sortedDataRef.current = stableSort(data, getComparator(order, orderBy));
-
-  data.forEach((row) => {
-    const inNetwork = checkedRows.findIndex(r => r.id === row.id) >= 0;
-    row.inNetwork = inNetwork;
-  });
 
   // Sorting
   useEffect(() => {
@@ -461,10 +450,6 @@ export function DataTable({
 
   const handleRowClick = (row) => {
     onRowClick?.(row);
-  };
-
-  const isRowChecked = (row) => {
-    return checkedRows.findIndex(r => r.id === row.id) >= 0;
   };
 
   const handleRowCheck = (row) => {
@@ -533,10 +518,10 @@ export function DataTable({
     );
   }
 
-  const totalRows = sortedDataRef.current.length;
-  const totalCheckedRows = checkedRows.length;
+  const totalRows = data.length;
+  const totalCheckedRows = data.filter(row => isRowChecked(row)).length;
   const allChecked = totalCheckedRows > 0 && totalCheckedRows === totalRows;
-  const noneChecked = checkedRows.length === 0;
+  const noneChecked = totalCheckedRows === 0;
 
   // Find the "current" id
   let currentId = currentRow ? currentRow.id : null;
@@ -626,8 +611,6 @@ DataTable.propTypes = {
   visible: PropTypes.bool.isRequired,
   data: PropTypes.array.isRequired,
   type: PropTypes.string.isRequired,
-  checkedRows: PropTypes.array,
-  selectedRows: PropTypes.array,
   currentRow: PropTypes.object,
   scrollToId: PropTypes.string,
   searchTerms: PropTypes.array,

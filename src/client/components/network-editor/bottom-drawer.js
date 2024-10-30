@@ -183,9 +183,9 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const [ data, setData ] = useState([]);
   const [ type, setType ] = useState(DEFAULT_NETWORK_TYPE_SELECTION);
   const [ searchTerms, setSearchTerms ] = useState();
-  const [ checkedRows, setCheckedRows ] = useState([]);
   const [ currentRow, setCurrentRow ] = useState();
   const [ scrollToId, setScrollToId ] = useState();
+  const [ _, forceUpdate ] = useState(0); // Dummy state to force update
 
   const classes = useBottomDrawerStyles();
 
@@ -204,34 +204,8 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const cy = controller.cy;
   const cyEmitter = new EventEmitterProxy(cy);
 
-  // TODO -- remove this
-  const updateCheckedRowsFromNetwork = () => {
-    const nodes = cy.nodes();
-    const newCheckedRows = [];
-    if (nodes.length > 0) {
-      const map = new Map();
-      nodes.forEach(n => {
-        const dataSources = n.data('dataSources') || [];
-        dataSources.forEach(s => {
-          const parts = s.split('-');
-          if (parts.length === 2) {
-            const type = parts[0].toUpperCase();
-            const typeId = parts[1];
-            const id = rowId(type, typeId);
-            let row = map.get(id);
-            if (!row) {
-              row = { id, type, transcriptionFactors: [] };
-              map.set(id, row);
-              newCheckedRows.push(row);
-            }
-            if (n.data('regulatoryFunction') === 'regulator') {
-              row.transcriptionFactors.push(n.data('name'));
-            }
-          }
-        });
-      });
-    }
-    setCheckedRows(newCheckedRows);
+  const triggerUpdate = () => {
+    forceUpdate(prev => prev + 1);
   };
 
   const updateData = () => {
@@ -263,7 +237,6 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   };
   
   const debouncedOnNetworkChange = _.debounce(() => {
-    updateCheckedRowsFromNetwork();
     const newDisabled = !controller.isNetworkLoaded() || !controller.isResultListIndexed();
     if (newDisabled !== disabled) {
       setDisabled(newDisabled);
@@ -338,11 +311,10 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     // Update the TF in the row (UI object)
     const tfs = row.transcriptionFactors || [];
     if (tfs.length === 0) return;
-    // Reset all TFs and the first one to be added to the network (if checked===true)
+    // Reset all TFs and and flag the first one to be added to the network (if checked===true)
     tfs.forEach((el, idx) => el.inNetwork = (idx === 0 && checked));
     // Update the UI checked state
-    const newCheckedRows = rowsInNetwork(data);
-    setCheckedRows(newCheckedRows);
+    triggerUpdate();
     // Update the network
     if (checked) {
       controller.addToNetwork([row]);
@@ -366,8 +338,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     const tf = tfs.find(el => el.geneID.name === tfInfo.name);
     tf.inNetwork = checked;
     // Update the UI checked state
-    const newCheckedRows = rowsInNetwork(data);
-    setCheckedRows(newCheckedRows);
+    triggerUpdate();
     // Update the network
     // (do not pass the actual row, but clone it and filter out the other TFs, so only the checked/unchecked one is added/removed)
     row = { ...row, transcriptionFactors: [tf] };
@@ -471,7 +442,6 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
               visible={open && currentRow == null}
               data={data}
               type={type}
-              checkedRows={checkedRows.filter(r => r.type === type)}
               currentRow={currentRow}
               scrollToId={scrollToId}
               searchTerms={searchTerms}
