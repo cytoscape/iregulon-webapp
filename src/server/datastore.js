@@ -12,10 +12,9 @@ import { parseMotifsAndTracks, annotateGenes } from './util.js';
 const MOTIFS_AND_TRACKS_COLLECTION = 'motifsAndTracks'; 
 
 // This collection contains state data that is associated with a document in the 
-// motifsAndTracks collection. It contains mutable state data like the name
-// of the document and UI state (like whats selected in the data table).
+// motifsAndTracks collection. It contains mutable UI state data
+// (like node positions and whats selected in the data table).
 const STATE_DATA_COLLECTION = 'stateData';
-const STATE_DATA_RESTORE_COLLECTION = "stateDataRestore";
 
 // const PERFORMANCE_COLLECTION = 'performance';
 
@@ -62,14 +61,6 @@ class Datastore {
   async createIndexes() {
     await this.db
       .collection(STATE_DATA_COLLECTION)
-      .createIndex({ motifsAndTracksID: 1 });
-    
-    await this.db
-      .collection(STATE_DATA_COLLECTION)
-      .createIndex({ motifsAndTracksID: 1 });
-
-    await this.db
-      .collection(STATE_DATA_RESTORE_COLLECTION)
       .createIndex({ motifsAndTracksID: 1 });
   }
 
@@ -193,9 +184,6 @@ class Datastore {
   //  * {
   //  *   _id: 'asdf',
   //  *   motifsAndTracksID: "abcdefg",
-  //  *   state: [
-  //  *     { name: "asdf", type: "MOTIF" },
-  //  *   ],
   //  *   positions: [
   //  *     {
   //  *        id: "asdf-asdf-asdf",
@@ -206,20 +194,14 @@ class Datastore {
   //  * }
   //  * Note: Deleted nodes are not part of the positions document.
   //  */
-  async setPositionsAndState(idStr, positions, selected) {
+  async setPositionsAndState(idStr, positions) {
     const id = makeID(idStr);
     const document = {
       motifsAndTracksID: id.bson,
-      positions,
-      selected
+      positions
     };
 
     console.log("Saving positions and state", document);
-
-    // Save the document twice, the one in POSITIONS_RESTORE_COLLECTION never changes
-    await this.db
-      .collection(STATE_DATA_RESTORE_COLLECTION)
-      .updateOne({ motifsAndTracksID: id.bson }, { $setOnInsert: document }, { upsert: true });
 
     await this.db
       .collection(STATE_DATA_COLLECTION)
@@ -234,13 +216,6 @@ class Datastore {
       .collection(STATE_DATA_COLLECTION)
       .findOne({ motifsAndTracksID: id.bson });
 
-    if(!result) {
-      console.log("Did not find positions, querying POSITIONS_RESTORE_COLLECTION");
-      result = await this.db
-        .collection(STATE_DATA_RESTORE_COLLECTION)
-        .findOne({ motifsAndTracksID: id.bson });
-    }
-    
     return result;  
   }
 

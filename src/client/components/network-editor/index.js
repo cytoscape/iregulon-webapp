@@ -52,30 +52,6 @@ function createCy(id) {
 }
 
 
-function getInitialResults(results) {
-  // For now, just update the network with the top results
-  // NOTE: there are no 'CLUSTER' results in the results object
-  const maxResults = Math.min(results.length, DEFAULT_NETWORK_TOTAL_SELECTION);
-
-  const filteredResults = [];
-  for(const ele of results) {
-    if(ele.transcriptionFactors.length > 0) {
-      filteredResults.push(ele);
-    } 
-    if(filteredResults.length >= maxResults) {
-      break;
-    }
-  }
-  return filteredResults;
-}
-
-function getSavedResults(results, selected) {
-  return results.filter(result => 
-    selected.some(({ type, name }) => type === result.type && name === result.name)
-  );
-}
-
-
 /**
  * @param { NetworkEditorController } controller
  */
@@ -106,23 +82,13 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   controller.initializeResults(networkJson);
 
   const positionsResult = await positionsAndStatePromise;
-
-  // Apply layout and select rows in the table
   if (positionsResult.status == 404) {
-    console.log('no positions and state found on server, initializing');
-    const filteredResults = getInitialResults(networkJson.results); 
-    controller.addToNetwork(filteredResults, networkJson.genes);
+    console.log('no positions found on server, running layout');
     await controller.applyLayout();
   } else {
-    console.log('got positions and state from server');
+    console.log('got positions from server');
     const positionsJson = await positionsResult.json();
-    const { positions, selected } = positionsJson;
-    console.log('selected', selected);
-    const allResults = controller.fetchResults();
-    console.log('allResults', allResults);
-    const filteredResults = getSavedResults(allResults, selected);
-    console.log('filteredResults', filteredResults);
-    controller.addToNetwork(filteredResults, networkJson.genes);
+    const { positions } = positionsJson;
     controller.applyPositions(positions);
   }
 

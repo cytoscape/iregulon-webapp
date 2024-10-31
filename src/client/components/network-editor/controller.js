@@ -475,19 +475,14 @@ export class NetworkEditorController {
         y:  node.position().y
       }));
 
-    const selected = this.getSelectedResults()
-      .map(r => ({
-        type: r.type,
-        name: r.name,
-      }));
-
+    // TODO how do we save the table/UI state?
 
     const res = await fetch(`/api/${this.networkIDStr}/positions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         positions,
-        selected
+        // TODO table state goes here
       })
     });
 

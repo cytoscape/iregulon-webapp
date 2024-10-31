@@ -129,14 +129,14 @@ http.get('/:id/positions', async function(req, res, next) {
 http.post('/:id/positions', async function(req, res, next) {
   try {
     const { id } = req.params;
-    const { positions, selected } = req.body;
+    const { positions } = req.body;
 
     if(!Array.isArray(positions)) {
       res.sendStatus(404);
       return;
     }
 
-    await Datastore.setPositionsAndState(id, positions, selected);
+    await Datastore.setPositionsAndState(id, positions);
 
     res.send('OK');
   } catch (err) {
