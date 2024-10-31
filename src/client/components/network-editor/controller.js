@@ -3,16 +3,11 @@ import Cytoscape from 'cytoscape'; // eslint-disable-line
 import _ from 'lodash';
 
 import { DEFAULT_PADDING } from '../defaults';
-import { rowId, rowTypeIdField } from '../util';
 import { monkeyPatchMathRandom, restoreMathRandom } from '../../rng';
 import { SearchController } from './search-contoller';
 import { ExportController } from './export-controller';
 import { UndoHandler } from './undo-stack';
 
-
-// Clusters that have this many nodes get optimized.
-// Note we are using number of nodes as a proxy for number of edges, assuming large clusters are mostly complete.
-const LARGE_CLUSTER_SIZE = 33; // approx 500 edges in a complete graph
 
 // Keys for scratch data
 export const Scratch = {
@@ -116,8 +111,17 @@ export class NetworkEditorController {
       genes.forEach(g => geneMap.set(g.name, g));
     }
 
-    /** Get an existing node by its name or create one and return it */
-    const getNode = (name, type, typeId, isQuery) => {
+    results.forEach(ele => {
+      const type = ele.type;
+      if(type === 'MOTIF') {
+        this.selectedResults.add(ele.name);
+      } else if(type === 'CLUSTER') {
+        this.selectedResults.add(ele.motifsAndTracks[0].name);
+      }
+    });
+
+    /** Get an existing node by its name or create one and return it. Either way, it also updates the `dataSources` attribute */
+    const getNode = (name, type, clusterCode, isQuery) => {
       let node = cy.getElementById(name);
       if (node.length === 0) {
         const gene = geneMap.get(name);
@@ -132,24 +136,23 @@ export class NetworkEditorController {
           regulatoryFunction: 'unknown',
           motifs: gene.motifs,
           tracks: gene.tracks,
-          source: []
+          dataSources: []
         };
         node = cy.add({ group: 'nodes', data })[0];
       } else {
         node = node[0];
       }
-      const sourceId = rowId(type, typeId);
-      const source = node.data('source');
-      if (!source.includes(sourceId)) {
-        source.push(sourceId);
+      const dataSources = node.data('dataSources');
+      if (!dataSources.includes(clusterCode)) {
+        dataSources.push(clusterCode);
       }
       return node;
     };
 
     results.forEach(ele => {
       const type = ele.type;
-      const typeId = ele[rowTypeIdField(type)];
       const clusterNumber = ele.clusterNumber;
+      const clusterCode = ele.clusterCode;
       const tfArr = ele.transcriptionFactors;
       const tgtArr = ele.candidateTargetGenes;
 
@@ -159,20 +162,29 @@ export class NetworkEditorController {
           if (g1.inNetwork) {
             // const g1 = tfArr[0];
             const name1 = g1.geneID.name;
-            const node1 = getNode(name1, type, typeId, false); // A TF must be added even if it's not a query gene
+            const node1 = getNode(name1, type, clusterCode, false); // A TF must be added even if it's not a query gene
             // Update the 'regulatoryFunction' data field
             node1.data('regulatoryFunction', 'regulator');
 
             tgtArr?.forEach((g2) => {
               const name2 = g2.geneID.name;
-              const node2 = getNode(name2, type, typeId, true); // Use only the query genes for target nodes
+              const node2 = getNode(name2, type, clusterCode, true); // Use only the query genes for target nodes
               if (node2) {
                 // Update the 'regulatoryFunction' data field, but only if it's not already set to 'regulator'
                 if (node2.data('regulatoryFunction') !== 'regulator') {
                   node2.data('regulatoryFunction', 'regulated');
                 }
-                // Add an edge between the TF and the target node
-                cy.add({ group: 'edges', data: { source: name1, target: name2, clusterNumber } });
+                // Add an edge between the TF and the target node (prevent duplicate edges by checking the clusterCode)
+                const edge = cy.elements(`edge[source="${name1}"][target="${name2}"][clusterCode="${clusterCode}"]`);
+                if (edge.length === 0) {
+                  const data = {
+                    source: name1,
+                    target: name2,
+                    clusterNumber,
+                    clusterCode,
+                  };
+                  cy.add({ group: 'edges', data });
+                }
               }
             });
           }
@@ -180,7 +192,7 @@ export class NetworkEditorController {
       }
     });
 
-    this.bus.emit('selectedResultsChanged', this.selectedMotifs);
+    this.bus.emit('selectedResultsChanged', this.selectedResults);
   }
 
   removeFromNetwork(results) {
@@ -189,9 +201,7 @@ export class NetworkEditorController {
     results.forEach(r => this.selectedResults.delete(r));
 
     results.forEach(ele => {
-      const type = ele.type;
-      const typeId = ele[rowTypeIdField(type)];
-      const clusterId = rowId(type, typeId);
+      const clusterCode = ele.clusterCode;
       const genesArr = [...ele.transcriptionFactors, ...ele.candidateTargetGenes];
 
       genesArr.forEach((g) => {
@@ -199,17 +209,19 @@ export class NetworkEditorController {
         let node = cy.getElementById(name);
         if (node.length > 0) {
           node = node[0];
-          const clusters = node.data('source');
-          // Remove this cluster from the node's cluster list
-          const idx = clusters.indexOf(clusterId);
+          const dataSources = node.data('dataSources');
+          // Remove this cluster from the node's data-source list
+          const idx = dataSources.indexOf(clusterCode);
           if (idx >= 0) {
-            clusters.splice(idx, 1);
+            dataSources.splice(idx, 1);
           }
-          if (clusters.length === 0) {
+          if (dataSources.length === 0) {
             cy.remove(node);
           }
         }
       });
+      // Finally remove all isolated nodes
+      // cy.nodes('[[degree = 0]]').remove();
     });
   }
 

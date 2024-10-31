@@ -102,9 +102,7 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   const updateRecentNetwork = _.debounce(() => recentNetworksController.updateRecentNetwork(cy), 1000);
   
   cy.on('position remove', 'node', updateRecentNetwork);
-  // same debounced function "updateServerState" used for both events, makes sure it doesn't get called twice
   cy.on('position remove', 'node', updateServerState);
-  controller.bus.on('selectedResultsChanged', updateServerState); 
 
   // Selecting an edge should select its nodes, but the edge itself must never be selected
   // (this makes it easier to keep the data table selection consistent)
