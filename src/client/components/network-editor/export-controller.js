@@ -70,7 +70,8 @@ export class ExportController {
     // // zip.file(Path.README,        readme);
 
     for(const { path, blob } of motifBlobs) {
-      zip.file(path, blob);
+      const fileName = path.split('/').pop();
+      zip.file('logos/'+fileName, blob);
     }
 
     const fileName = this._getZipFileName('iregulon');
@@ -95,11 +96,11 @@ export class ExportController {
     return Promise.all(
       names
       .map(logoPath)
-      .map(path => 
-        fetch(path)
-        .then(r => r.blob())
-        .then(blob => ({ path, blob }))
-      )
+      .map(path => {
+        return fetch(path)
+          .then(r => r.blob())
+          .then(blob => ({ path, blob }));
+      })
     );
   }
 
