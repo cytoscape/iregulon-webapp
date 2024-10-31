@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
-import { useTheme } from '@mui/material/styles';
-
 import makeStyles from '@mui/styles/makeStyles';
 
 import { Box, Paper, Typography, Link } from '@mui/material';
@@ -117,11 +115,9 @@ export function QueryPanel({ initialOrganism, isMobile, onOrganismChanged, onGen
   const [ organism, setOrganism ] = useState(organisms.indexOf(initialOrganism));
 
   const classes = useQueryPanelStyles();
-  const theme = useTheme();
   
   const handleOrganismChange = (event) => {
     const idx = event.target.value;
-    console.log(idx);
     setOrganism(idx);
     onOrganismChanged(organisms[idx]);
   };

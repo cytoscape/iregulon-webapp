@@ -12,6 +12,7 @@ import makeStyles from '@mui/styles/makeStyles';
 
 import { Table, TableHead, TableBody, TableCell, TableRow, TableSortLabel } from '@mui/material';
 import { Box, Grid, Paper, Typography, Tooltip } from '@mui/material';
+import { FormControl, InputLabel, Select, Menu, MenuItem } from '@mui/material';
 import { Checkbox } from '@mui/material';
 
 
@@ -95,6 +96,7 @@ const useDataDetailsPanelStyles = makeStyles((theme) => ({
 export function DataDetailsPanel({
   visible,
   data, // Track, Motif or TF
+  selectedMotifOrTrack, // Only used for CLUSTER data
   controller,
   isMobile,
   onTFCheckChange,
@@ -119,14 +121,11 @@ export function DataDetailsPanel({
 
   if (type === 'MOTIF') {
     logoImgPath = logoPath(data.nameWithCollection);
-  } else if (type === 'CLUSTER') {
-    // TODO: temporary solution!
-    // Show the name and description of the first motif/track in the cluster, which is the one with the highest NES.
-    if (data.motifsAndTracks.length > 0) {
-      description = data.motifsAndTracks[0].name + ' -- ' + data.motifsAndTracks[0].description;
-      if (data.motifsAndTracks[0].type === 'MOTIF') {
-        logoImgPath = logoPath(data.motifsAndTracks[0].name);
-      }
+  } else if (type === 'CLUSTER' && selectedMotifOrTrack) {
+    // Show the name and description of the selected motif/track in the cluster
+    description = selectedMotifOrTrack.name + ' -- ' + selectedMotifOrTrack.description;
+    if (selectedMotifOrTrack.type === 'MOTIF') {
+      logoImgPath = logoPath(selectedMotifOrTrack.name);
     }
   }
 
@@ -138,7 +137,7 @@ export function DataDetailsPanel({
     <Paper className={classes.root} sx={{display: visible ? 'block' : 'none'}}>
       <Grid container direction="row" spacing={1} sx={{height: '100%'}}>
         <Grid item xs={type === 'MOTIF' ? 3 : 4} sx={{height: '100%'}}>
-          <Box variant="outlined" sx={{height: '100%', border: 'none'}}>
+          <Box sx={{height: '100%', border: 'none'}}>
             <Paper
               variant="outlined"
               sx={{p: theme.spacing(0.25, 1, 0.25, 1), overflowY: 'auto', maxHeight: 100, borderRadius: 2}}
@@ -176,6 +175,7 @@ export function DataDetailsPanel({
 DataDetailsPanel.propTypes = {
   visible: PropTypes.bool.isRequired,
   data: PropTypes.object.isRequired,
+  selectedMotifOrTrack: PropTypes.object,
   controller: PropTypes.instanceOf(NetworkEditorController).isRequired,
   isMobile: PropTypes.bool,
   onTFCheckChange: PropTypes.func,
@@ -295,21 +295,6 @@ function GeneTable({ columns, data, isMobile, onRowCheckChange }) {
         </TableBody>
       </Table>
     </Paper>
-    // <Paper variant="outlined" className={classes.infoBox} sx={{height: '100%'}}>
-    //   <List
-    //     dense
-    //     subheader={<ListSubheader className={classes.subheader}>Targets &#40;{data.candidateTargetGenes.length}&#41;</ListSubheader>}
-    //   >
-    //   {data.map(({ row }, idx) => (
-    //     <ListItem key={`target-${idx}`} className={classes.listItem}>
-    //       <ListItemIcon className={classes.listItemIcon}>
-    //         <LabelImportantIcon className={classes.listItemIconIcon} />
-    //       </ListItemIcon>
-    //       <ListItemText className={classes.listItemText} primary={geneID.name} secondary={rank} />
-    //     </ListItem>
-    //   ))}
-    //   </List>
-    // </Paper>
   );
 }
 GeneTable.propTypes = {

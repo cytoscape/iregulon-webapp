@@ -14,9 +14,10 @@ import { motifName, motifTrackLinkOut, rowId, rowTypeIdField } from '../util';
 import makeStyles from '@mui/styles/makeStyles';
 
 import Collapse from '@mui/material/Collapse';
-import { AppBar, Toolbar, Divider } from '@mui/material';
+import { AppBar, Toolbar, Divider, Grid } from '@mui/material';
 import { Drawer, Tooltip, Typography } from '@mui/material';
 import { IconButton, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 import ExpandIcon from '@mui/icons-material/ExpandLess';
 import CollapseIcon from '@mui/icons-material/ExpandMore';
@@ -74,18 +75,6 @@ function toTableData(results, type, sortFn) {
     data.push(row);
   }
   return sortFn ? sortFn(data) : data;
-}
-
-function rowsInNetwork(data) {
-  const rows = [];
-  data.forEach(r => {
-    r.transcriptionFactors && r.transcriptionFactors.forEach(tf => {
-      if (tf.inNetwork) {
-        rows.push(r);
-      }
-    });
-  });
-  return rows;
 }
 
 //==[ BottomDrawer ]==================================================================================================
@@ -185,6 +174,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const [ searchTerms, setSearchTerms ] = useState();
   const [ currentRow, setCurrentRow ] = useState();
   const [ scrollToId, setScrollToId ] = useState();
+  const [ selectedMotifOrTrack, setSelectedMotifOrTrack ] = useState();
   const [ _, forceUpdate ] = useState(0); // Dummy state to force update
 
   const classes = useBottomDrawerStyles();
@@ -325,9 +315,14 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   };
   const onRowClick = (row) => {
     setCurrentRow(row);
+    setSelectedMotifOrTrack(row?.motifsAndTracks?.[0]);
   };
   const onDataSort = (sortFn) => {
     sortFnRef.current = sortFn; // Save the current sort function for later use
+  };
+
+  const onMotifAndTrackSelectChange = (motifOrTrack) => {
+    setSelectedMotifOrTrack(motifOrTrack);
   };
 
   const onTFCheckChange = async (tfInfo, checked, rowId) => {
@@ -386,7 +381,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
               <ToolbarButton
                 title="Back"
                 icon={<ArrowBackIcon fontSize="medium" />}
-                onClick={() => setCurrentRow(null)}
+                onClick={() => { setCurrentRow(null); setSelectedMotifOrTrack(null); }}
               />
             :
               <SearchBar
@@ -408,6 +403,9 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
             </Typography>
           )}
             <ToolbarDivider unrelated />
+          {open && currentRow && type === 'CLUSTER' && (
+            <MotifAndTrackSelect motifsAndTracks={currentRow.motifsAndTracks} onChange={onMotifAndTrackSelectChange} />
+          )}
             <div className={classes.grow} />
           {open && !currentRow && (
             <ToggleButtonGroup
@@ -454,6 +452,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
             <DataDetailsPanel
               visible={open && currentRow != null}
               data={currentRow || {}}
+              selectedMotifOrTrack={selectedMotifOrTrack}
               controller={controller}
               isMobile={isMobile}
               onTFCheckChange={onTFCheckChange}
@@ -471,6 +470,48 @@ BottomDrawer.propTypes = {
   isTablet: PropTypes.bool.isRequired,
   leftDrawerOpen: PropTypes.bool.isRequired,
   onToggle: PropTypes.func.isRequired,
+};
+
+//==[ MotifAndTrackSelect ]===========================================================================================
+
+function MotifAndTrackSelect({ motifsAndTracks, onChange }) {
+  const [value, setValue] = useState(0);
+
+  const handleChange = (event) => {
+    const idx = event.target.value;
+    setValue(idx);
+    const obj = motifsAndTracks[idx];
+    onChange?.(obj);
+  };
+
+  return (
+    <FormControl variant="filled" size="small">
+      <Select
+        variant="outlined"
+        value={value}
+        onChange={handleChange}
+        autoWidth
+        sx={{ pr: 2, backgroundColor: (theme) => theme.palette.background.paper, fontSize: '0.75rem' }}
+      >
+      {motifsAndTracks.map(({ rank, name }, idx) => (
+        <MenuItem key={rank} value={idx} sx={{ pr: 7 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={2} sx={{ color: (theme) => theme.palette.text.disabled, textAlign: 'right' }}>
+              { rank }
+            </Grid>
+            <Grid item xs={10}>
+              { name }
+            </Grid>
+          </Grid>
+        </MenuItem>
+      ))}
+      </Select>
+    </FormControl>
+  );
+}
+MotifAndTrackSelect.propTypes = {
+  motifsAndTracks: PropTypes.array.isRequired,
+  onChange: PropTypes.func,
 };
 
 //==[ ToolbarButton ]=================================================================================================
@@ -524,19 +565,5 @@ function ToolbarDivider({ unrelated }) {
 ToolbarDivider.propTypes = {
   unrelated: PropTypes.bool
 };
-
-//==[ SelectionNavigator ]============================================================================================
-
-const useSelectionNavigatorStyles = makeStyles(() => ({
-  root: {
-    maxWidth: 24,
-  },
-  button: {
-    minWidth: 24,
-    maxWidth: 24,
-    minHeight: 24,
-    maxHeight: 24,
-  },
-}));
 
 export default BottomDrawer;
