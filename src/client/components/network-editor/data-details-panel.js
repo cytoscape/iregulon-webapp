@@ -1,10 +1,10 @@
-import React, { forwardRef, useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
 import { dataTableHeight } from '../defaults';
+import { logoPath, getComparator, stableSort } from '../util';
 import { NetworkEditorController } from './controller';
-import { logoPath } from '../util';
 
 import { useTheme } from '@mui/material/styles';
 
@@ -12,8 +12,9 @@ import makeStyles from '@mui/styles/makeStyles';
 
 import { Table, TableHead, TableBody, TableCell, TableRow, TableSortLabel } from '@mui/material';
 import { Box, Grid, Paper, Typography, Tooltip } from '@mui/material';
-import { FormControl, InputLabel, Select, Menu, MenuItem } from '@mui/material';
-import { Checkbox } from '@mui/material';
+import { Checkbox, IconButton } from '@mui/material';
+
+import IndeterminateCheckBoxOutlinedIcon from '@mui/icons-material/IndeterminateCheckBoxOutlined';
 
 
 const TARGET_COLUMNS = [
@@ -160,7 +161,7 @@ export function DataDetailsPanel({
         </Grid>
       {targetRows && targetRows.length > 0 && (
         <Grid item xs={type === 'MOTIF' ? 3 : 4} sx={{height: '100%'}}>
-          <GeneTable columns={targetColumns} data={targetRows} isMobile={isMobile} />
+          <GeneTable columns={targetColumns} data={targetRows} defOrderBy="rank" defOrder="asc" isMobile={isMobile} />
         </Grid>
       )}
       {tfRows && tfRows.length > 0 && (
@@ -219,8 +220,15 @@ const useGeneTableStyles = makeStyles((theme) => ({
     cursor: 'pointer',
   },
   rankCell: {
+    borderLeft: 'none',
     minWidth: 48,
     maxWidth: 68,
+  },
+  inNetworkCell: {
+    borderLeft: 'none',
+    paddingLeft: '1px !important',
+    paddingRight: '1px !important',
+    textAlign: 'center',
   },
   nameCell: {
     width: '95%',
@@ -234,9 +242,29 @@ const useGeneTableStyles = makeStyles((theme) => ({
   },
 }));
 
-function GeneTable({ columns, data, isMobile, onRowCheckChange }) {
+function GeneTable({ columns, data, defOrderBy, defOrder, isMobile, onRowCheckChange }) {
+  const [orderBy, setOrderBy] = useState(defOrderBy);
+  const [order, setOrder] = useState(defOrder);
+
   const classes = useGeneTableStyles();
 
+  const sortedDataRef = useRef();
+  sortedDataRef.current = stableSort(data, getComparator(order, orderBy));
+
+  // Sorting
+  useEffect(() => {
+    if (defOrderBy && defOrder) {
+      const comparator = getComparator(order, orderBy);
+      const sortedData = stableSort(data, comparator);
+      sortedDataRef.current = sortedData;
+    }
+  }, [order, orderBy]);
+
+  const handleRequestSort = (event, property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
   const isRowChecked = (row) => {
     return Boolean(row['inNetwork']);
   };
@@ -245,32 +273,77 @@ function GeneTable({ columns, data, isMobile, onRowCheckChange }) {
     onRowCheckChange?.(row, !checked);
   };
 
+  const handleUncheckAllClick = (evt) => {
+    if (sortedDataRef.current) {
+      sortedDataRef.current.forEach(row => {
+        isRowChecked(row) && handleRowCheck(row);
+      });
+    }
+    evt.stopPropagation();
+  };
+
+  const columnTooltip = (col) => {
+    if (col.id === 'inNetwork') {
+      return noneChecked ?
+        `Select one or more TFs to add their associated genes to the network` :
+        `Select none (remove all TF genes from network)`;
+    } else {
+      return typeof col.tooltip === 'function' ? col.tooltip() : col.tooltip;
+    }
+  };
+
+  const totalRows = data.length;
+  const totalCheckedRows = data.filter(row => isRowChecked(row)).length;
+  const noneChecked = totalCheckedRows === 0;
+
   return (
     <Paper variant="outlined" className={classes.paper} sx={{height: '100%'}}>
-      <Table size="small">
+      <Table size="small" stickyHeader>
         <TableHead>
           <TableRow className={classes.headerRow}>
           {columns.map((col, idx) => (
-            <Tooltip key={col.id} title={col.tooltip || ''}>
-              <TableCell
-                align="left"
-                // sortDirection={orderBy === col.id ? order : false}
-                className={clsx(classes[col.id + 'Cell'], { [classes.tableCell]: true, [classes.tableHeaderCell]: true })}
+            <TableCell
+              key={col.id}
+              align="left"
+              sortDirection={orderBy === col.id ? order : false}
+              className={clsx(classes[col.id + 'Cell'], { [classes.tableCell]: true, [classes.tableHeaderCell]: true })}
+            >
+              <Tooltip
+                title={columnTooltip(col)}
+                placement="top-start"
+                arrow
               >
+              {col.id === 'inNetwork' ?
+                <span>
+                  <IconButton
+                    disabled={data.length === 0 || noneChecked}
+                    sx={{color: (theme) => theme.palette.text.primary}}
+                    onClick={handleUncheckAllClick}
+                  >
+                    <IndeterminateCheckBoxOutlinedIcon />
+                  </IconButton>
+                </span>
+              :
                 <TableSortLabel 
-                  // active={orderBy === col.id}
-                  // direction={orderBy === col.id ? order : 'asc'}
-                  // onClick={(event) => handleRequestSort(event, col.id)}
+                  active={orderBy === col.id}
+                  direction={orderBy === col.id ? order : 'asc'}
+                  onClick={(event) => handleRequestSort(event, col.id)}
                 >
                   { typeof col.label === 'function' ? col.label() : col.label }
+                {col.id === 'name' && data && (
+                  <Typography component="span" variant="body2" sx={{ color: (theme) => theme.palette.text.disabled }}>
+                    &nbsp;&nbsp;&#40;{ totalRows }&#41;
+                  </Typography>
+                )}
                 </TableSortLabel>
-              </TableCell>
-            </Tooltip>
+              }
+              </Tooltip>
+            </TableCell>
           ))}
           </TableRow>
         </TableHead>
         <TableBody>
-        {data?.map((row, rowIdx) => (
+        {sortedDataRef.current?.map((row, rowIdx) => (
           <TableRow key={`row-${rowIdx}`} className={classes.tableRow}>
           {columns.map((col, idx) => 
             <TableCell
@@ -281,7 +354,6 @@ function GeneTable({ columns, data, isMobile, onRowCheckChange }) {
             {col.id === 'inNetwork' ?
               <Checkbox
                 sx={{ width: 24, height: 24 }}
-                // disabled={row['transcriptionFactors'].length === 0}
                 checked={isRowChecked(row)}
                 onClick={() => handleRowCheck(row)}
               />
@@ -300,6 +372,8 @@ function GeneTable({ columns, data, isMobile, onRowCheckChange }) {
 GeneTable.propTypes = {
   columns: PropTypes.array.isRequired,
   data: PropTypes.array.isRequired,
+  defOrderBy: PropTypes.string,
+  defOrder: PropTypes.string,
   isMobile: PropTypes.bool,
   onRowCheckChange: PropTypes.func,
 };

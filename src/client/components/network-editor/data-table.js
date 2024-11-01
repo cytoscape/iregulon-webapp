@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
 import { dataTableHeight } from '../defaults';
+import { getComparator, stableSort } from '../util';
 import { NetworkEditorController } from './controller';
 
 import { useTheme } from '@mui/material/styles';
@@ -170,7 +171,7 @@ const COLUMNS = [
     label: 'Rank',
     tooltip: (type) => `The ${type.toLowerCase()} is ranked using the Normalized Enrichment Score (NES)`,
     show: (type) => type !== 'CLUSTER',
-    render: (row, col, classes) => {
+    render: (row, col) => {
       return (
         <>{ row[col.id] }</>
       );
@@ -295,60 +296,8 @@ TableComponents.TableBody.displayName = "TableBody"; // for linting rule (debugg
 
 const linkoutProps = { target: "_blank",  rel: "noreferrer", underline: "hover" };
 
-const DEF_ORDER = 'asc';
 const DEF_ORDER_BY = 'rank';
-
-export const comparator = (a, b, orderBy) => {
-  const aVal = a[orderBy], bVal = b[orderBy];
-
-  // null values come last in ascending!
-  if (aVal == null) {
-    return 1;
-  }
-  if (bVal == null) {
-    return -1;
-  }
-  if (typeof aVal === 'string' && typeof bVal === 'string') {
-    if (orderBy === 'name') {
-      const v1 = a['db'] + '__' + aVal;
-      const v2 = b['db'] + '__' + bVal;
-      return v1.localeCompare(v2, undefined, { sensitivity: 'accent' });
-    }
-    return aVal.localeCompare(bVal, undefined, { sensitivity: 'accent' });
-  }
-  if (typeof aVal === 'boolean' && typeof bVal === 'boolean') {
-    if (aVal && !bVal) {
-      return -1;
-    }
-    if (!aVal && bVal) {
-      return 1;
-    }
-    return 0;
-  }
-  if (aVal < bVal) {
-    return -1;
-  }
-  if (aVal > bVal) {
-    return 1;
-  }
-  return 0;
-};
-
-export const getComparator = (order, orderBy) => {
-  return order === 'asc'
-    ? (a, b) => comparator(a, b, orderBy)
-    : (a, b) => comparator(b, a, orderBy);
-};
-
-const stableSort = (rows, comparator) => {
-  const stabilizedThis = rows.map((el, index) => [el, index]);
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
-  return stabilizedThis.map((el) => el[0]);
-};
+const DEF_ORDER = 'asc';
 
 export const DEF_SORT_FN = (rows) => stableSort(rows, getComparator(DEF_ORDER, DEF_ORDER_BY));
 
@@ -372,7 +321,6 @@ const ContentRow = ({ row, index, controller, isMobile, onCheck, onClick }) => {
         <TableCell
           key={col.id + '_' + index + '_' + idx}
           align={col.numeric ? 'right' : 'left'}
-          // selected={selected}
           className={clsx(classes[col.id + 'Cell'], { [classes.tableCell]: true, /*[classes.selectedCell]: selected*/ })}
           onClick={() => col.id !== 'inNetwork' && onClick?.(row)}
         >
@@ -416,8 +364,8 @@ export function DataTable({
   onRowClick,
   onDataSort,
 }) {
-  const [order, setOrder] = useState(DEF_ORDER);
   const [orderBy, setOrderBy] = useState(DEF_ORDER_BY);
+  const [order, setOrder] = useState(DEF_ORDER);
 
   const classes = useStyles();
   const theme = useTheme();
@@ -554,42 +502,50 @@ export function DataTable({
         <TableRow className={classes.headerRow}>
         {COLUMNS.map((col) => (
           (!isMobile || !col.hideOnMobile) && col.show(type) && (
-            <Tooltip
-              key={col.id}
-              title={columnTooltip(col)}
-            >
               <TableCell
+                key={col.id}
                 align="left"
                 sortDirection={orderBy === col.id ? order : false}
                 className={clsx(classes[col.id + 'Cell'], { [classes.tableCell]: true, [classes.tableHeaderCell]: true })}
               >
-              {col.id === 'inNetwork' ?
-                <IconButton
-                  disabled={data.length === 0 || noneChecked}
-                  sx={{color: theme.palette.text.primary}}
-                  onClick={handleUncheckAllClick}
+                <Tooltip
+                  title={columnTooltip(col)}
+                  placement="top-start"
+                  arrow
                 >
-                  <IndeterminateCheckBoxOutlinedIcon className={classes.selectAllIcon} />
-                </IconButton>
-              :
-                <TableSortLabel 
-                  active={orderBy === col.id}
-                  direction={orderBy === col.id ? order : 'asc'}
-                  onClick={(event) => handleRequestSort(event, col.id)}
-                >
-                  { typeof col.label === 'function' ? col.label(type) : col.label }
-                {col.id === 'name' && data && (
-                  <Typography component="span" variant="body2" color="textSecondary">
-                    &nbsp;&#40;{totalCheckedRows > 0 ? 
-                      (allChecked ? 'all' : totalCheckedRows) + ' selected of '
-                      :
-                    ''}{ data.length }&#41;
-                  </Typography>
-                )}
-                </TableSortLabel>
-              }
+                {col.id === 'inNetwork' ?
+                  <span>
+                    <IconButton
+                      disabled={data.length === 0 || noneChecked}
+                      sx={{color: theme.palette.text.primary}}
+                      onClick={handleUncheckAllClick}
+                    >
+                      <IndeterminateCheckBoxOutlinedIcon />
+                    </IconButton>
+                  </span>
+                :
+                  <TableSortLabel 
+                    active={orderBy === col.id}
+                    direction={orderBy === col.id ? order : 'asc'}
+                    onClick={(event) => handleRequestSort(event, col.id)}
+                  >
+                    { typeof col.label === 'function' ? col.label(type) : col.label }
+                  {col.id === 'name' && data && (
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      sx={{ color: (theme) => theme.palette.text.disabled }}
+                    >
+                      &nbsp;&nbsp;&#40;{totalCheckedRows > 0 ? 
+                        (allChecked ? 'all' : totalCheckedRows) + ' selected of '
+                        :
+                      ''}{ totalRows }&#41;
+                    </Typography>
+                  )}
+                  </TableSortLabel>
+                }
+                </Tooltip>
               </TableCell>
-            </Tooltip>
           )
         ))}
         </TableRow>

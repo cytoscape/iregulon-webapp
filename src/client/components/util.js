@@ -296,3 +296,56 @@ export function openPageLink(href, target) {
     window.location.href = href;
   }
 }
+
+
+export function stableSort(rows, comparator) {
+  const stabilizedThis = rows.map((el, index) => [el, index]);
+  stabilizedThis.sort((a, b) => {
+    const order = comparator(a[0], b[0]);
+    if (order !== 0) return order;
+    return a[1] - b[1];
+  });
+  return stabilizedThis.map((el) => el[0]);
+}
+
+export function comparator(a, b, orderBy) {
+  const aVal = a[orderBy], bVal = b[orderBy];
+
+  // null values come last in ascending!
+  if (aVal == null) {
+    return 1;
+  }
+  if (bVal == null) {
+    return -1;
+  }
+  if (typeof aVal === 'string' && typeof bVal === 'string') {
+    if (orderBy === 'name') {
+      const v1 = a['db'] + '__' + aVal;
+      const v2 = b['db'] + '__' + bVal;
+      return v1.localeCompare(v2, undefined, { sensitivity: 'accent' });
+    }
+    return aVal.localeCompare(bVal, undefined, { sensitivity: 'accent' });
+  }
+  if (typeof aVal === 'boolean' && typeof bVal === 'boolean') {
+    if (aVal && !bVal) {
+      return -1;
+    }
+    if (!aVal && bVal) {
+      return 1;
+    }
+    return 0;
+  }
+  if (aVal < bVal) {
+    return -1;
+  }
+  if (aVal > bVal) {
+    return 1;
+  }
+  return 0;
+}
+
+export function getComparator(order, orderBy) {
+  return order === 'asc'
+    ? (a, b) => comparator(a, b, orderBy)
+    : (a, b) => comparator(b, a, orderBy);
+}

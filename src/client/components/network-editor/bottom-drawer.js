@@ -494,12 +494,12 @@ function MotifAndTrackSelect({ motifsAndTracks, onChange }) {
         sx={{ pr: 2, backgroundColor: (theme) => theme.palette.background.paper, fontSize: '0.75rem' }}
       >
       {motifsAndTracks.map(({ rank, name }, idx) => (
-        <MenuItem key={rank} value={idx} sx={{ pr: 7 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={2} sx={{ color: (theme) => theme.palette.text.disabled, textAlign: 'right' }}>
+        <MenuItem key={rank} value={idx}>
+          <Grid container spacing={2} sx={{ mr: 1 }}>
+            <Grid item sx={{ color: (theme) => theme.palette.text.disabled, textAlign: 'right' }}>
               { rank }
             </Grid>
-            <Grid item xs={10}>
+            <Grid item>
               { name }
             </Grid>
           </Grid>
