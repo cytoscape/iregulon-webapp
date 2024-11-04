@@ -15,23 +15,39 @@ import { Box, Grid, Paper, Typography, Tooltip } from '@mui/material';
 import { Checkbox, IconButton } from '@mui/material';
 
 import IndeterminateCheckBoxOutlinedIcon from '@mui/icons-material/IndeterminateCheckBoxOutlined';
+import NotIncludedIcon from '@mui/icons-material/NotInterested';
+import IncludedIcon from '@mui/icons-material/Check';
 
 
 const TARGET_COLUMNS = [
   { 
     id: 'rank',
     numeric: true,
+    sortable: true,
     hideOnMobile: false,
     label: 'Rank',
+    show: () => true,
     render: (row, col) => row[col.id],
   },
   { 
     id: 'name',
     numeric: false,
+    sortable: true,
     hideOnMobile: false,
     label: 'Target',
     tooltip: "Predicted Target",
+    show: () => true,
     render: (row, col) => row[col.id],
+  },
+  {
+    id: 'included', // Special column for icons
+    sortable: false,
+    numeric: false,
+    hideOnMobile: true,
+    label: <>&nbsp;</>,
+    tooltip: (type) => `Whether the selected ${type.toLowerCase()} is annotated for this target`,
+    show: (type) => type === 'CLUSTER',
+    render: () => <></>,
   },
 ];
 
@@ -39,36 +55,51 @@ const TF_COLUMNS = [
   {
     id: 'inNetwork', // Special column for checkboxes
     numeric: false,
+    sortable: false,
     hideOnMobile: false,
     label: '',
     show: () => true,
-    render: () => <></>,
   },
   { 
     id: 'name',
     numeric: false,
+    sortable: true,
     hideOnMobile: false,
     label: 'TF',
     tooltip: "Predicted Transcription Factor",
+    show: () => true,
     render: (row, col) => row[col.id],
   },
   { 
-    id: 'minOrthologousId',
-    type: 'MOTIF',
+    id: 'minOrthologousIdentity',
     numeric: true,
+    sortable: true,
     hideOnMobile: false,
-    label: 'Orthologous ID',
-    tooltip: "Minimum Identity between orthologous genes",
-    render: (row, col) => row[col.id],
+    label: 'Orthologous Identity',
+    tooltip: "Minimum identity between orthologous genes",
+    show: (type, subtype) => type === 'MOTIF' || subtype === 'MOTIF',
+    render: (row, col) => typeof row[col.id] === 'number' ? `${Math.round(row[col.id] * 100)}%` : 'N/A',
   },
   { 
     id: 'maxFDR',
-    type: 'MOTIF',
     numeric: true,
+    sortable: true,
     hideOnMobile: false,
     label: 'Motif Similarity (FDR)',
-    tooltip: "Maximum False Discovery Rate on motif similarity",
-    render: (row, col) => row[col.id],
+    tooltip: "Maximum False Discovery Rate (FDR) on motif similarity",
+    show: (type, subtype) => type === 'MOTIF' || subtype === 'MOTIF',
+    render: (row, col) => typeof row[col.id] === 'number' ? row[col.id].toExponential(3) : 'Direct',
+  },
+  {
+    id: 'included', // Special column for icons
+    type: 'CLUSTER',
+    numeric: false,
+    sortable: false,
+    hideOnMobile: true,
+    label: <>&nbsp;</>,
+    tooltip: (type) => `Whether the selected ${type.toLowerCase()} is annotated for this TF`,
+    show: (type) => type === 'CLUSTER',
+    render: () => <></>,
   },
 ];
 
@@ -107,15 +138,23 @@ export function DataDetailsPanel({
   console.log('data (DataDetailsPanel):', data);
   
   const targetRows = data.candidateTargetGenes?.map(({ geneID, rank }) => {
-    return { rank, name: geneID.name };
+    return {
+      rank,
+      name: geneID.name
+    };
   });
   const tfRows = data.transcriptionFactors?.map(({ geneID, maxMotifSimilarityFDR, minOrthologousIdentity, inNetwork }) => {
-    return { name: geneID.name, maxFDR: maxMotifSimilarityFDR, minOrthologousId: minOrthologousIdentity, inNetwork };
+    return {
+      name: geneID.name,
+      maxFDR: maxMotifSimilarityFDR,
+      minOrthologousIdentity, inNetwork
+    };
   });
 
   const type = data.type;
-  const targetColumns = TARGET_COLUMNS.filter(col => (!col.hideOnMobile || !isMobile) && (!col.type || col.type === type));
-  const tfColumns = TF_COLUMNS.filter(col => (!col.hideOnMobile || !isMobile) && (!col.type || col.type === type));
+  const subtype = selectedMotifOrTrack?.type || type;
+  const targetColumns = TARGET_COLUMNS.filter(col => (!col.hideOnMobile || !isMobile) && col.show(type, subtype));
+  const tfColumns = TF_COLUMNS.filter(col => (!col.hideOnMobile || !isMobile) && col.show(type, subtype));
 
   let description = data.description;
   let logoImgPath;
@@ -133,7 +172,7 @@ export function DataDetailsPanel({
   const handleRowCheck = (row, checked) => {
     onTFCheckChange?.(row, checked, data.id);
   };
-  
+
   return (
     <Paper className={classes.root} sx={{display: visible ? 'block' : 'none'}}>
       <Grid container direction="row" spacing={1} sx={{height: '100%'}}>
@@ -161,12 +200,27 @@ export function DataDetailsPanel({
         </Grid>
       {targetRows && targetRows.length > 0 && (
         <Grid item xs={type === 'MOTIF' ? 3 : 4} sx={{height: '100%'}}>
-          <GeneTable columns={targetColumns} data={targetRows} defOrderBy="rank" defOrder="asc" isMobile={isMobile} />
+          <GeneTable
+            type={subtype}
+            columns={targetColumns}
+            data={targetRows}
+            defOrderBy="rank"
+            defOrder="asc"
+            motifOrTrackGenes={selectedMotifOrTrack?.candidateTargetGenes}
+            isMobile={isMobile}
+          />
         </Grid>
       )}
       {tfRows && tfRows.length > 0 && (
         <Grid item xs={type === 'MOTIF' ? 6 : 4} sx={{height: '100%'}}>
-          <GeneTable columns={tfColumns} data={tfRows} isMobile={isMobile} onRowCheckChange={handleRowCheck} />
+          <GeneTable
+            type={subtype}
+            columns={tfColumns}
+            data={tfRows}
+            motifOrTrackGenes={selectedMotifOrTrack?.transcriptionFactors}
+            isMobile={isMobile}
+            onRowCheckChange={handleRowCheck}
+          />
         </Grid>
       )}
       </Grid>
@@ -217,12 +271,6 @@ const useGeneTableStyles = makeStyles((theme) => ({
     paddingLeft: `${theme.spacing(0.5)} !important`,
     paddingRight: theme.spacing(0.5),
     borderBottom: `1px solid ${theme.palette.table.divider}`,
-    cursor: 'pointer',
-  },
-  rankCell: {
-    borderLeft: 'none',
-    minWidth: 48,
-    maxWidth: 68,
   },
   inNetworkCell: {
     borderLeft: 'none',
@@ -230,19 +278,29 @@ const useGeneTableStyles = makeStyles((theme) => ({
     paddingRight: '1px !important',
     textAlign: 'center',
   },
+  rankCell: {
+    borderLeft: 'none',
+    minWidth: 48,
+    maxWidth: 68,
+  },
   nameCell: {
     width: '95%',
     maxWidth: 0,
   },
-  minOrthologousIdCell: {
-    width: '35%',
+  minOrthologousIdentityCell: {
+    width: '55%',
   },
   maxFDRCell: {
     width: '35%',
   },
+  includedCell: {
+    minWidth: 24,
+    maxWidth: 24,
+    textAlign: 'center',
+  },
 }));
 
-function GeneTable({ columns, data, defOrderBy, defOrder, isMobile, onRowCheckChange }) {
+function GeneTable({ type, columns, data, defOrderBy, defOrder, motifOrTrackGenes, isMobile, onRowCheckChange }) {
   const [orderBy, setOrderBy] = useState(defOrderBy);
   const [order, setOrder] = useState(defOrder);
 
@@ -288,56 +346,109 @@ function GeneTable({ columns, data, defOrderBy, defOrder, isMobile, onRowCheckCh
         `Select one or more TFs to add their associated genes to the network` :
         `Select none (remove all TF genes from network)`;
     } else {
-      return typeof col.tooltip === 'function' ? col.tooltip() : col.tooltip;
+      return typeof col.tooltip === 'function' ? col.tooltip(type) : col.tooltip;
     }
   };
+
+  const isInSelectedMotifOrTrack = (geneName) => motifOrTrackGenes?.some(g => g.geneID.name === geneName);
 
   const totalRows = data.length;
   const totalCheckedRows = data.filter(row => isRowChecked(row)).length;
   const noneChecked = totalCheckedRows === 0;
+
+  const renderHeaderCell = (col) => {
+    switch(col.id) {
+      case 'inNetwork':
+        return (
+          <Tooltip
+            title={columnTooltip(col)}
+            placement="top-start"
+            arrow
+          >
+            <span>
+              <IconButton
+                disabled={data.length === 0 || noneChecked}
+                sx={{ color: (theme) => theme.palette.text.primary }}
+                onClick={handleUncheckAllClick}
+              >
+                <IndeterminateCheckBoxOutlinedIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+        );
+      default:
+        return (
+          <Tooltip
+            title={columnTooltip(col)}
+            placement="top-start"
+            arrow
+          >
+            <Typography component="span" variant="inherit" sx={{ fontSize: '0.75rem' }}>
+              { typeof col.label === 'function' ? col.label() : col.label }
+            {col.id === 'name' && data && (
+              <Typography component="span" variant="inherit" sx={{ color: (theme) => theme.palette.text.disabled }}>
+                &nbsp;&nbsp;&#40;{ totalRows }&#41;
+              </Typography>
+            )}
+            </Typography>
+          </Tooltip>
+        );
+    }
+  };
+
+  const renderBodyCell = (row, col) => {
+    switch(col.id) {
+      case 'inNetwork':
+        return (
+          <Checkbox
+            sx={{ width: 24, height: 24 }}
+            checked={isRowChecked(row)}
+            onClick={() => handleRowCheck(row)}
+          />
+        );
+      case 'included':
+        return (
+          isInSelectedMotifOrTrack(row.name) ?
+            <IncludedIcon sx={{ color: (theme) => theme.palette.success.light, fontSize: 16, display: 'block' }} />
+            :
+            <NotIncludedIcon sx={{ color: (theme) => theme.palette.text.disabled, opacity: 0.4, fontSize: 16, display: 'block' }} />
+        );
+      default:
+        return (
+          <Typography
+            component="span"
+            variant="inherit"
+            sx={{ fontSize: '0.75rem', color: (theme) => row[col.id] ? 'inherit' : theme.palette.text.disabled }}
+          >
+            { col.render(row, col, classes) }
+          </Typography>
+        );
+    }
+  };
 
   return (
     <Paper variant="outlined" className={classes.paper} sx={{height: '100%'}}>
       <Table size="small" stickyHeader>
         <TableHead>
           <TableRow className={classes.headerRow}>
-          {columns.map((col, idx) => (
+          {columns.map((col) => (
             <TableCell
               key={col.id}
               align="left"
               sortDirection={orderBy === col.id ? order : false}
               className={clsx(classes[col.id + 'Cell'], { [classes.tableCell]: true, [classes.tableHeaderCell]: true })}
             >
-              <Tooltip
-                title={columnTooltip(col)}
-                placement="top-start"
-                arrow
+            { col.sortable ?
+              <TableSortLabel
+                active={orderBy === col.id}
+                direction={orderBy === col.id ? order : 'asc'}
+                onClick={(event) => handleRequestSort(event, col.id)}
               >
-              {col.id === 'inNetwork' ?
-                <span>
-                  <IconButton
-                    disabled={data.length === 0 || noneChecked}
-                    sx={{color: (theme) => theme.palette.text.primary}}
-                    onClick={handleUncheckAllClick}
-                  >
-                    <IndeterminateCheckBoxOutlinedIcon />
-                  </IconButton>
-                </span>
-              :
-                <TableSortLabel 
-                  active={orderBy === col.id}
-                  direction={orderBy === col.id ? order : 'asc'}
-                  onClick={(event) => handleRequestSort(event, col.id)}
-                >
-                  { typeof col.label === 'function' ? col.label() : col.label }
-                {col.id === 'name' && data && (
-                  <Typography component="span" variant="body2" sx={{ color: (theme) => theme.palette.text.disabled }}>
-                    &nbsp;&nbsp;&#40;{ totalRows }&#41;
-                  </Typography>
-                )}
-                </TableSortLabel>
-              }
-              </Tooltip>
+                { renderHeaderCell(col) }
+              </TableSortLabel>
+            :
+              renderHeaderCell(col)
+            }
             </TableCell>
           ))}
           </TableRow>
@@ -351,15 +462,7 @@ function GeneTable({ columns, data, defOrderBy, defOrder, isMobile, onRowCheckCh
               align={col.numeric ? 'right' : 'left'}
               className={clsx(classes[col.id + 'Cell'], { [classes.tableCell]: true })}
             >
-            {col.id === 'inNetwork' ?
-              <Checkbox
-                sx={{ width: 24, height: 24 }}
-                checked={isRowChecked(row)}
-                onClick={() => handleRowCheck(row)}
-              />
-            :
-              col.render(row, col, classes)
-            }
+              { renderBodyCell(row, col) }
             </TableCell>
           )}
           </TableRow>
@@ -370,10 +473,12 @@ function GeneTable({ columns, data, defOrderBy, defOrder, isMobile, onRowCheckCh
   );
 }
 GeneTable.propTypes = {
+  type: PropTypes.string.isRequired,
   columns: PropTypes.array.isRequired,
   data: PropTypes.array.isRequired,
   defOrderBy: PropTypes.string,
   defOrder: PropTypes.string,
+  motifOrTrackGenes: PropTypes.array,
   isMobile: PropTypes.bool,
   onRowCheckChange: PropTypes.func,
 };

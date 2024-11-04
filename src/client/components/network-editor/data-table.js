@@ -533,7 +533,7 @@ export function DataTable({
                   {col.id === 'name' && data && (
                     <Typography
                       component="span"
-                      variant="body2"
+                      variant="inherit"
                       sx={{ color: (theme) => theme.palette.text.disabled }}
                     >
                       &nbsp;&nbsp;&#40;{totalCheckedRows > 0 ? 
