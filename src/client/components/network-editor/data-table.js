@@ -152,7 +152,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const PRECISION = 3;
+export const PRECISION = 3;
 
 const NAME_LABELS = { MOTIF: 'Enriched Motif', TRACK: 'Enriched Track', CLUSTER: 'Transcription Factor' };
 
@@ -306,7 +306,7 @@ const DEF_ORDER = 'asc';
 
 export const DEF_SORT_FN = (rows) => stableSort(rows, getComparator(DEF_ORDER, DEF_ORDER_BY));
 
-const roundNumber = (val) => {
+export const roundNumber = (val) => {
   return val != null ? (Math.round(val * Math.pow(10, PRECISION)) / Math.pow(10, PRECISION)) : 0;
 };
 

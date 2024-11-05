@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import { LEFT_DRAWER_WIDTH, BOTTOM_DRAWER_HEIGHT, DEFAULT_NETWORK_TYPE_SELECTION } from '../defaults';
 import { EventEmitterProxy } from '../../../model/event-emitter-proxy';
 import { NetworkEditorController } from './controller';
-import DataTable, { DEF_SORT_FN } from './data-table';
+import DataTable, { DEF_SORT_FN, PRECISION, roundNumber } from './data-table';
 import DataDetailsPanel from './data-details-panel';
 import SearchBar from './search-bar';
 import { motifName, motifTrackLinkOut, rowId, rowTypeIdField } from '../util';
@@ -17,7 +17,7 @@ import Collapse from '@mui/material/Collapse';
 import { AppBar, Toolbar, Divider, Grid } from '@mui/material';
 import { Drawer, Tooltip, Typography } from '@mui/material';
 import { IconButton, ToggleButtonGroup, ToggleButton } from '@mui/material';
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { FormControl, Select, MenuItem } from '@mui/material';
 
 import ExpandIcon from '@mui/icons-material/ExpandLess';
 import CollapseIcon from '@mui/icons-material/ExpandMore';
@@ -491,16 +491,41 @@ function MotifAndTrackSelect({ motifsAndTracks, onChange }) {
         value={value}
         onChange={handleChange}
         autoWidth
-        sx={{ pr: 2, backgroundColor: (theme) => theme.palette.background.paper, fontSize: '0.75rem' }}
-      >
-      {motifsAndTracks.map(({ rank, name }, idx) => (
-        <MenuItem key={rank} value={idx}>
-          <Grid container spacing={2} sx={{ mr: 1 }}>
+        sx={{ backgroundColor: (theme) => theme.palette.background.paper, fontSize: '0.75rem' }}
+        renderValue={(val) => (
+          <Grid container spacing={2} sx={{ mr: 2 }}>
             <Grid item sx={{ color: (theme) => theme.palette.text.disabled, textAlign: 'right' }}>
+              { motifsAndTracks[val].rank }
+            </Grid>
+            <Grid item >
+              { motifsAndTracks[val].name }
+            </Grid>
+          </Grid>
+        )}
+      >
+      {motifsAndTracks.map(({ rank, name, nes, auc, transcriptionFactors }, idx) => (
+        <MenuItem key={rank} value={idx} sx={{ py: 1 }}>
+          <Grid container spacing={4} sx={{ mr: 4 }}>
+            <Grid item xs={2} sx={{ color: (theme) => theme.palette.text.disabled, textAlign: 'right' }}>
               { rank }
             </Grid>
-            <Grid item>
-              { name }
+            <Grid item container direction="column" xs={10}>
+              <Grid item>
+                { name }
+              </Grid>
+              <Grid item>
+                <Typography
+                  component="div"
+                  variant="caption"
+                  sx={{ display: 'flex', flexDirection: 'row', color: (theme) => theme.palette.text.disabled }}
+                >
+                  NES:&nbsp;{roundNumber(nes).toFixed(PRECISION)}
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  AUC:&nbsp;{roundNumber(auc).toFixed(PRECISION)}
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  TFs:&nbsp;{transcriptionFactors.length}
+                </Typography>
+              </Grid>
             </Grid>
           </Grid>
         </MenuItem>
