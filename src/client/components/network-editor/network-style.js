@@ -71,6 +71,11 @@ export const nodeLabel = _.memoize(node => {
   return name;
 }, node => node.id());
 
+export const clusterColor = (clusterNumber) => {
+  const colorNumber = clusterNumber % CLUSTER_COLORS.length;
+  const color = chroma(CLUSTER_COLORS[colorNumber]);
+  return color.hex();
+};
 
 export const createNetworkStyle = (cy) => {
   const { min:minNES, max:maxNES } = getMinMaxValues(cy, 'NES');
@@ -95,9 +100,7 @@ export const createNetworkStyle = (cy) => {
   }, node => node.id());
   const getEdgeColor = _.memoize(edge => {
     const cluster = edge.data('clusterNumber');
-    const colorNumber = cluster % CLUSTER_COLORS.length;
-    const color = chroma(CLUSTER_COLORS[colorNumber]);
-    return color.hex();
+    return clusterColor(cluster);
   }, edge => edge.id());
 
   return {

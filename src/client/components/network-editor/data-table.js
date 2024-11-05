@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { dataTableHeight } from '../defaults';
 import { getComparator, stableSort } from '../util';
 import { NetworkEditorController } from './controller';
+import { clusterColor } from './network-style';
 
 import { useTheme } from '@mui/material/styles';
 
@@ -12,7 +13,7 @@ import makeStyles from '@mui/styles/makeStyles';
 
 import { TableVirtuoso } from 'react-virtuoso';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel } from '@mui/material';
-import { Paper, Typography, Link, Tooltip } from '@mui/material';
+import { Box, Paper, Typography, Link, Tooltip } from '@mui/material';
 import { List, ListSubheader, ListItem, ListItemIcon, ListItemText } from '@mui/material';
 import { Checkbox, IconButton } from '@mui/material';
 
@@ -218,7 +219,11 @@ const COLUMNS = [
             {type === 'CLUSTER' && <>Motifs are clustered by similarity and tracks are clustered by transcription factor</>}
             </>,
     show: () => true,
-    render: (row, col) =>  <>{ row[col.id] }</>
+    render: (row, col) => (
+      <Box sx={{ pl: 1, height: '100%', borderLeft: `8px solid ${clusterColor(row['clusterNumber'])}` }}>
+        { row[col.id] }
+      </Box>
+    )
   },
   {
     id: 'nes',
