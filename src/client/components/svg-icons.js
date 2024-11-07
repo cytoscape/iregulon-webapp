@@ -213,7 +213,15 @@ export function ShareIcon(props) {
 export function ZoomInIcon(props) {
   return (
     <SvgIcon viewBox="0 0 24 24" {...props}>
-        <path d="M9,9l0-6L7,3l0,2.59L3.91,2.5L2.5,3.91L5.59,7L3,7l0,2L9,9z M21,9V7l-2.59,0l3.09-3.09L20.09,2.5L17,5.59V3l-2,0l0,6L21,9z M3,15l0,2h2.59L2.5,20.09l1.41,1.41L7,18.41L7,21h2l0-6L3,15z M15,15l0,6h2v-2.59l3.09,3.09l1.41-1.41L18.41,17H21v-2L15,15z"/>
+      <path d="M9,9l0-6L7,3l0,2.59L3.91,2.5L2.5,3.91L5.59,7L3,7l0,2L9,9z M21,9V7l-2.59,0l3.09-3.09L20.09,2.5L17,5.59V3l-2,0l0,6L21,9z M3,15l0,2h2.59L2.5,20.09l1.41,1.41L7,18.41L7,21h2l0-6L3,15z M15,15l0,6h2v-2.59l3.09,3.09l1.41-1.41L18.41,17H21v-2L15,15z"/>
+    </SvgIcon>
+  );
+}
+
+export function OctagonIcon(props) {
+  return (
+    <SvgIcon viewBox="0 0 24 24" {...props}>
+      <path d="M16.144,2 L7.856,2 L2,7.856 L2,16.144 L7.856,22 L16.144,22 L22,16.144 L22,7.856 z"/>
     </SvgIcon>
   );
 }

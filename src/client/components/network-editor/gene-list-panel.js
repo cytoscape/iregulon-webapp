@@ -13,7 +13,7 @@ import makeStyles from '@mui/styles/makeStyles';
 import withStyles from '@mui/styles/withStyles';
 
 import { Virtuoso } from 'react-virtuoso';
-import { List, ListItem, ListItemText, ListItemIcon, ListSubheader } from '@mui/material';
+import { ListItem, ListItemText } from '@mui/material';
 import { Box, Grid, Paper, Typography, Link, Tooltip } from '@mui/material';
 import Skeleton from '@mui/material/Skeleton';
 
@@ -25,13 +25,13 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import CircleIcon from '@mui/icons-material/Circle';
-import HexagonIcon from '@mui/icons-material/Hexagon';
+import { OctagonIcon } from '../svg-icons';
 
 
 //==[ GeneIcon ]======================================================================================================
 
 const regulatoryFunctions = {
-  regulator: { label: 'Regulator', icon: <HexagonIcon sx={{ color: NODE_COLOR_REGULATOR }} /> },
+  regulator: { label: 'Regulator', icon: <OctagonIcon sx={{ color: NODE_COLOR_REGULATOR }} /> },
   regulated: { label: 'Regulated', icon: <CircleIcon sx={{ color: NODE_COLOR_REGULATED }} /> },
 };
 

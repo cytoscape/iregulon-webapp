@@ -81,6 +81,7 @@ export const createNetworkStyle = (cy) => {
   const { min:minNES, max:maxNES } = getMinMaxValues(cy, 'NES');
   const magNES = Math.max(Math.abs(maxNES), Math.abs(minNES));
 
+  // Nodes
   const getNodeColor = _.memoize(node => {
     const regFunction = node.data('regulatoryFunction');
     // const query = node.data('query');
@@ -90,18 +91,22 @@ export const createNetworkStyle = (cy) => {
       case 'regulated': return NODE_COLOR_REGULATED;
       default:          return NODE_COLOR_DEFAULT;
     }
-  }, node => node.id());
-  const getNodeShape = _.memoize(node => {
-    const regFunction = node.data('regulatoryFunction');
-    switch (regFunction) {
-      case 'regulator': return 'hexagon';
-      default:          return 'ellipse';
-    }
-  }, node => node.id());
-  const getEdgeColor = _.memoize(edge => {
-    const cluster = edge.data('clusterNumber');
+  }, n => n.id());
+  const getNodeShape = _.memoize(n => {
+    return n.data('regulatoryFunction') === 'regulator' ? 'octagon' : 'ellipse';
+  }, n => n.id());
+  const getNodeSize = _.memoize(n => {
+    return n.data('regulatoryFunction') === 'regulator' ? 50 : 40;
+  }, n => n.id());
+  const getNodeFontSize = _.memoize(n => {
+    return n.data('regulatoryFunction') === 'regulator' ? '14px' : '10px';
+  }, n => n.id());
+
+  // Edges
+  const getEdgeColor = _.memoize(e => {
+    const cluster = e.data('clusterNumber');
     return clusterColor(cluster);
-  }, edge => edge.id());
+  }, e => e.id());
 
   return {
     maxNES,
@@ -117,9 +122,9 @@ export const createNetworkStyle = (cy) => {
           'opacity': NODE_OPACITY,
           'border-width': 12,
           'border-opacity': 0,
-          'width':  40,
-          'height': 40,
-          'font-size': '8px',
+          'width':  getNodeSize,
+          'height': getNodeSize,
+          'font-size': getNodeFontSize,
           'text-valign': 'center',
           'text-wrap': 'wrap',
           'text-max-width': 80,
