@@ -389,7 +389,7 @@ const Main = ({
           onClick: () => controller.applyLayout({ 
             name: 'euler',
             animate: false,
-            mass: (n) => n.data('regulatoryFunction') === 'regulator' ? 100 : 10,
+            mass: (n) => n.data('regulatoryFunction') === 'regulator' ? 480 : 12,
             springLength: () => 120,
           }),
         },

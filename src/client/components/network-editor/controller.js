@@ -9,6 +9,14 @@ import { ExportController } from './export-controller';
 import { UndoHandler } from './undo-stack';
 
 
+export const DEFAULT_LAYOUT_OPTIONS = {
+  name: 'euler',
+  animate: false,
+  mass: (n) => n.data('regulatoryFunction') === 'regulator' ? 480 : 12,
+  springLength: 120,
+};
+
+
 // Keys for scratch data
 export const Scratch = {
   // boolean flag indicating if the expand/collapse layout is currently running, attached to parent nodes
@@ -232,31 +240,31 @@ export class NetworkEditorController {
     return [...this.selectedMotifs];
   }
 
-  _computeFCOSEidealEdgeLengthMap(clusterLabels, clusterAttr) {
-    const idealLength = size => {
-      switch(true) {
-        case size < 10: return 40;
-        case size < 20: return 75;
-        case size < 30: return 120;
-        case size < 40: return 180;
-        default:        return 250;
-      }
-    };
+  // _computeFCOSEidealEdgeLengthMap(clusterLabels, clusterAttr) {
+  //   const idealLength = size => {
+  //     switch(true) {
+  //       case size < 10: return 40;
+  //       case size < 20: return 75;
+  //       case size < 30: return 120;
+  //       case size < 40: return 180;
+  //       default:        return 250;
+  //     }
+  //   };
 
-    const edgeLengthMap = new Map();
+  //   const edgeLengthMap = new Map();
 
-    clusterLabels.forEach(({ clusterId }) => {
-      const cluster = this.cy.elements(`node[${clusterAttr}="${clusterId}"]`);
-      if(!cluster.empty()) {
-        const ideal = idealLength(cluster.size());
-        cluster.internalEdges().forEach(edge => {
-          edgeLengthMap.set(edge.data('id'), ideal);
-        });
-      }
-    });
+  //   clusterLabels.forEach(({ clusterId }) => {
+  //     const cluster = this.cy.elements(`node[${clusterAttr}="${clusterId}"]`);
+  //     if(!cluster.empty()) {
+  //       const ideal = idealLength(cluster.size());
+  //       cluster.internalEdges().forEach(edge => {
+  //         edgeLengthMap.set(edge.data('id'), ideal);
+  //       });
+  //     }
+  //   });
 
-    return edgeLengthMap;
-  }
+  //   return edgeLengthMap;
+  // }
 
 
   async applyLayout(options) {
@@ -298,22 +306,7 @@ export class NetworkEditorController {
     //   // idealEdgeLength: edge => idealLengths.get(edge.data('id')) || 50,
     //   nodeRepulsion: 100000
     // };
-    options = options || {
-      name: 'breadthfirst',
-      circle: true,
-      // grid: true,
-      // avoidOverlap: true,
-      // nodeDimensionsIncludeLabels: true,
-      // roots: eles.filter(n => n.data('regulatoryFunction') === 'regulator').map(n => n.id()),
-    };
-    // const options = {
-    //   name: 'concentric',
-    //   animate: true,
-    //   concentric: (node) => {
-    //      // return higher values to place nodes in levels towards the centre
-    //     return node.data('regulatoryFunction') === 'regulator' ? 2 : 1;
-    //   },
-    // };
+    options = options || DEFAULT_LAYOUT_OPTIONS;
 
     const allNodes = eles.nodes();
     const disconnectedNodes = allNodes.filter(n => n.degree() === 0); // careful, our compound nodes have degree 0
