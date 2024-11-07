@@ -311,6 +311,16 @@ export function stableSort(rows, comparator) {
 export function comparator(a, b, orderBy) {
   const aVal = a[orderBy], bVal = b[orderBy];
 
+  const compareStrings = (s1, s2) => {
+    return s1.localeCompare(s2, undefined, { sensitivity: 'accent' });
+  };
+  const compareNumbers = (n1, n2) => {
+    if (n1 === n2) {
+      return 0;
+    }
+    return n1 > n2 ? 1 : -1;
+  };
+
   // null values come last in ascending!
   if (aVal == null) {
     return 1;
@@ -320,11 +330,22 @@ export function comparator(a, b, orderBy) {
   }
   if (typeof aVal === 'string' && typeof bVal === 'string') {
     if (orderBy === 'name') {
+      // Include the DB name
       const v1 = a['db'] + '__' + aVal;
       const v2 = b['db'] + '__' + bVal;
-      return v1.localeCompare(v2, undefined, { sensitivity: 'accent' });
+      return compareStrings(v1, v2);
+    } else if (orderBy === 'clusterCode') {
+      // The cluster code is a string that starts with a letter ('M' or 'T'), followed by a number.
+      // Group by the first letter, then sort by the number.
+      const aLetter = aVal.charAt(0);
+      const bLetter = bVal.charAt(0);
+      if (aLetter === bLetter) {
+        const n1 = Number(aVal.replace(aLetter, ''));
+        const n2 = Number(bVal.replace(bLetter, ''));
+        return compareNumbers(n1, n2);
+      }
     }
-    return aVal.localeCompare(bVal, undefined, { sensitivity: 'accent' });
+    return compareStrings(aVal, bVal);
   }
   if (typeof aVal === 'boolean' && typeof bVal === 'boolean') {
     if (aVal && !bVal) {
@@ -335,13 +356,7 @@ export function comparator(a, b, orderBy) {
     }
     return 0;
   }
-  if (aVal < bVal) {
-    return -1;
-  }
-  if (aVal > bVal) {
-    return 1;
-  }
-  return 0;
+  return compareNumbers(aVal, bVal);
 }
 
 export function getComparator(order, orderBy) {

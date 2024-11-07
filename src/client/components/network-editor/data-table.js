@@ -220,6 +220,7 @@ const COLUMNS = [
             </>,
     show: () => true,
     render: (row, col) => (
+      // Also show the color of the cluster (Edge Color Legend)
       <Box sx={{ pl: 1, height: '100%', borderLeft: `8px solid ${clusterColor(row['clusterNumber'])}` }}>
         { row[col.id] }
       </Box>
