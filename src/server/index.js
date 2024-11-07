@@ -28,7 +28,7 @@ import Datastore from './datastore.js';
 
 // Connect to the database
 console.info('Starting Express');
-await Datastore.connect();
+await Datastore.initialize();
 // Set up the debug log
 const debugLog = debug('iregulon');
 // Set up the express app

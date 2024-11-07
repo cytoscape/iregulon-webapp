@@ -27,7 +27,6 @@ export const TRACK_RANKINGS_DATABASE = process.env.TRACK_RANKINGS_DATABASE;
 // Mongo config
 export const MONGO_URL = process.env.MONGO_URL;
 export const MONGO_ROOT_NAME = process.env.MONGO_ROOT_NAME;
-export const MONGO_COLLECTION_QUERIES = process.env.MONGO_COLLECTION_QUERIES;
 
 // Sentry config
 export const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT;
