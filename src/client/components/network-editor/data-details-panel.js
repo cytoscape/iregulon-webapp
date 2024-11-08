@@ -273,32 +273,27 @@ const useGeneTableStyles = makeStyles((theme) => ({
   },
   inNetworkCell: {
     borderLeft: 'none',
+    width: 40,
     paddingLeft: '1px !important',
     paddingRight: '1px !important',
     textAlign: 'center',
   },
   rankCell: {
     borderLeft: 'none',
-    minWidth: 48,
-    maxWidth: 68,
+    width: 60,
     ...userSelectTextProps,
   },
   nameCell: {
-    width: '95%',
-    maxWidth: 0,
     ...userSelectTextProps,
   },
   minOrthologousIdentityCell: {
-    width: '55%',
     ...userSelectTextProps,
   },
   maxFDRCell: {
-    width: '35%',
     ...userSelectTextProps,
   },
   includedCell: {
-    minWidth: 24,
-    maxWidth: 24,
+    width: 26,
     textAlign: 'center',
   },
 }));
@@ -412,9 +407,9 @@ function GeneTable({ type, columns, data, defOrderBy, defOrder, motifOrTrackGene
       case 'included':
         return (
           isInSelectedMotifOrTrack(row.name) ?
-            <IncludedIcon sx={{ color: (theme) => theme.palette.success.light, fontSize: 16, display: 'block' }} />
+            <IncludedIcon sx={{ color: (theme) => theme.palette.success.light, fontSize: 16, display: 'block', m: 'auto' }} />
             :
-            <NotIncludedIcon sx={{ color: (theme) => theme.palette.text.disabled, opacity: 0.4, fontSize: 16, display: 'block' }} />
+            <NotIncludedIcon sx={{ color: (theme) => theme.palette.text.disabled, opacity: 0.4, fontSize: 16, display: 'block', m: 'auto' }} />
         );
       default:
         return (
