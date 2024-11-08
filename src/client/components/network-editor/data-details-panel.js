@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
 import { dataTableHeight } from '../defaults';
-import { logoPath, getComparator, stableSort } from '../util';
+import { logoPath, getComparator, stableSort, userSelectTextProps } from '../util';
 import { NetworkEditorController } from './controller';
 
 import { useTheme } from '@mui/material/styles';
@@ -11,7 +11,7 @@ import { useTheme } from '@mui/material/styles';
 import makeStyles from '@mui/styles/makeStyles';
 
 import { Table, TableHead, TableBody, TableCell, TableRow, TableSortLabel } from '@mui/material';
-import { Box, Grid, Paper, Typography, Tooltip } from '@mui/material';
+import { Grid, Paper, Typography, Tooltip } from '@mui/material';
 import { Checkbox, IconButton } from '@mui/material';
 
 import IndeterminateCheckBoxOutlinedIcon from '@mui/icons-material/IndeterminateCheckBoxOutlined';
@@ -163,7 +163,7 @@ export function DataDetailsPanel({
     logoImgPath = logoPath(data.nameWithCollection);
   } else if (type === 'CLUSTER' && selectedMotifOrTrack) {
     // Show the name and description of the selected motif/track in the cluster
-    description = selectedMotifOrTrack.name + ' -- ' + selectedMotifOrTrack.description;
+    description = selectedMotifOrTrack.description;
     if (selectedMotifOrTrack.type === 'MOTIF') {
       logoImgPath = logoPath(selectedMotifOrTrack.name);
     }
@@ -174,32 +174,31 @@ export function DataDetailsPanel({
   };
 
   return (
-    <Paper className={classes.root} sx={{display: visible ? 'block' : 'none'}}>
-      <Grid container direction="row" spacing={1} sx={{height: '100%'}}>
-        <Grid item xs={type === 'MOTIF' ? 3 : 4} sx={{height: '100%'}}>
-          <Box sx={{height: '100%', border: 'none'}}>
+    <Paper className={classes.root} sx={{ display: visible ? 'block' : 'none' }}>
+      <Grid container direction="row" spacing={1} sx={{ height: '100%' }}>
+        <Grid item container xs={3} sx={{ height: '100%' }}>
+          <Grid item xs={12} sx={{ height: '30%', pb: 0.5 }}>
             <Paper
               variant="outlined"
-              sx={{p: theme.spacing(0.25, 1, 0.25, 1), overflowY: 'auto', maxHeight: 100, borderRadius: 2}}
+              sx={{p: theme.spacing(0.25, 1, 0.25, 1), overflowY: 'auto', height: '100%', borderRadius: 2, ...userSelectTextProps }} 
             >
-              <Typography variant="caption">{description}</Typography>
+              <Typography variant="caption">{ description }</Typography>
             </Paper>
-          {logoImgPath && (
-            <Paper
-              variant="outlined"
-              sx={{mt: 0.5, p: 0, borderRadius: 2}}
-            >
+          </Grid>
+        {logoImgPath && (
+          <Grid item xs={12} sx={{ height: '70%' }}>
+            <Paper variant="outlined" sx={{ height: '100%', width: '100%', borderRadius: '8px', textAlign: 'center' }}>
               <img
                 src={logoImgPath}
                 alt={data.nameWithCollection}
-                style={{width: '100%', height: 'auto', borderRadius: 8}}
+                style={{ maxWidth: 300, width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }}
               />
             </Paper>
-          )}
-          </Box>
+          </Grid>
+        )}
         </Grid>
       {targetRows && targetRows.length > 0 && (
-        <Grid item xs={type === 'MOTIF' ? 3 : 4} sx={{height: '100%'}}>
+        <Grid item xs={3} flexGrow={1} sx={{ height: '100%' }}>
           <GeneTable
             type={subtype}
             columns={targetColumns}
@@ -212,7 +211,7 @@ export function DataDetailsPanel({
         </Grid>
       )}
       {tfRows && tfRows.length > 0 && (
-        <Grid item xs={type === 'MOTIF' ? 6 : 4} sx={{height: '100%'}}>
+        <Grid item xs={6} sx={{height: '100%'}}>
           <GeneTable
             type={subtype}
             columns={tfColumns}
@@ -282,16 +281,20 @@ const useGeneTableStyles = makeStyles((theme) => ({
     borderLeft: 'none',
     minWidth: 48,
     maxWidth: 68,
+    ...userSelectTextProps,
   },
   nameCell: {
     width: '95%',
     maxWidth: 0,
+    ...userSelectTextProps,
   },
   minOrthologousIdentityCell: {
     width: '55%',
+    ...userSelectTextProps,
   },
   maxFDRCell: {
     width: '35%',
+    ...userSelectTextProps,
   },
   includedCell: {
     minWidth: 24,

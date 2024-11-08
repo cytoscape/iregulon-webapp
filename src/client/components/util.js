@@ -1,6 +1,15 @@
 import { token } from 'morgan';
 
 
+export const userSelectTextProps = {
+  WebkitTouchCallout: 'default', /* iOS Safari */
+  WebkitUserSelect: 'text', /* Safari */
+  MozUserSelect: 'text', /* Firefox */
+  msUserSelect: 'text', /* Internet Explorer/Edge */
+  userSelect: 'text', /* Non-prefixed version (Chrome and Opera) */
+};
+
+
 const USE_SMOOTH_LINK_SCROLLING = true;
 
 const motifTrackDBs = [
