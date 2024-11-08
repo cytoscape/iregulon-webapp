@@ -1,9 +1,7 @@
 import { token } from 'morgan';
 
-const USE_SMOOTH_LINK_SCROLLING = true;
 
-const MC_V3_V6_LOGO_DIR = '/images/logos/mc_v3_v6';
-const MC_V7_AND_HIGHER_LOGO_DIR = '/images/logos/mc_v7_and_higher';
+const USE_SMOOTH_LINK_SCROLLING = true;
 
 const motifTrackDBs = [
   // MOTIFs:
@@ -206,6 +204,8 @@ export function logoPath(motifName) {
   // }
 
   // Fetch from the local images
+  // const MC_V3_V6_LOGO_DIR = '/images/logos/mc_v3_v6';
+  // const MC_V7_AND_HIGHER_LOGO_DIR = '/images/logos/mc_v7_and_higher';
   // const motifNameMotifCollectionCouldBe7OrHigherIndex = motifName.indexOf("__");
   // const motifNameMotifCollectionCouldBe3To6Index = motifName.indexOf("-");
 
