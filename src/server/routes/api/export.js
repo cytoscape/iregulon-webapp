@@ -5,6 +5,21 @@ const http = Express.Router();
 
 // TODO
 
+// Return enrichment results in TSV format
+http.get('/results/:id', async function(req, res, next) {
+  try {
+    const { id } = req.params;
+    const results = await Datastore.getTextResults(id);
+
+    res.write(results.text);
+    res.write('\n');
+    res.end();
+
+  } catch(err) {
+    next(err);
+  }
+});
+
 
 async function sendDataLines(cursor, res, { type='tsv', header, objToStr } ) {
   try {

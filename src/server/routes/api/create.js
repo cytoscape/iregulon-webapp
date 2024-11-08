@@ -92,13 +92,13 @@ http.post('/', async function(req, res) {
   const params = req.body.params;
   
   console.log('Fetching results for job ' + jobID + '...');
-  const results = await fetchJobResults(jobID);
+  const { text, results } = await fetchJobResults(jobID);
                 
   const geneSymbols = params.genes.split(';').map(name => name.trim()).filter(name => name.length > 0);
   const genes = geneSymbols.map(name => ({ name }));
   annotateGenes(genes, results);
 
-  const networkID = await Datastore.saveResults(genes, results);
+  const networkID = await Datastore.saveResults(genes, results, text);
   console.log(networkID);
 
   // Return the result of the job
@@ -150,9 +150,10 @@ async function fetchJobResults(jobID) {
     throw new CreateError({ step: 'fetchJobResults', body, status });
   }
 
-  const txt = await res.text();
+  const text = await res.text();
+  const results = parseMotifsAndTracks(text);
 
-  return parseMotifsAndTracks(txt);
+  return { text, results };
 }
 
 function createPeformanceHook() {

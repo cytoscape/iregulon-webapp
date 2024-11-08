@@ -63,25 +63,25 @@ class Datastore {
     }
 
     // Load demo file (public/sample-data/hypoxia_geneset-results.tsv) into cache
-    fs.readFile('public/sample-data/hypoxia_geneset-results.tsv', 'utf8', (err, data) => {
+    fs.readFile('public/sample-data/hypoxia_geneset-results.tsv', 'utf8', (err, resultsData) => {
       if (err) {
         console.error(err);
         return;
       }
-      const results = parseMotifsAndTracks(data);
+      const results = parseMotifsAndTracks(resultsData);
       console.log("- Demo Results Loaded:", results.length);
 
-      fs.readFile('public/sample-data/hypoxia_geneset.txt', 'utf8', (err, data) => {
+      fs.readFile('public/sample-data/hypoxia_geneset.txt', 'utf8', (err, geneData) => {
         if (err) {
           console.error(err);
           return;
         }
-        const geneSymbols = data.split('\n').map(name => name.trim()).filter(name => name.length > 0);
+        const geneSymbols = geneData.split('\n').map(name => name.trim()).filter(name => name.length > 0);
         const genes = geneSymbols.map(name => ({ name }));
         annotateGenes(genes, results);
         console.log("- Demo Genes Loaded:", genes.length);
 
-        this.saveResults(genes, results, "Demo Network", DEMO_ID);
+        this.saveResults(genes, results, resultsData, "Demo Network", DEMO_ID);
       });
     });
   }
@@ -90,7 +90,7 @@ class Datastore {
   /**
    * @returns The id of the created document.
    */
-  async saveResults(genes, results, name, demoID) {
+  async saveResults(genes, results, text, name, demoID) {
     name = name || "Untitled Network";
     const id = demoID ? makeID(demoID) : makeID();
 
@@ -98,6 +98,7 @@ class Datastore {
       _id: id.bson,
       genes, 
       results, // motifs and tracks
+      text, // raw text of original results
       creationTime: new Date(),
       demo: Boolean(demoID),
      };
@@ -143,7 +144,9 @@ class Datastore {
       .findOneAndUpdate(
         { _id: id.bson },
         { $set: { lastAccessTime: new Date() } },
-        { returnDocument: 'after' }
+        { returnDocument: 'after',
+          projection: { text: 0 } 
+        }
       );
 
     if(!docResult) {
@@ -160,6 +163,23 @@ class Datastore {
     }
     return motifsAndTracks;
   }
+
+    /**
+   * Returns the motifs and tracks document. 
+   */
+  async getTextResults(idStr) {
+    const id = makeID(idStr);
+
+    const docResult = await this.db
+      .collection(MOTIFS_AND_TRACKS_COLLECTION)
+      .findOne(
+        { _id: id.bson },
+        { projection: { _id: 0, text: 1 } }
+      );
+
+    return docResult;
+  }
+
 
   async getGenesForSearch(idStr) { 
     const results = await this.getMotifsAndTracks(idStr);
