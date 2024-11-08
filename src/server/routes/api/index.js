@@ -40,17 +40,6 @@ http.get('/sample-data', async function(req, res, next) {
   }
 });
 
-/*
- * Returns the IDs of demo networks.
- */
-http.get('/demos', async function(req, res, next) {
-  try {
-    const networkIDs = await Datastore.getDemoNetworkIDs();
-    res.send(JSON.stringify(networkIDs));
-  } catch (err) {
-    next(err);
-  }
-});
 
 /* 
  * Returns a network given its ID.
@@ -58,7 +47,7 @@ http.get('/demos', async function(req, res, next) {
 http.get('/:netid', async function(req, res, next) {
   try {
     const { netid } = req.params;
-    const network = await Datastore.getNetwork(netid);
+    const network = await Datastore.getMotifsAndTracks(netid);
     
     if (!network) {
       res.sendStatus(404);
@@ -76,56 +65,11 @@ http.get('/:netid', async function(req, res, next) {
 http.put('/:netid', async function(req, res, next) {
   try {
     const { netid } = req.params;
-    const { networkName } = req.body;
-    const updated = await Datastore.updateNetwork(netid, { networkName });
+    const { name } = req.body;
+    console.log('updateState', 'networkName:', name);
+    const updated = await Datastore.updateState(netid, { name });
     
     res.sendStatus(updated ? 204 : 409);
-  } catch (err) {
-    next(err);
-  }
-});
-
-
-/*
- * Returns a ranked gene list.
- */
-http.get('/:netid/ranks', async function(req, res, next) {
-  try {
-    const { netid } = req.params;
-
-    const rankedGeneList = await Datastore.getRankedGeneList(netid);
-    if(!rankedGeneList) {
-      res.sendStatus(404);
-    } else {
-      res.send(JSON.stringify(rankedGeneList));
-    }
-  } catch (err) {
-    next(err);
-  }
-});
-
-
-/*
- * Returns the contents of multiple gene sets, including ranks.
- * Can be used to populate the gene search documents on the clinent.
- */
-http.post('/:netid/genesets', async function(req, res, next) {
-  try {
-    const { intersection } = req.query;
-    const { netid } = req.params;
-    const { geneSets } = req.body;
-
-    if(!Array.isArray(geneSets)) {
-      res.sendStatus(404);
-      return;
-    }
-
-    const geneInfo = await Datastore.getGenesWithRanks(netid, geneSets, intersection === 'true');
-    if(!geneInfo) {
-      res.sendStatus(404);
-    } else {
-      res.send(JSON.stringify(geneInfo));
-    }
   } catch (err) {
     next(err);
   }
@@ -138,14 +82,8 @@ http.post('/:netid/genesets', async function(req, res, next) {
 http.get('/:netid/genesforsearch', async function(req, res, next) {
   try {
     const { netid } = req.params;
-
-    // TODO - this is temporary for prototyping
-    const genes = await Datastore.getGenesForSearchCursor(netid);
+    const genes = await Datastore.getGenesForSearch(netid);
     res.write(JSON.stringify(genes));
-    // ============================================================================================================
-    // const cursor = await Datastore.getGenesForSearchCursor(netid);
-    // await writeCursorToResult(cursor, res);
-    // cursor.close();
   } catch (err) {
     next(err);
   } finally {
@@ -160,15 +98,8 @@ http.get('/:netid/genesforsearch', async function(req, res, next) {
 http.get('/:netid/results', async function(req, res, next) {
   try {
     const { netid } = req.params;
-
-    // TODO - this is temporary for prototyping
-    const results = await Datastore.getResultsForSearchCursor(netid);
+    const results = await Datastore.getResultsForSearch(netid);
     res.write(JSON.stringify(results));
-    // ============================================================================================================
-    // const cursor = await Datastore.getResultsForSearchCursor(netid);
-    // await writeCursorToResult(cursor, res);
-    // cursor.close();
-
   } catch (err) {
     next(err);
   } finally {
@@ -177,51 +108,51 @@ http.get('/:netid/results', async function(req, res, next) {
 });
 
 
-http.get('/:netid/positions', async function(req, res, next) {
-  try {
-    const { netid } = req.params;
+// http.get('/:netid/positions', async function(req, res, next) {
+//   try {
+//     const { netid } = req.params;
 
-    const positions = await Datastore.getPositions(netid);
-    if(!positions) {
-      res.sendStatus(404);
-    } else {
-      res.send(JSON.stringify(positions));
-    }
+//     const positions = await Datastore.getPositions(netid);
+//     if(!positions) {
+//       res.sendStatus(404);
+//     } else {
+//       res.send(JSON.stringify(positions));
+//     }
 
-    res.sendStatus(404);
+//     res.sendStatus(404);
     
-  } catch (err) {
-    next(err);
-  }
-});
+//   } catch (err) {
+//     next(err);
+//   }
+// });
 
-http.post('/:netid/positions', async function(req, res, next) {
-  try {
-    const { netid } = req.params;
-    const { positions } = req.body;
+// http.post('/:netid/positions', async function(req, res, next) {
+//   try {
+//     const { netid } = req.params;
+//     const { positions } = req.body;
 
-    if(!Array.isArray(positions)) {
-      res.sendStatus(404);
-      return;
-    }
+//     if(!Array.isArray(positions)) {
+//       res.sendStatus(404);
+//       return;
+//     }
 
-    await Datastore.setPositions(netid, positions);
+//     await Datastore.setPositions(netid, positions);
 
-    res.send('OK');
-  } catch (err) {
-    next(err);
-  }
-});
+//     res.send('OK');
+//   } catch (err) {
+//     next(err);
+//   }
+// });
 
-http.delete('/:netid/positions', async function(req, res, next) {
-  try {
-    const { netid } = req.params;
-    await Datastore.deletePositions(netid);
-    res.send('OK');
-  } catch (err) {
-    next(err);
-  }
-});
+// http.delete('/:netid/positions', async function(req, res, next) {
+//   try {
+//     const { netid } = req.params;
+//     await Datastore.deletePositions(netid);
+//     res.send('OK');
+//   } catch (err) {
+//     next(err);
+//   }
+// });
 
 
 export async function writeCursorToResult(cursor, res) {

@@ -69,11 +69,9 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   }
   const networkJson = await networkResult.json();
 
-  cy.add(networkJson.network.elements);
   cy.data({ 
-    name: networkJson.networkName, 
+    name: networkJson.name, 
     parameters: networkJson.parameters,
-    geneSetCollection: networkJson.geneSetCollection,
     demo: Boolean(networkJson.demo)
   });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { getComparator } from '../network-editor/data-table';
+import { getComparator } from '../util';
 import { Select, MenuItem } from '@mui/material';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
@@ -31,6 +31,7 @@ async function fetchReport(secret) {
 
     const counts = await countRes.json();
     const networks = await networkRes.json();
+    console.log(counts, networks);
 
     return { counts, networks };
   } catch(err) {
@@ -68,7 +69,7 @@ export function Report({ secret }) {
       Sort:
       &nbsp;&nbsp;
       <Select value={orderBy} onChange={(event) => setOrderBy(event.target.value)} className={classes.orderBy}>
-        <MenuItem value="networkName">Name</MenuItem>
+        <MenuItem value="name">Name</MenuItem>
         <MenuItem value="creationTime">Creation Time</MenuItem>
         <MenuItem value="lastAccessTime">Last Accessed Time</MenuItem>
       </Select>
@@ -84,9 +85,6 @@ export function Report({ secret }) {
         <TableHead>
           <TableRow>
             <TableCell><b>Network Name</b></TableCell>
-            <TableCell align="right"><b>Nodes</b></TableCell>
-            <TableCell align="right"><b>Edges</b></TableCell>
-            <TableCell align="right"><b>Type</b></TableCell>
             <TableCell align="right"><b>Creation Time</b></TableCell>
             <TableCell align="right"><b>Last Access Time</b></TableCell>
             <TableCell align="right"> </TableCell>
@@ -101,10 +99,7 @@ export function Report({ secret }) {
                 key={network._id}
                 sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
               >
-                <TableCell component="th" scope="row">{network.networkName}</TableCell>
-                <TableCell align="right">{network.nodeCount}</TableCell>
-                <TableCell align="right">{network.edgeCount}</TableCell>
-                <TableCell align="right">{network.inputType}</TableCell>
+                <TableCell component="th" scope="row">{network.name}</TableCell>
                 <TableCell align="right">{createTime}</TableCell>
                 <TableCell align="right">{accessTime}</TableCell>
                 <TableCell align="right"><a href={`/document/${network._id}`} target="_blank" rel = "noopener noreferrer">open</a></TableCell>

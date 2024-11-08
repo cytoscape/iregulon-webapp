@@ -15,7 +15,7 @@ http.get(`/count/:secret`, async function(req, res, next) {
       return;
     }
 
-    const counts = await Datastore.getNetworkCounts();
+    const counts = await Datastore.getResultCounts();
     res.send(JSON.stringify(counts));
 
   } catch(err) {
@@ -32,7 +32,7 @@ http.get(`/networks/:secret`, async function(req, res, next) {
       return;
     }
 
-    const cursor = await Datastore.getNetworkStatsCursor();
+    const cursor = await Datastore.getResultStatsCursor();
     await writeCursorToResult(cursor, res);
     cursor.close();
 
