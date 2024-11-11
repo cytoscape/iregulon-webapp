@@ -173,7 +173,6 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const [ type, setType ] = useState(DEFAULT_NETWORK_TYPE_SELECTION);
   const [ searchTerms, setSearchTerms ] = useState();
   const [ currentRow, setCurrentRow ] = useState();
-  const [ scrollToId, setScrollToId ] = useState();
   const [ selectedMotifOrTrack, setSelectedMotifOrTrack ] = useState();
   const [ _, forceUpdate ] = useState(0); // Dummy state to force update
 
@@ -232,10 +231,6 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
       setDisabled(newDisabled);
     }
   }, 200);
-  const debouncedBoxSelectHandler = _.debounce((target) => {
-    // Scroll to the last box selected element
-    setScrollToId(target.data('id'));
-  }, 100);
   
   const search = (val) => {
     // Now execute the search
@@ -279,11 +274,6 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
 
   useEffect(() => {
     cyEmitter.on('add remove', debouncedOnNetworkChange);
-    cyEmitter.on('boxselect', evt => {
-      if (openRef.current && evt.target.group() === 'nodes' && !evt.target.isParent()) {
-        debouncedBoxSelectHandler(evt.target);
-      }
-    });
     return () => {
       cyEmitter.removeAllListeners();
     };
@@ -441,7 +431,6 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
               data={data}
               type={type}
               currentRow={currentRow}
-              scrollToId={scrollToId}
               searchTerms={searchTerms}
               controller={controller}
               isMobile={isMobile}
