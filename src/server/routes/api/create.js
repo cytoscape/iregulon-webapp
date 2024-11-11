@@ -17,19 +17,24 @@ const IREGULON_USER_AGENT = 'iRegulon/1.4 (build: 2024-08-06; Cytoscape: 3.11.0-
 
 const http = Express.Router();
 
+const jobParams = new Map(); // jobID -> params
 
 /*
  * Endpoint to submit a job to the iRegulon service--returns the "jobID".
  */
 http.post('/submitJob', async function(req, res) {
   const params = new URLSearchParams();
-  Object.entries(req.body).forEach(([key, value]) => params.append(key, value));
+  const savedParams = {};
+
+  Object.entries(req.body).forEach(([key, value]) => {
+    params.append(key, value);
+    savedParams[key] = value;
+  });
+
 
   const response = await fetch(IREGULON_JOB_SERVICE_URL, {
     method: 'POST',
-    headers: {
-      'User-Agent': IREGULON_USER_AGENT,
-    },
+    headers: { 'User-Agent': IREGULON_USER_AGENT },
     body: params
   });
 
@@ -42,8 +47,13 @@ http.post('/submitJob', async function(req, res) {
   const txt = await response.text();
   const jobID = txt?.replace('jobID:', '').trim();
 
-  // Return the job ID to the client
-  res.json({ jobID });
+  savedParams['jobID'] = jobID;
+  savedParams['timestamp'] = new Date();
+  jobParams.set(jobID, savedParams); // save the params for later, to store in mongo
+ 
+  res.json({ jobID }); // Return the job ID to the client
+
+  clearOldJobParams();
 });
 
 /*
@@ -64,6 +74,7 @@ http.get('/checkStatus/:jobID', async function(req, res) {
   if (!response.ok) {
     const body = await response.text();
     const status = response.status;
+    jobParams.delete(jobID);
     throw new CreateError({ step: 'checkStatus', body, status });
   }
 
@@ -90,20 +101,42 @@ http.get('/checkStatus/:jobID', async function(req, res) {
 http.post('/', async function(req, res) {
   const jobID = req.body.jobID;
   const params = req.body.params;
-  
-  console.log('Fetching results for job ' + jobID + '...');
+
+  console.log('Fetching results for job ' + jobID + '...', params);
   const { text, results } = await fetchJobResults(jobID);
                 
   const geneSymbols = params.genes.split(';').map(name => name.trim()).filter(name => name.length > 0);
   const genes = geneSymbols.map(name => ({ name }));
   annotateGenes(genes, results);
 
-  const networkID = await Datastore.saveResults(genes, results, text);
+  const savedParams = jobParams.get(jobID);
+  jobParams.delete(jobID);
+
+  const networkID = await Datastore.saveResults({ genes, results, text, params: savedParams });
   console.log(networkID);
 
   // Return the result of the job
   res.json({ jobID, networkID });
 });
+
+/**
+ * Prevent a potential memory leak by clearing old jobs.
+ */
+function clearOldJobParams() {
+  const maxAge = 1000 * 60 * 60 * 24; // 24 hours
+  const now = new Date();
+  let count = 0;
+  for (const [jobID, params] of jobParams.entries()) {
+    const timestamp = params.timestamp;
+    if (now - timestamp > maxAge) {
+      jobParams.delete(jobID);
+      count++;
+    }
+  }
+  if(count > 0) {
+    console.log('Cleared ' + count + ' old job params.');
+  }
+}
 
 /*
  */

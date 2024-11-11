@@ -81,7 +81,13 @@ class Datastore {
         annotateGenes(genes, results);
         console.log("- Demo Genes Loaded:", genes.length);
 
-        this.saveResults(genes, results, resultsData, "Demo Network", DEMO_ID);
+        this.saveResults({ 
+          genes, 
+          results, 
+          text: resultsData, 
+          name: "Demo Network", 
+          demoID: DEMO_ID 
+        });
       });
     });
   }
@@ -90,7 +96,7 @@ class Datastore {
   /**
    * @returns The id of the created document.
    */
-  async saveResults(genes, results, text, name, demoID) {
+  async saveResults({ genes, results, text, name, params, demoID }) {
     name = name || "Untitled Network";
     const id = demoID ? makeID(demoID) : makeID();
 
@@ -99,6 +105,7 @@ class Datastore {
       genes, 
       results, // motifs and tracks
       text, // raw text of original results
+      params, // params used to generate the results
       creationTime: new Date(),
       demo: Boolean(demoID),
      };
