@@ -171,17 +171,26 @@ class Datastore {
     return motifsAndTracks;
   }
 
-    /**
+  /**
    * Returns the motifs and tracks document. 
    */
-  async getTextResults(idStr) {
+  async getResultsForExport(idStr, { type }) {
     const id = makeID(idStr);
+
+    let projection; 
+    if(type === 'text') {
+      projection = { _id: 0 , text: 1 };
+    } else if(type === 'params') {
+      projection = { _id: 0 , params: 1 };
+    } else if(type === 'results') {
+      projection = { _id: 0 , results: 1, genes: 1 };
+    }
 
     const docResult = await this.db
       .collection(MOTIFS_AND_TRACKS_COLLECTION)
       .findOne(
         { _id: id.bson },
-        { projection: { _id: 0, text: 1 } }
+        { projection }
       );
 
     return docResult;
