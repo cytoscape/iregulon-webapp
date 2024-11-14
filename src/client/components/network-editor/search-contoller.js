@@ -1,6 +1,7 @@
 import EventEmitter from 'eventemitter3';
 import Cytoscape from 'cytoscape'; // eslint-disable-line
 import MiniSearch from 'minisearch';
+import { rowId, rowTypeIdField } from '../util';
 
 
 export class SearchController {
@@ -58,6 +59,26 @@ export class SearchController {
       return this.resultsMiniSearch.search(query, { fields: ['name', 'description'], prefix: true });
     }
     return [];
+  }
+
+  searchClusters(query) {
+    if (!this.isResultListIndexed()) {
+      throw "The results haven't been fecthed yet!";
+    }
+    if (query && query.length > 0) {
+      return this.clustersMiniSearch.search(query, { fields: ['name', 'description'], prefix: true });
+    }
+    return [];
+  }
+
+  getResultById(id) {
+    const all = Object.values(this.resultsMiniSearch.toJSON().storedFields);
+    return all?.find(obj => obj.id === id);
+  }
+
+  getClusterById(id) {
+    const all = Object.values(this.clustersMiniSearch.toJSON().storedFields);
+    return all?.find(obj => obj.id === id);
   }
 
   getResults(type) {
@@ -130,9 +151,10 @@ export class SearchController {
 
   _indexMotifsAndTracks(documents) {
     this.resultsMiniSearch = new MiniSearch({
-      idField: 'name',
-      fields: ['name', 'description'],
+      idField: 'id',
+      fields: ['id', 'name', 'description'],
       storeFields: [
+        'id',
         'type',
         'nomenclatureCode',
         'rankingsDatabase',
@@ -155,15 +177,18 @@ export class SearchController {
         'orthologousSpecies',
       ]
     });
+    // Add an `id` field to each document
+    documents?.forEach((doc) => doc.id = rowId(doc.type, doc[rowTypeIdField(doc.type)]));
     console.log('Search docs (RESULTS)', documents);
     this.resultsMiniSearch.addAll(documents);
   }
 
   _indexClusters(documents) {
     this.clustersMiniSearch = new MiniSearch({
-      idField: 'name',
-      fields: ['name'],
+      idField: 'id',
+      fields: ['id', 'name'],
       storeFields: [
+        'id',
         'type',
         'resultType',
         'name',
@@ -175,6 +200,8 @@ export class SearchController {
         'transcriptionFactors',
       ]
     });
+    // Add an `id` field to each document
+    documents?.forEach((doc) => doc.id = rowId(doc.type, doc[rowTypeIdField(doc.type)]));
     console.log('Search docs (CLUSTERS)', documents);
     this.clustersMiniSearch.addAll(documents);
   }

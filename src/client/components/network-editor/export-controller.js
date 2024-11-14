@@ -4,6 +4,7 @@ import dedent from 'dedent';
 import { logoPath } from '../util';
 // eslint-disable-next-line no-unused-vars
 import { NetworkEditorController } from './controller';
+import { useUIStateStore } from './store';
 
 
 // Sizes of exported PNG images
@@ -79,9 +80,25 @@ export class ExportController {
 
 
   async _getMotifImageBlobs() {
-    const motifs = this.controller.getSelectedMotifs();
-    const paths = motifs.map(logoPath);
-    
+    const motifs = new Set();
+    // Get all selected rows/TFs from the UI store
+    const selectedTFs = useUIStateStore.getState().selectedTFs;
+    // Filter out the tracks (includes only motifs, including those in clusters)
+    selectedTFs.forEach((tfNames, rowId) => {
+      const res = this.controller.getResultOrClusterById(rowId);
+      if (res.type === 'MOTIF') {
+        motifs.add(res.name);
+      } else if (res.type === 'CLUSTER') {
+        for (const mt of res.motifsAndTracks) {
+          if (mt.type === 'MOTIF') {
+            motifs.add(mt.name);
+          }
+        }
+      }
+    });
+    // Get the paths to the motif logos
+    const paths = Array.from(motifs).map(logoPath);
+    // Fetch the sequence logo images
     return Promise.all(
       paths.map(path => 
         fetch(path)

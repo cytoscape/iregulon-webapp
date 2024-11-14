@@ -101,12 +101,16 @@ export class NetworkEditorController {
     return this.searchController.searchClusters(query);
   }
 
+  getResultOrClusterById(id) {
+    return id.startsWith('CLUSTER') ? this.searchController.getClusterById(id) : this.searchController.getResultById(id);
+  }
+
   isDemoNetwork() {
     return Boolean(this.cy.data('demo'));
   }
 
   /**
-   * @param {*} results Only the 'transcriptionFactors' that have the 'inNetwork' flag set to true will be added
+   * @param {*} results Array of motifs/tracks/clusters with the 'transcriptionFactors' that must be added to the network.
    */
   addToNetwork(results) {
     const cy = this.cy;
@@ -162,38 +166,34 @@ export class NetworkEditorController {
       const tfArr = ele.transcriptionFactors;
       const tgtArr = ele.candidateTargetGenes;
 
-      // The TF to be added must have the 'inNetwork' flag set to true
       if (tfArr.length > 0) {
         tfArr.forEach((g1) => {
-          if (g1.inNetwork) {
-            // const g1 = tfArr[0];
-            const name1 = g1.geneID.name;
-            const node1 = getNode(name1, type, clusterCode, false); // A TF must be added even if it's not a query gene
-            // Update the 'regulatoryFunction' data field
-            node1.data('regulatoryFunction', 'regulator');
+          const name1 = g1.geneID.name;
+          const node1 = getNode(name1, type, clusterCode, false); // A TF must be added even if it's not a query gene
+          // Update the 'regulatoryFunction' data field
+          node1.data('regulatoryFunction', 'regulator');
 
-            tgtArr?.forEach((g2) => {
-              const name2 = g2.geneID.name;
-              const node2 = getNode(name2, type, clusterCode, true); // Use only the query genes for target nodes
-              if (node2) {
-                // Update the 'regulatoryFunction' data field, but only if it's not already set to 'regulator'
-                if (node2.data('regulatoryFunction') !== 'regulator') {
-                  node2.data('regulatoryFunction', 'regulated');
-                }
-                // Add an edge between the TF and the target node (prevent duplicate edges by checking the clusterCode)
-                const edge = cy.elements(`edge[source="${name1}"][target="${name2}"][clusterCode="${clusterCode}"]`);
-                if (edge.length === 0) {
-                  const data = {
-                    source: name1,
-                    target: name2,
-                    clusterNumber,
-                    clusterCode,
-                  };
-                  cy.add({ group: 'edges', data });
-                }
+          tgtArr?.forEach((g2) => {
+            const name2 = g2.geneID.name;
+            const node2 = getNode(name2, type, clusterCode, true); // Use only the query genes for target nodes
+            if (node2) {
+              // Update the 'regulatoryFunction' data field, but only if it's not already set to 'regulator'
+              if (node2.data('regulatoryFunction') !== 'regulator') {
+                node2.data('regulatoryFunction', 'regulated');
               }
-            });
-          }
+              // Add an edge between the TF and the target node (prevent duplicate edges by checking the clusterCode)
+              const edge = cy.elements(`edge[source="${name1}"][target="${name2}"][clusterCode="${clusterCode}"]`);
+              if (edge.length === 0) {
+                const data = {
+                  source: name1,
+                  target: name2,
+                  clusterNumber,
+                  clusterCode,
+                };
+                cy.add({ group: 'edges', data });
+              }
+            }
+          });
         });
       }
     });
@@ -619,7 +619,6 @@ export class NetworkEditorController {
       this.bus.emit('deletedSelectedNodes', deletedNodes);
     }
   }
-
 
   /**
    * @param {boolean} isQuery if `true`, the returned list will contain only query genes

@@ -10,6 +10,7 @@ import DataTable, { DEF_SORT_FN, PRECISION, roundNumber } from './data-table';
 import DataDetailsPanel from './data-details-panel';
 import SearchBar from './search-bar';
 import { motifName, motifTrackLinkOut, rowId, rowTypeIdField } from '../util';
+import { useUIStateStore } from './store';
 
 import makeStyles from '@mui/styles/makeStyles';
 
@@ -176,6 +177,8 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const [ selectedMotifOrTrack, setSelectedMotifOrTrack ] = useState();
   const [ _, forceUpdate ] = useState(0); // Dummy state to force update
 
+  const setSelectedTF = useUIStateStore((state) => state.setSelectedTF);
+
   const classes = useBottomDrawerStyles();
 
   const openRef = useRef(false);
@@ -291,13 +294,19 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     // Update the TF in the row (UI object)
     const tfs = row.transcriptionFactors || [];
     if (tfs.length === 0) return;
-    // Reset all TFs and and flag the first one to be added to the network (if checked===true)
-    tfs.forEach((el, idx) => el.inNetwork = (idx === 0 && checked));
+    // Update the TranscriptionFactor Store
+    if (checked) {
+      // Select the first TF by default
+      setSelectedTF(row.id, tfs[0].geneID.name, true);
+    } else {
+      // Unselect all TFs from this row
+      row.transcriptionFactors.forEach(tf => setSelectedTF(row.id, tf.geneID.name, false));
+    }
     // Update the UI checked state
     triggerUpdate();
     // Update the network
     if (checked) {
-      controller.addToNetwork([row]);
+      controller.addToNetwork([{ ...row, transcriptionFactors: [tfs[0]] }]);
       await controller.applyLayout();
     } else {
       controller.removeFromNetwork([row]);
@@ -318,14 +327,14 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const onTFCheckChange = async (tfInfo, checked, rowId) => {
     // Find the row to update
     let row = data.find(r => r.type === type && r.id === rowId);
-    // Update the actual TF object in the row
-    const tfs = row.transcriptionFactors || [];
-    const tf = tfs.find(el => el.geneID.name === tfInfo.name);
-    tf.inNetwork = checked;
+    // Update the TranscriptionFactor Store
+    setSelectedTF(rowId, tfInfo.name, checked);
     // Update the UI checked state
     triggerUpdate();
     // Update the network
     // (do not pass the actual row, but clone it and filter out the other TFs, so only the checked/unchecked one is added/removed)
+    const tfs = row.transcriptionFactors || [];
+    const tf = tfs.find(el => el.geneID.name === tfInfo.name);
     row = { ...row, transcriptionFactors: [tf] };
     if (checked) {
       controller.addToNetwork([row]);

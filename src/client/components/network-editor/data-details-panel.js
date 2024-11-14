@@ -4,6 +4,7 @@ import clsx from 'clsx';
 
 import { dataTableHeight } from '../defaults';
 import { logoPath, getComparator, stableSort, userSelectTextProps } from '../util';
+import { useUIStateStore } from './store';
 import { NetworkEditorController } from './controller';
 
 import { useTheme } from '@mui/material/styles';
@@ -135,7 +136,6 @@ export function DataDetailsPanel({
 }) {
   const classes = useDataDetailsPanelStyles();
   const theme = useTheme();
-  console.log('data (DataDetailsPanel):', data);
   
   const targetRows = data.candidateTargetGenes?.map(({ geneID, rank }) => {
     return {
@@ -143,11 +143,11 @@ export function DataDetailsPanel({
       name: geneID.name
     };
   });
-  const tfRows = data.transcriptionFactors?.map(({ geneID, maxMotifSimilarityFDR, minOrthologousIdentity, inNetwork }) => {
+  const tfRows = data.transcriptionFactors?.map(({ geneID, maxMotifSimilarityFDR, minOrthologousIdentity }) => {
     return {
       name: geneID.name,
       maxFDR: maxMotifSimilarityFDR,
-      minOrthologousIdentity, inNetwork
+      minOrthologousIdentity,
     };
   });
 
@@ -200,6 +200,7 @@ export function DataDetailsPanel({
       {targetRows && targetRows.length > 0 && (
         <Grid item xs={3} flexGrow={1} sx={{ height: '100%' }}>
           <GeneTable
+            parentId={data.id}
             type={subtype}
             columns={targetColumns}
             data={targetRows}
@@ -213,6 +214,7 @@ export function DataDetailsPanel({
       {tfRows && tfRows.length > 0 && (
         <Grid item xs={6} sx={{height: '100%'}}>
           <GeneTable
+            parentId={data.id}
             type={subtype}
             columns={tfColumns}
             data={tfRows}
@@ -298,9 +300,10 @@ const useGeneTableStyles = makeStyles((theme) => ({
   },
 }));
 
-function GeneTable({ type, columns, data, defOrderBy, defOrder, motifOrTrackGenes, isMobile, onRowCheckChange }) {
+function GeneTable({ parentId, type, columns, data, defOrderBy, defOrder, motifOrTrackGenes, isMobile, onRowCheckChange }) {
   const [orderBy, setOrderBy] = useState(defOrderBy);
   const [order, setOrder] = useState(defOrder);
+  const selectedTFs = useUIStateStore(state => state.selectedTFs);
 
   const classes = useGeneTableStyles();
 
@@ -322,7 +325,7 @@ function GeneTable({ type, columns, data, defOrderBy, defOrder, motifOrTrackGene
     setOrderBy(property);
   };
   const isRowChecked = (row) => {
-    return Boolean(row['inNetwork']);
+    return Boolean(selectedTFs.get(parentId)?.has(row.name));
   };
   const handleRowCheck = (row) => {
     const checked = isRowChecked(row);
@@ -471,6 +474,7 @@ function GeneTable({ type, columns, data, defOrderBy, defOrder, motifOrTrackGene
   );
 }
 GeneTable.propTypes = {
+  parentId: PropTypes.string.isRequired,
   type: PropTypes.string.isRequired,
   columns: PropTypes.array.isRequired,
   data: PropTypes.array.isRequired,
