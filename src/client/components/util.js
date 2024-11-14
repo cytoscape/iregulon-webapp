@@ -204,33 +204,25 @@ export function motifName(nameWithCollection) {
 }
 
 export function logoPath(motifName) {
-  return `https://motifcollections.aertslab.org/v9/logos/${motifName}.png`;
+  // Fetch from the public `images` folder
+  const MC_V3_V6_LOGO_DIR = '/images/sequence-logos/mc_v3_v6';
+  const MC_V7_AND_HIGHER_LOGO_DIR = '/images/sequence-logos/mc_v7_and_higher';
+  const motifNameMotifCollectionCouldBe7OrHigherIndex = motifName.indexOf("__");
+  const motifNameMotifCollectionCouldBe3To6Index = motifName.indexOf("-");
 
-  // Fetch the JASPAR logos from the JASPAR website
-  // if (motifName.startsWith('jaspar__')) {
-  //   const motifId = motifName.replace('jaspar__', '');
-  //   return `https://jaspar.elixir.no/static/logos/all/svg/${motifId}.svg`;
-  // }
-
-  // Fetch from the local images
-  // const MC_V3_V6_LOGO_DIR = '/images/logos/mc_v3_v6';
-  // const MC_V7_AND_HIGHER_LOGO_DIR = '/images/logos/mc_v7_and_higher';
-  // const motifNameMotifCollectionCouldBe7OrHigherIndex = motifName.indexOf("__");
-  // const motifNameMotifCollectionCouldBe3To6Index = motifName.indexOf("-");
-
-  // if (motifNameMotifCollectionCouldBe7OrHigherIndex !== -1) {
-  //   if (motifNameMotifCollectionCouldBe3To6Index !== -1) {
-  //     if (motifNameMotifCollectionCouldBe7OrHigherIndex < motifNameMotifCollectionCouldBe3To6Index) {
-  //       return `${MC_V7_AND_HIGHER_LOGO_DIR}/${motifName}.png`;
-  //     } else {
-  //       return `${MC_V3_V6_LOGO_DIR}/${motifName}.png`;
-  //     }
-  //   } else {
-  //     return `${MC_V7_AND_HIGHER_LOGO_DIR}/${motifName}.png`;
-  //   }
-  // } else {
-  //   return `${MC_V3_V6_LOGO_DIR}/${motifName}.png`;
-  // }
+  if (motifNameMotifCollectionCouldBe7OrHigherIndex !== -1) {
+    if (motifNameMotifCollectionCouldBe3To6Index !== -1) {
+      if (motifNameMotifCollectionCouldBe7OrHigherIndex < motifNameMotifCollectionCouldBe3To6Index) {
+        return `${MC_V7_AND_HIGHER_LOGO_DIR}/${motifName}.png`;
+      } else {
+        return `${MC_V3_V6_LOGO_DIR}/${motifName}.png`;
+      }
+    } else {
+      return `${MC_V7_AND_HIGHER_LOGO_DIR}/${motifName}.png`;
+    }
+  } else {
+    return `${MC_V3_V6_LOGO_DIR}/${motifName}.png`;
+  }
 }
 
 /**
