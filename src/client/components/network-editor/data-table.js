@@ -220,9 +220,11 @@ const COLUMNS = [
             </>,
     show: () => true,
     render: (row, col) => (
-      // Also show the color of the cluster (Edge Color Legend)
-      <Box sx={{ pl: 1, height: '100%', borderLeft: `8px solid ${clusterColor(row['clusterNumber'])}` }}>
-        { row[col.id] }
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ pl: 1, height: 24, width: 8, backgroundColor: clusterColor(row['clusterNumber']), borderRadius: 0.5 }} />
+        <Box component="span" sx={{ pl: 0.75 }}>
+          { row[col.id] }
+        </Box>
       </Box>
     )
   },
