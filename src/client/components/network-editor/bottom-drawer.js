@@ -9,6 +9,7 @@ import { NetworkEditorController } from './controller';
 import DataTable, { DEF_SORT_FN, PRECISION, roundNumber } from './data-table';
 import DataDetailsPanel from './data-details-panel';
 import SearchBar from './search-bar';
+import { updateNetworkStyle } from './network-style';
 import { motifName, motifTrackLinkOut, resultId } from '../util';
 import { useUIStateStore } from './store';
 
@@ -307,9 +308,11 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     // Update the network
     if (checked) {
       controller.addToNetwork([{ ...row, transcriptionFactors: [tfs[0]] }]);
+      updateNetworkStyle();
       await controller.applyLayout();
     } else {
       controller.removeFromNetwork([row]);
+      updateNetworkStyle();
     }
   };
   const onRowClick = (row) => {
@@ -338,9 +341,11 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     row = { ...row, transcriptionFactors: [tf] };
     if (checked) {
       controller.addToNetwork([row]);
+      updateNetworkStyle();
       await controller.applyLayout();
     } else {
       controller.removeFromNetwork([row]);
+      updateNetworkStyle();
     }
   };
 

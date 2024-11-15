@@ -62,6 +62,8 @@ function getMinMaxValues(cy, attr) {
   };
 }
 
+// So we can update all memoize functions when necessary
+let memoizeFunctions = [];
 
 export const nodeLabel = _.memoize(node => {
   const label = node.data('label');
@@ -71,13 +73,17 @@ export const nodeLabel = _.memoize(node => {
   return name;
 }, node => node.id());
 
-export const clusterColor = (clusterNumber) => {
+export function clusterColor(clusterNumber) {
   const colorNumber = clusterNumber % CLUSTER_COLORS.length;
   const color = chroma(CLUSTER_COLORS[colorNumber]);
   return color.hex();
-};
+}
 
-export const createNetworkStyle = (cy) => {
+export function updateNetworkStyle() {
+  memoizeFunctions?.forEach(f => f.cache.clear());
+}
+
+export function createNetworkStyle(cy) {
   const { min:minNES, max:maxNES } = getMinMaxValues(cy, 'NES');
   const magNES = Math.max(Math.abs(maxNES), Math.abs(minNES));
 
@@ -107,6 +113,9 @@ export const createNetworkStyle = (cy) => {
     const cluster = e.data('clusterNumber');
     return clusterColor(cluster);
   }, e => e.id());
+
+  // Clear the memoize array
+  memoizeFunctions = [nodeLabel, getNodeColor, getNodeShape, getNodeSize, getNodeFontSize, getEdgeColor];
 
   return {
     maxNES,
@@ -210,6 +219,6 @@ export const createNetworkStyle = (cy) => {
       },
     ]
   };
-};
+}
 
 export default createNetworkStyle;
