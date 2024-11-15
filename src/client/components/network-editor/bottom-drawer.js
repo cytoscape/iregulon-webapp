@@ -9,7 +9,7 @@ import { NetworkEditorController } from './controller';
 import DataTable, { DEF_SORT_FN, PRECISION, roundNumber } from './data-table';
 import DataDetailsPanel from './data-details-panel';
 import SearchBar from './search-bar';
-import { motifName, motifTrackLinkOut, rowId, rowTypeIdField } from '../util';
+import { motifName, motifTrackLinkOut, resultId } from '../util';
 import { useUIStateStore } from './store';
 
 import makeStyles from '@mui/styles/makeStyles';
@@ -47,7 +47,7 @@ function toTableRow(obj, type) {
   const linkOut = type !== 'CLUSTER' ? motifTrackLinkOut(name) : null;
   
   const row = {};
-  row.id = rowId(type, obj[rowTypeIdField(type)]);
+  row.id = resultId(obj);
   row.type = type;
   row.db = linkOut ? linkOut.db : null;
   row.name = type === 'MOTIF' ? motifName(name) : name;

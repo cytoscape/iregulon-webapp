@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3';
 import Cytoscape from 'cytoscape'; // eslint-disable-line
 import MiniSearch from 'minisearch';
-import { rowId, rowTypeIdField } from '../util';
+import { resultId } from '../util';
 
 
 export class SearchController {
@@ -178,7 +178,7 @@ export class SearchController {
       ]
     });
     // Add an `id` field to each document
-    documents?.forEach((doc) => doc.id = rowId(doc.type, doc[rowTypeIdField(doc.type)]));
+    documents?.forEach((doc) => doc.id = resultId(doc));
     console.log('Search docs (RESULTS)', documents);
     this.resultsMiniSearch.addAll(documents);
   }
@@ -201,7 +201,7 @@ export class SearchController {
       ]
     });
     // Add an `id` field to each document
-    documents?.forEach((doc) => doc.id = rowId(doc.type, doc[rowTypeIdField(doc.type)]));
+    documents?.forEach((doc) => doc.id = resultId(doc));
     console.log('Search docs (CLUSTERS)', documents);
     this.clustersMiniSearch.addAll(documents);
   }

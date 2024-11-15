@@ -9,7 +9,7 @@ import makeStyles from '@mui/styles/makeStyles';
 
 import { BOTTOM_DRAWER_OPEN, DEFAULT_NETWORK_TYPE_SELECTION, DEFAULT_NETWORK_TOTAL_SELECTION } from '../defaults';
 import { currentTheme } from '../../theme';
-import { isMobile, isTablet, rowId, rowTypeIdField } from '../util';
+import { isMobile, isTablet } from '../util';
 import { useUIStateStore } from './store';
 import { NetworkEditorController } from './controller';
 import Main from './main';
@@ -203,8 +203,7 @@ function Root({ id, theme, recentNetworksController }) {
         ele.transcriptionFactors = ele.transcriptionFactors.slice(0, 1);
         // Update the UI Store
         const tf = ele.transcriptionFactors[0];
-        const type = ele.type;
-        const id = rowId(type, ele[rowTypeIdField(type)]);
+        const id = ele.id;
         useUIStateStore.getState().setSelectedTF(id, tf.geneID.name, true);
       });
 

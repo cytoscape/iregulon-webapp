@@ -225,21 +225,16 @@ export function logoPath(motifName) {
   }
 }
 
-/**
- * @param {*} type 'MOTIF', 'TRACK', or 'CLUSTER'
- * @param {*} typeId the 'clusterCode' or 'rank' value, which must be unique for the type.
- * @returns the row ID which is unique for all tables/types.
- */
-export function rowId(type, typeId) {
-  return `${type.toUpperCase()}-${typeId}`;
-}
 
 /**
- * @param {*} type 'MOTIF', 'TRACK', or 'CLUSTER'
- * @returns 'clusterCode' for 'CLUSTER' and 'rank' for the rest.
+ * Creates a meaningful ID that is unique for all table rows or result entries.
+ * @param {*} obj A row or result entry object which must have the fields 'type' and 'rank' or 'clusterCode'.
+ * @returns the row/result ID which is unique for all tables/types.
  */
-export function rowTypeIdField(type) {
-  return type === 'CLUSTER' ? 'clusterCode' : 'rank';
+export function resultId(obj) {
+  const type = obj.type;
+  const typeId = type === 'CLUSTER' ? obj.clusterCode : obj.rank;
+  return `${type.toUpperCase()}-${typeId}`;
 }
 
 
