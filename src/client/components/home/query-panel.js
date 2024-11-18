@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import clsx from 'clsx';
 
 import makeStyles from '@mui/styles/makeStyles';
 
-import { Box, Paper, Typography, Link } from '@mui/material';
+import { Box, Typography, Link } from '@mui/material';
 import { FormControl, Select, MenuItem, ListItemIcon, ListItemText, TextField } from '@mui/material';
 
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { FlyIcon, HumanIcon, MouseIcon } from '../svg-icons';
 
 export const organisms = [
@@ -63,45 +61,6 @@ export const organisms = [
 
 //==[ QueryPanel ]====================================================================================================
 
-const useQueryPanelStyles = makeStyles((theme) => ({
-  description: {
-    marginBottom: theme.spacing(2.5),
-    [theme.breakpoints.down('sm')]: {
-      marginBottom: theme.spacing(1),
-      fontSize: '0.85rem',
-    },
-  },
-  details: {
-    marginTop: 0,
-    [theme.breakpoints.down('sm')]: {
-      marginBlockStart: 0,
-      marginBlockEnd: theme.spacing(1),
-      fontSize: '0.85rem',
-    },
-  },
-  archerContainer: {
-    width: '100%',
-  },
-  legendContainer: {
-    width: '100%',
-  },
-  legend: {
-    position:'absolute',
-    padding: 5,
-    fontSize: '0.85em',
-    color: theme.palette.text.secondary,
-    cursor: 'default',
-    border: `1px solid transparent`,
-    "&:hover": {
-      color: theme.palette.text.primary,
-    },
-  },
-  linkout: {
-    color: 'inherit',
-    borderBottom: 'dotted 1px',
-  },
-}));
-
 function parseGeneList(text) {
   if (text.length > 0) {
     let parts = text.split(/[\s,]+/);
@@ -114,8 +73,6 @@ function parseGeneList(text) {
 export function QueryPanel({ initialOrganism, isMobile, onOrganismChanged, onGenesChanged }) {
   const [ organism, setOrganism ] = useState(organisms.indexOf(initialOrganism));
 
-  const classes = useQueryPanelStyles();
-  
   const handleOrganismChange = (event) => {
     const idx = event.target.value;
     setOrganism(idx);
@@ -152,8 +109,8 @@ export function QueryPanel({ initialOrganism, isMobile, onOrganismChanged, onGen
         >
           {organisms.map(({ id, name, assembly, nomenclature, icon }, idx) => (
             <MenuItem key={id} value={idx}>
-              <ListItemIcon className={classes.organismIcon}>
-                { icon({color: 'inherit', fontSize: 'large'}) }
+              <ListItemIcon sx={{ pr: 2, color: (theme) => theme.palette.text.primary }}>
+                { icon({ color: 'inherit', fontSize: 'large' }) }
               </ListItemIcon>
               <ListItemText primary={`${name} (${assembly})`} secondary={nomenclature} />
             </MenuItem>
@@ -164,8 +121,11 @@ export function QueryPanel({ initialOrganism, isMobile, onOrganismChanged, onGen
         aria-label="gene-list"
         placeholder="Enter gene list"
         multiline
-        minRows={isMobile ? 10 : 6}
-        sx={{ minWidth: { sm: 400 }, width: '100%' }}
+        fullWidth
+        minRows={isMobile ? 8 : 12}
+        maxRows={isMobile ? 8 : 12}
+        inputProps={{ spellCheck: false }}
+        sx={{ minWidth: { sm: 400 } }}
         onChange={handleGenesChange}
       />
     </Box>

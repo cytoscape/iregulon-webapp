@@ -622,7 +622,7 @@ function Debug({ sampleFiles, onLoadSampleNetwork }) {
   const { sampleRankFiles, sampleExprFiles } = sampleFiles;
   return (
     <DebugMenu>
-      <h3>Example rank input files</h3>
+      <h3>Examples</h3>
       {/* <ul>
       {
         sampleRankFiles.length > 0 ?
