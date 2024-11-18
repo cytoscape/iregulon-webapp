@@ -22,10 +22,9 @@ const Path = {
   IMAGE_PDF:     'images/iregulon.pdf',
   IMAGE_LEGEND:  'images/node_color_legend_NES.svg',
   DATA_FOLDER:   'data',
-  DATA_ENRICH:   'data/iregulon_results.txt',
-  DATA_RANKS:    'data/ranks.txt',
-  DATA_GENESETS: 'data/gene_sets.gmt',
-  DATA_JSON:     'data/network.json',
+  DATA_RESULTS:  'data/iregulon_results.txt',
+  DATA_PARAMS:   'data/parameters.txt',
+  DATA_IRF:      'data/iregulon.irf',
   README:        'README.md'
 };
 
@@ -48,30 +47,39 @@ export class ExportController {
       return await res.text();
     };
   
-    // Let the fethching happen in the background while we generate the images
-    // const filesPromise = Promise.all([
-    //   fetchExport(`/api/export/enrichment/${netID}`),
-    //   fetchExport(`/api/export/ranks/${netID}`),
-    //   fetchExport(`/api/export/gmt/${netID}`),
-    // ]);
+    // Let the server fetching happen in the background while we generate the images
+    const filesPromise = Promise.all([
+      fetchExport(`/api/export/results/${netID}`),
+      fetchExport(`/api/export/params/${netID}`),
+      fetchExport(`/api/export/irf/${netID}`),
+    ]);
 
-    // // Let image generation run in parallel with fetching data from server
+    // Fetch motif images from the server
+    const motifsPromise = this._getMotifImageBlobs();
+
+    // Let image generation run in parallel with fetching data from server
     const blob0 = await this._createNetworkImageBlob(ImageSize.SMALL);
     const blob1 = await this._createNetworkImageBlob(ImageSize.MEDIUM);
     const blob2 = await this._createNetworkImageBlob(ImageSize.LARGE);
     const blob3 = await this._createNetworkPDFBlob();
-    const motifBlobs = await this._getMotifImageBlobs();
-    // // const readme = createREADME(this.controller);
+    // const readme = createREADME(this.controller);
+
+    const files = await filesPromise;
+    const motifBlobs = await motifsPromise;
   
     const zip = new JSZip();
     zip.file(Path.IMAGE_SMALL,   blob0);
     zip.file(Path.IMAGE_MEDIUM,  blob1);
     zip.file(Path.IMAGE_LARGE,   blob2);
     zip.file(Path.IMAGE_PDF,     blob3);
-    // // zip.file(Path.README,        readme);
+    zip.file(Path.DATA_RESULTS,  files[0]);
+    zip.file(Path.DATA_PARAMS,   files[1]);
+    zip.file(Path.DATA_IRF,      files[2]);
+    // zip.file(Path.README,        readme);
 
     for(const { path, blob } of motifBlobs) {
-      zip.file(path, blob);
+      const fileName = path.split('/').pop();
+      zip.file('logos/'+fileName, blob);
     }
 
     const fileName = this._getZipFileName('iregulon');
@@ -106,33 +114,6 @@ export class ExportController {
         .then(blob => ({ path, blob }))
       )
     );
-  }
-
-
-  async exportGeneList(genesJSON, pathways) { // used by the gene list panel (actually left-drawer.js)
-    if(pathways.length == 0)
-      return;
-
-    let fileName = 'gene_ranks.zip';
-    if(pathways.length == 1)
-      fileName = `gene_ranks_(${pathways[0]}).zip`;
-    else if(pathways.length <= 3)
-      fileName = `gene_ranks_(${pathways.slice(0,3).join(',')}).zip`;
-    else
-      fileName = `gene_ranks_${pathways.length}_pathways.zip`;
-
-    const geneLines = ['gene\trank'];
-    for(const { name, rank } of genesJSON) {
-      geneLines.push(`${name}\t${rank}`);
-    }
-    const genesText = geneLines.join('\n');
-    const pathwayText = pathways.join('\n');
-  
-    const zip = new JSZip();
-    zip.file('gene_ranks.txt', genesText);
-    zip.file('pathways.txt', pathwayText);
-
-    this._saveZip(zip, fileName);
   }
 
   async _createNetworkImageBlob(imageSize) {
