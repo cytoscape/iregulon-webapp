@@ -6,6 +6,7 @@ import { dataTableHeight } from '../defaults';
 import { getComparator, stableSort } from '../util';
 import { NetworkEditorController } from './controller';
 import { clusterColor } from './network-style';
+import { useUIStateStore } from './store';
 
 import { useTheme } from '@mui/material/styles';
 
@@ -313,13 +314,14 @@ export const roundNumber = (val) => {
   return val != null ? (Math.round(val * Math.pow(10, PRECISION)) / Math.pow(10, PRECISION)) : 0;
 };
 
-const isRowChecked = (row) => {
-  return row.transcriptionFactors.some(tf => tf.inNetwork);
+const isRowChecked = (row, selectedTFs) => {
+  return row.transcriptionFactors.some(tf => selectedTFs.get(row.id)?.has(tf.geneID.name));
 };
 
 //==[ ContentRow ]====================================================================================================
 
 const ContentRow = ({ row, index, controller, isMobile, onCheck, onClick }) => {
+  const selectedTFs = useUIStateStore(state => state.selectedTFs);
   const classes = useStyles();
 
   return (
@@ -336,7 +338,7 @@ const ContentRow = ({ row, index, controller, isMobile, onCheck, onClick }) => {
           <Checkbox
             sx={{ width: 24, height: 24 }}
             disabled={row['transcriptionFactors'].length === 0}
-            checked={isRowChecked(row)}
+            checked={isRowChecked(row, selectedTFs)}
             onClick={() => onCheck(row)}
           /> 
         :
@@ -374,6 +376,7 @@ export function DataTable({
 }) {
   const [orderBy, setOrderBy] = useState(DEF_ORDER_BY);
   const [order, setOrder] = useState(DEF_ORDER);
+  const selectedTFs = useUIStateStore(state => state.selectedTFs);
 
   const classes = useStyles();
   const theme = useTheme();
@@ -409,14 +412,14 @@ export function DataTable({
   };
 
   const handleRowCheck = (row) => {
-    const checked = !isRowChecked(row);
+    const checked = !isRowChecked(row, selectedTFs);
     onRowCheckChange?.(row, checked);
   };
 
   const handleUncheckAllClick = (evt) => {
     if (sortedDataRef.current) {
       sortedDataRef.current.forEach(row => {
-        isRowChecked(row) && handleRowCheck(row);
+        isRowChecked(row, selectedTFs) && handleRowCheck(row);
       });
     }
     evt.stopPropagation();
@@ -475,7 +478,7 @@ export function DataTable({
   }
 
   const totalRows = data.length;
-  const totalCheckedRows = data.filter(row => isRowChecked(row)).length;
+  const totalCheckedRows = data.filter(row => isRowChecked(row, selectedTFs)).length;
   const allChecked = totalCheckedRows > 0 && totalCheckedRows === totalRows;
   const noneChecked = totalCheckedRows === 0;
 

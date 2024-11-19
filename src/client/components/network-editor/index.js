@@ -10,6 +10,7 @@ import makeStyles from '@mui/styles/makeStyles';
 import { BOTTOM_DRAWER_OPEN, DEFAULT_NETWORK_TYPE_SELECTION, DEFAULT_NETWORK_TOTAL_SELECTION } from '../defaults';
 import { currentTheme } from '../../theme';
 import { isMobile, isTablet } from '../util';
+import { useUIStateStore } from './store';
 import { NetworkEditorController } from './controller';
 import Main from './main';
 
@@ -195,18 +196,15 @@ function Root({ id, theme, recentNetworksController }) {
           return true;
         }
         return false;
-      });
-      // Check whether this TF is in the gene list and, if not, get the gene object
-      // that has all the fields and add it to the list
+      })
+      .map(ele => _.cloneDeep(ele));
+      // Add only the first TF by default
       filteredResults.forEach(ele => {
-        ele.transcriptionFactors.forEach((tf, idx) => {
-          // Add only the first TF by default
-          if (idx === 0) {
-            tf.inNetwork = true;
-          } else {
-            tf.inNetwork = false;
-          }
-        });
+        ele.transcriptionFactors = ele.transcriptionFactors.slice(0, 1);
+        // Update the UI Store
+        const tf = ele.transcriptionFactors[0];
+        const id = ele.id;
+        useUIStateStore.getState().setSelectedTF(id, tf.geneID.name, true);
       });
 
   // TODO do not add to network here (?), but let the data-table do it from the cheked results (TF's 'inNetwork' field)
