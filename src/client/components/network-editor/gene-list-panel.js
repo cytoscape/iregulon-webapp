@@ -25,14 +25,15 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import CircleIcon from '@mui/icons-material/Circle';
-import { OctagonIcon } from '../svg-icons';
+import NotApplicableIcon from '@mui/icons-material/NotInterested';
 
 
 //==[ GeneIcon ]======================================================================================================
 
 const regulatoryFunctions = {
-  regulator: { label: 'Regulator', icon: <OctagonIcon sx={{ color: NODE_COLOR_REGULATOR }} /> },
-  regulated: { label: 'Regulated', icon: <CircleIcon sx={{ color: NODE_COLOR_REGULATED }} /> },
+  regulator: { label: 'REGULATOR', icon: <CircleIcon sx={{ color: NODE_COLOR_REGULATOR }} /> },
+  regulated: { label: 'regulated', icon: <CircleIcon sx={{ color: NODE_COLOR_REGULATED }} /> },
+  unknown:   { label: 'N/A',       icon: <NotApplicableIcon sx={{ color: (theme) => theme.palette.text.disabled }} /> },
 };
 
 const GeneIcon = ({ symbol, regulatoryFunction, isMobile, controller }) => {
@@ -53,7 +54,7 @@ const GeneIcon = ({ symbol, regulatoryFunction, isMobile, controller }) => {
     };
   }, []);
 
-  const RegFnTooltip = withStyles(theme => ({
+  const GeneLegendTooltip = withStyles(theme => ({
     tooltipPlacementTop: {
       marginBottom: 8,
     },
@@ -64,15 +65,16 @@ const GeneIcon = ({ symbol, regulatoryFunction, isMobile, controller }) => {
   }))(Tooltip);
 
   return (
-    <>
-    {regulatoryFunction && regulatoryFunction !== 'unknown' &&  (
-      <RegFnTooltip arrow title={regulatoryFunction} enterDelay={750} placement={isMobile ? 'top' : 'right'}>
-        <Box sx={{opacity: (inNetwork ? 1.0 : 0.1)}}>
-          {regulatoryFunctions[regulatoryFunction].icon}
-        </Box>
-      </RegFnTooltip>
-    )}
-    </>
+    <GeneLegendTooltip
+      arrow
+      title={regulatoryFunctions[regulatoryFunction].label}
+      enterDelay={750}
+      placement={isMobile ? 'top' : 'right'}
+    >
+      <Box component="span" sx={{ opacity: (inNetwork ? 1.0 : 0.15) } }>
+        {regulatoryFunctions[regulatoryFunction].icon}
+      </Box>
+    </GeneLegendTooltip>
   );
 };
 GeneIcon.propTypes = {
@@ -512,9 +514,7 @@ const GeneListPanel = ({
                 {loading ?
                   <Skeleton variant="circular" width={24} height={24} />
                   :
-                  regulatoryFunction && regulatoryFunction !== 'unknown' && (
-                    <GeneIcon symbol={symbol} regulatoryFunction={regulatoryFunction} isMobile={isMobile} controller={controller} />
-                  )
+                  <GeneIcon symbol={symbol} regulatoryFunction={regulatoryFunction} isMobile={isMobile} controller={controller} />
                 }
                 </Grid>
               </Grid>

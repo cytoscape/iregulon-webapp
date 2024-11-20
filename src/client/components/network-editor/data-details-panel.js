@@ -187,7 +187,7 @@ export function DataDetailsPanel({
           </Grid>
         {logoImgPath && (
           <Grid item xs={12} sx={{ height: '70%' }}>
-            <Paper variant="outlined" sx={{ height: '100%', width: '100%', borderRadius: '8px', textAlign: 'center' }}>
+            <Paper variant="outlined" sx={{ height: '100%', width: '100%', borderRadius: '8px', textAlign: 'center', background: '#ffffff' }}>
               <img
                 src={logoImgPath}
                 alt={data.nameWithCollection}

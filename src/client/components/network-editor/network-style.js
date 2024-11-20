@@ -1,33 +1,17 @@
 import _ from 'lodash';
 import chroma from 'chroma-js';
 
+
 export const NODE_COLOR_DEFAULT = '#d5d5d5';
-export const NODE_COLOR_REGULATOR = '#9d56b4';
-export const NODE_COLOR_REGULATED = '#3a88fe';
-export const NODE_OPACITY = 1;
-export const TEXT_OPACITY = 1;
-export const SELECTED_BORDER_COLOR = '#333333';
+export const NODE_COLOR_REGULATOR = '#9555ab';
+export const NODE_COLOR_REGULATED = '#5275ab';
+export const SELECTED_BORDER_COLOR = '#121212';
+export const TEXT_COLOR = '#ffffff';
+export const NODE_OPACITY = 1.0;
+export const TEXT_OPACITY = 1.0;
+export const BORDER_WIDTH = 8;
+export const SELECTED_BORDER_WIDTH = 8;
 
-
-/** Color range for up-down regulation. */
-export const REG_COLOR_RANGE = (() => {
-  // ColorBrewer 2.0 -- Diverging (Colorblind Safe)
-  // IMPORTANT: Use only hex format, do NOT use 'rgb()'!
-  const colors = ['#0571b0', '#92c5de', '#f7f7f7', '#f4a582', '#ca0020']; // 5-class RdBu: https://colorbrewer2.org/#type=diverging&scheme=RdBu&n=5
-  // const colors = ['#2c7bb6', '#abd9e9', '#ffffbf', '#fdae61', '#d7191c']; // 5-class RdYlBu: https://colorbrewer2.org/#type=diverging&scheme=RdYlBu&n=5
-  // const colors = ['#5e3c99', '#b2abd2', '#f7f7f7', '#fdb863', '#e66101']; // 5-class PuOr: https://colorbrewer2.org/#type=diverging&scheme=PuOr&n=5
-  // const colors = ['#008837', '#a6dba0', '#f7f7f7', '#c2a5cf', '#7b3294']; // 5-class PRGn: // https://colorbrewer2.org/#type=diverging&scheme=PRGn&n=5
-  // const colors = ['#4dac26', '#b8e186', '#f7f7f7', '#f1b6da', '#d01c8b']; // 5-class PiYG: https://colorbrewer2.org/#type=diverging&scheme=PiYG&n=5
-  // const colors = ['#018571', '#80cdc1', '#f5f5f5', '#dfc27d', '#a6611a']; // 5-class BrBG: https://colorbrewer2.org/#type=diverging&scheme=BrBG&n=5
-  const downMax = colors[0];
-  const down = colors[1];
-  const zero = colors[2];
-  const up = colors[3];
-  const upMax = colors[4];
-  const range3 = [ downMax, zero, upMax ];
-  const range5 = colors;
-  return { downMax, down, zero, up, upMax, range3, range5 };
-})();
 
 const CLUSTER_COLORS = [
   0x51CC8C, 0x51CCCC, 0x337F7F, 0x8ECC51, 0x597F33, 0x8E51CC, 0xCCAD51, 0x7F6C33,
@@ -41,20 +25,6 @@ const CLUSTER_COLORS = [
   0xB151CC, 0xCC51A1, 0xCC515D, 0xCC6E51, 0xCC9051, 0xCCB351, 0xC2CC51, 0xA0CC51,
   0x7DCC51, 0x5BCC51, 0x51C6CC, 0x51A3CC, 0x7F335E, 0x7F3341
 ];
-
-function hexToRgb(hex) {
-  // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
-  var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-  hex = hex.replace(shorthandRegex, function(m, r, g, b) {
-    return r + r + g + g + b + b;
-  });
-  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16)
-  } : null;
-}
 
 function getMinMaxValues(cy, attr) {
   return {
@@ -85,15 +55,19 @@ const getNodeColor = _.memoize(node => {
 }, n => n.id());
 
 const getNodeShape = _.memoize(n => {
-  return n.data('regulatoryFunction') === 'regulator' ? 'octagon' : 'ellipse';
+  return n.data('regulatoryFunction') === 'regulator' ? 'ellipse' : 'ellipse';
 }, n => n.id());
 
 const getNodeSize = _.memoize(n => {
-  return n.data('regulatoryFunction') === 'regulator' ? 50 : 40;
+  return n.data('regulatoryFunction') === 'regulator' ? 60 : 40;
 }, n => n.id());
 
 const getNodeFontSize = _.memoize(n => {
-  return n.data('regulatoryFunction') === 'regulator' ? '14px' : '10px';
+  return n.data('regulatoryFunction') === 'regulator' ? '16px' : '10px';
+}, n => n.id());
+
+const getTextOutlineWidth = _.memoize(n => {
+  return n.data('regulatoryFunction') === 'regulator' ? 3 : 2;
 }, n => n.id());
 
 // Edge memoize functions
@@ -104,7 +78,15 @@ const getEdgeColor = _.memoize(e => {
 }, e => e.id());
 
 // So we can update all memoize functions when necessary
-const memoizeFunctions = [getNodeLabel, getNodeColor, getNodeShape, getNodeSize, getNodeFontSize, getEdgeColor];
+const memoizeFunctions = [
+  getNodeLabel,
+  getNodeColor,
+  getNodeShape,
+  getNodeSize,
+  getNodeFontSize,
+  getTextOutlineWidth,
+  getEdgeColor,
+];
 
 
 export function clusterColor(clusterNumber) {
@@ -133,7 +115,7 @@ export function createNetworkStyle(cy) {
         selector: 'node',
         style: {
           'opacity': NODE_OPACITY,
-          'border-width': 12,
+          'border-width': BORDER_WIDTH,
           'border-opacity': 0,
           'width':  getNodeSize,
           'height': getNodeSize,
@@ -141,9 +123,9 @@ export function createNetworkStyle(cy) {
           'text-valign': 'center',
           'text-wrap': 'wrap',
           'text-max-width': 80,
-          'text-outline-width': 2,
+          'text-outline-width': getTextOutlineWidth,
           'text-outline-opacity': TEXT_OPACITY,
-          'color': '#fff',
+          'color': TEXT_COLOR,
           'background-color':   getNodeColor,
           'text-outline-color': getNodeColor,
           'shape': getNodeShape,
@@ -185,7 +167,7 @@ export function createNetworkStyle(cy) {
       {
         selector: 'node:selected',
         style: {
-          'border-width': 8,
+          'border-width': SELECTED_BORDER_WIDTH,
           'border-color': SELECTED_BORDER_COLOR,
           'border-opacity': 1.0,
           'text-outline-color': SELECTED_BORDER_COLOR,
@@ -195,7 +177,7 @@ export function createNetworkStyle(cy) {
       {
         selector: 'edge:selected',
         style: {
-          'line-color': '#333333',
+          'line-color': SELECTED_BORDER_COLOR,
           'line-opacity': 1.0,
           'z-index': 9999999,
         }

@@ -26,8 +26,6 @@ import CollapseIcon from '@mui/icons-material/ExpandMore';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 
-export const NODE_COLOR_SVG_ID = 'node-color-legend-svg';
-
 const typeOptions = {
   MOTIF: {  
     label: 'Motifs',

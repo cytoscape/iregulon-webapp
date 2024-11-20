@@ -231,7 +231,7 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
     }
   };
 
-  const updateCyHighlights = _.debounce((symbol) => {console.log('updateCyHighlights', symbol);
+  const updateCyHighlights = _.debounce((symbol) => {
     if (symbol != null) {
       const nodes = cy.nodes().filter(n => symbol === n.data('name'));
       if (nodes.length > 0) {
