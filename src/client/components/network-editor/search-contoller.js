@@ -1,5 +1,4 @@
 import EventEmitter from 'eventemitter3';
-import Cytoscape from 'cytoscape'; // eslint-disable-line
 import MiniSearch from 'minisearch';
 import { resultId } from '../util';
 
@@ -13,13 +12,14 @@ export class SearchController {
 
     this.genesReady = false;
     this.resultsReady = false;
+  }
 
-    this.bus.on('networkLoaded', () => {
-      Promise.all([
-        this._fetchAllGenes(),
-        this._fetchResults(),
-      ]);
-    });
+  initializeResults(resultsJson) {
+    console.log('SearchController.initializeResults', resultsJson);
+    this._initializeAllGenes(resultsJson.genes);
+    this._initializeResults(resultsJson.results);
+    this.bus.emit('geneListIndexed');
+    this.bus.emit('resultsIndexed');
   }
 
   isGeneListIndexed() {
@@ -97,56 +97,39 @@ export class SearchController {
     return results;
   }
 
+
   /**
-   * Fetches all genes (query + results).
+   * Initializes all genes (query + results).
    */
-  async _fetchAllGenes() {
-    const res = await fetch(`/api/${this.networkIDStr}/genesforsearch`);
+  _initializeAllGenes(genes) {
+    this.geneMiniSearch = new MiniSearch({
+      idField: 'name',
+      fields: ['name'],
+      storeFields: [
+        'name',
+        'query',
+        'regulatoryFunction',
+        'motifs',
+        'tracks',
+      ]
+    });
 
-    if (res.ok) {
-      this.geneMiniSearch = new MiniSearch({
-        idField: 'name',
-        fields: ['name'],
-        storeFields: [
-          'name',
-          'query',
-          'regulatoryFunction',
-          'motifs',
-          'tracks',
-        ]
-      });
-
-      const documents = await res.json();
-      console.log('Search docs (GENES)', documents);
-      this.geneMiniSearch.addAll(documents);
-
-      console.log('Gene list indexed:', documents.length);
-      this.genesReady = true;
-      this.bus.emit('geneListIndexed');
-    }
+    this.geneMiniSearch.addAll(genes);
+    this.genesReady = true;
   }
 
   /**
    * Fetches and indexes the iRegulon results.
    */
-  async _fetchResults() {
-    const res = await fetch(`/api/${this.networkIDStr}/results`);
+  _initializeResults(results) {
+    this._indexMotifsAndTracks(results);
 
-    if (res.ok) {
-      const documents = await res.json();
+    const geneNames = this.getGenes().map(g => g.name);
+    const clusterDocuments = this._getMotifAndTrackClusters(results, geneNames);
+    this._indexClusters(clusterDocuments);
 
-      if (documents) {
-        this._indexMotifsAndTracks(documents);
-
-        const geneNames = this.getGenes().map(g => g.name);
-        const clusterDocuments = this._getMotifAndTrackClusters(documents, geneNames);
-        this._indexClusters(clusterDocuments);
-
-        console.log('Results indexed:', documents.length, '--', clusterDocuments.length);
-        this.resultsReady = true;
-        this.bus.emit('resultsIndexed');
-      }
-    }
+    console.log('Results indexed:', results.length, '--', clusterDocuments.length);
+    this.resultsReady = true;
   }
 
   _indexMotifsAndTracks(documents) {
