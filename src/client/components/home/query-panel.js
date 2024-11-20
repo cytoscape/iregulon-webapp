@@ -166,7 +166,7 @@ export function DemoPanel() {
       <Link 
           target="_blank" // open in new tab
           rel="noopener"
-          href="http://iregulon.aertslab.org/tutorial.html/">
+          href="http://iregulon.aertslab.org/tutorial.html">
         iRegulon Tutorial
       </Link>.
     </Typography>
