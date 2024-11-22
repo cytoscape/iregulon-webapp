@@ -69,11 +69,12 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   }
   
   const results = await networkResult.json();
+  const isDemo = Boolean(results.demo);
 
   cy.data({ 
     name: results.name, 
     parameters: results.parameters,
-    demo: Boolean(results.demo)
+    demo: isDemo
   });
 
   // initializes the search controller
@@ -85,7 +86,7 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
     stateJson = await uiResult.json();
   }
 
-  if(stateJson) {
+  if(!isDemo && stateJson) {
     restoreUIStateAndNetwork(stateJson, controller);
   }
   if(cy.nodes().length === 0) {
