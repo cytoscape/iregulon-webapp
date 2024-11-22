@@ -10,7 +10,7 @@ import makeStyles from '@mui/styles/makeStyles';
 import { BOTTOM_DRAWER_OPEN, DEFAULT_NETWORK_TYPE_SELECTION, DEFAULT_NETWORK_TOTAL_SELECTION } from '../defaults';
 import { currentTheme } from '../../theme';
 import { isMobile, isTablet } from '../util';
-import { useUIStateStore } from './store';
+import { useUIStateStore, jsonToState } from './store';
 import { NetworkEditorController } from './controller';
 import Main from './main';
 
@@ -60,55 +60,59 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   console.log('Loading...');
 
   const networkPromise = fetch(`/api/${id}`);
-  // TODO
-  // const positionsPromise = fetch(`/api/${id}/positions`);
+  const uiStatePromise = fetch(`/api/${id}/uistate`);
 
   const networkResult = await networkPromise;
   if (!networkResult.ok) {
     location.href = '/';
     return;
   }
-  const networkJson = await networkResult.json();
+  
+  const results = await networkResult.json();
+  const isDemo = Boolean(results.demo);
 
   cy.data({ 
-    name: networkJson.name, 
-    parameters: networkJson.parameters,
-    demo: Boolean(networkJson.demo)
+    name: results.name, 
+    parameters: results.parameters,
+    demo: isDemo
   });
 
-  // Apply layout
-  let layoutWasRun = false;
+  // initializes the search controller
+  controller.initializeResults(results); 
 
-  // TODO
-  // const positionsResult = await positionsPromise;
-  // if (positionsResult.status == 404) {
-    console.log('running layout');
-    await controller.applyLayout();
-    layoutWasRun = true;  
-  // } else {
-  //   console.log('got positions from server');
-  //   const positionsJson = await positionsResult.json();
-  //   const positionsMap = controller.applyPositions(positionsJson.positions);
-  // }
+  const uiResult = await uiStatePromise;
+  let stateJson;
+  if(uiResult.ok) {
+    stateJson = await uiResult.json();
+  }
+
+  if(!isDemo && stateJson) {
+    restoreUIStateAndNetwork(stateJson, controller);
+  }
+  if(cy.nodes().length === 0) {
+    initializeNetworkWithTopClusters(cy, controller);
+  } 
+  if(stateJson) {
+    restorePositions(stateJson, controller);
+  }
 
   // Set network style
   const style = createNetworkStyle(cy);
   cy.style().fromJson(style.cyJSON);
   controller.style = style; // Make available to components
 
+  const updateServerState   = _.debounce(() => controller.savePositionsAndState(), 4000);
+  const updateRecentNetwork = _.debounce(() => recentNetworksController.updateRecentNetwork(cy), 1000);
+  // same debounced function "updateServerState" used for both events so it doesn't get called twice
+  cy.on('position remove', 'node', updateRecentNetwork);
+  cy.on('position remove', 'node', updateServerState);
+  useUIStateStore.subscribe(state => state.selectedTFs, () => { console.log("zustand event"); updateServerState(); });   // TODO should this be fired on the event bus instead??
+
   // Make sure to call cy.fit() after the network is ready
   cy.ready(() => {
     controller.fitAndSetZoomMinMax();
     recentNetworksController.saveRecentNetwork(cy);
   });
-
-  cy.on('position remove', 'node', _.debounce(() => {
-    controller.savePositions();
-    recentNetworksController.updateRecentNetwork(cy);
-  }, 4000));
-  cy.on('data', _.debounce(() => {
-    recentNetworksController.updateRecentNetwork(cy);
-  }, 1000));
 
   // Selecting an edge should select its nodes, but the edge itself must never be selected
   // (this makes it easier to keep the data table selection consistent)
@@ -121,15 +125,95 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   });
 
   // Notify listeners that the network has been loaded
-  console.log('Loaded');
   cy.data({ loaded: true });
-  controller.bus.emit('networkLoaded', { layoutWasRun }); 
-
+  controller.bus.emit('networkLoaded', { cy, results }); 
   console.log('Successful Network Load');
 
-  // make the controller accessible from the chrome console for debugging purposes
+  // make the controller accessible from the console for debugging purposes
   window.controller = controller;
 }
+
+
+/**
+ * Must be called after the cy object is created and the search controller is initialized.
+ */
+function initializeNetworkWithTopClusters(cy, controller) {
+  // If the loaded network is empty (no nodes), then update it with the top clusters
+  console.log('Network is empty, initialize with top clusters...');
+  // Get the top clusters
+  const results = controller.fetchResults(DEFAULT_NETWORK_TYPE_SELECTION);
+  const maxResults = Math.min(results.length, DEFAULT_NETWORK_TOTAL_SELECTION);
+
+  let count = 0;
+  const filteredResults = results
+    .filter(ele => { 
+      if (ele.transcriptionFactors.length > 0 && count < maxResults) {
+        ++count;
+        return true;
+      }
+      return false;
+    })
+    .map(ele => _.cloneDeep(ele));
+
+  filteredResults.forEach(ele => {
+    // Add only the first TF by default
+    ele.transcriptionFactors = ele.transcriptionFactors.slice(0, 1);
+    // Update the UI Store
+    const tf = ele.transcriptionFactors[0];
+    const id = ele.id;
+    useUIStateStore.getState().setSelectedTF(id, tf.geneID.name, true);
+  });
+
+  // TODO do not add to network here (?), but let the data-table do it from the cheked results (TF's 'inNetwork' field)
+  controller.addToNetwork(filteredResults);
+  controller.applyLayout();
+}
+
+
+function restoreUIStateAndNetwork(stateJson, controller) {
+  const { state } = stateJson;
+  if(state) {
+    console.log('got UI state from server');
+    try {
+      const stateObj = jsonToState(state);
+      console.log('UI state', stateObj);
+
+      useUIStateStore.setState(stateObj);
+
+      const { selectedTFs } = stateObj;
+      const results = controller.fetchResults();
+
+      const filteredResults = results
+        .filter(result => selectedTFs.has(result.id))
+        .map(result => _.cloneDeep(result))
+        .map(result => {
+          const filteredTFs = result.transcriptionFactors
+            .filter(tf => selectedTFs.get(result.id).has(tf.geneID.name));
+          result.transcriptionFactors = filteredTFs;
+          return result;
+        });
+
+      console.log("adding to network", filteredResults);
+      controller.addToNetwork(filteredResults);
+    } catch (e) {
+      console.error('Error restoring UI state:', state, e);
+    }
+  } else {
+    console.error('Error restoring UI state:', state);
+  }
+}
+
+
+function restorePositions(stateJson, controller) {
+  const { positions } = stateJson;
+  if(positions) {
+    console.log('got positions from server');
+    controller.applyPositions(positions);
+  } else {
+    controller.applyLayout();
+  }
+}
+
 
 
 function Root({ id, theme, recentNetworksController }) {
@@ -182,42 +266,9 @@ function Root({ id, theme, recentNetworksController }) {
     }
   };
 
-  const onResultsIndexed = () => {console.log('resultsIndexed...');
-// TODO: do not inspect the network here--instead, check the server results and always rebuild the network from them
-    // If the loaded network is empty (no nodes), then update it with the top clusters
-    if (cy.nodes().length === 0) {
-      // Get the top clusters
-      const results = controller.fetchResults(DEFAULT_NETWORK_TYPE_SELECTION);
-      const maxResults = Math.min(results.length, DEFAULT_NETWORK_TOTAL_SELECTION);
-      let count = 0;
-      const filteredResults = results.filter(ele => { 
-        if (ele.transcriptionFactors.length > 0 && count < maxResults) {
-          ++count;
-          return true;
-        }
-        return false;
-      })
-      .map(ele => _.cloneDeep(ele));
-      // Add only the first TF by default
-      filteredResults.forEach(ele => {
-        ele.transcriptionFactors = ele.transcriptionFactors.slice(0, 1);
-        // Update the UI Store
-        const tf = ele.transcriptionFactors[0];
-        const id = ele.id;
-        useUIStateStore.getState().setSelectedTF(id, tf.geneID.name, true);
-      });
-
-  // TODO do not add to network here (?), but let the data-table do it from the cheked results (TF's 'inNetwork' field)
-      controller.addToNetwork(filteredResults);
-      controller.applyLayout();
-    }
-  };
-
   useEffect(() => {
-    controller.bus.on('resultsIndexed', onResultsIndexed);
     loadNetwork(id, cy, controller, recentNetworksController);
     return () => {
-      controller.bus.removeListener('resultsIndexed', onResultsIndexed);
       cy.destroy();
     };
   }, []);

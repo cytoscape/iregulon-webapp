@@ -23,3 +23,16 @@ export const useUIStateStore = create((set) => ({
     return { selectedTFs };
   }),
 }));
+
+
+export function stateToJson(state) {
+  const selectedTFs = Array.from(state.selectedTFs.entries()).map(([rowId, tfNames]) => {
+    return { rowId, tfNames: Array.from(tfNames) };
+  });
+  return { selectedTFs };
+}
+
+export function jsonToState(json) {
+  const selectedTFs = new Map(json.selectedTFs.map(({ rowId, tfNames }) => [rowId, new Set(tfNames)]));
+  return { selectedTFs };
+}

@@ -7,6 +7,7 @@ import { monkeyPatchMathRandom, restoreMathRandom } from '../../rng';
 import { SearchController } from './search-contoller';
 import { ExportController } from './export-controller';
 import { UndoHandler } from './undo-stack';
+import { useUIStateStore, stateToJson } from './store';
 
 
 export const DEFAULT_LAYOUT_OPTIONS = {
@@ -63,16 +64,16 @@ export class NetworkEditorController {
 
     this.networkLoaded = false;
 
-    this.bus.on('networkLoaded', (flags) => {
+    this.bus.on('networkLoaded', () => {
       this.networkLoaded = true;
       this.undoHandler.init();
-      
-      if(flags.layoutWasRun) {
-        this.savePositions();
-      }
     });
 
     window.cy = cy; // for access in the console
+  }
+
+  initializeResults(resultsJson) {
+    this.searchController.initializeResults(resultsJson);
   }
 
   isNetworkLoaded() {
@@ -455,31 +456,40 @@ export class NetworkEditorController {
   }
   
 
-  async savePositions() {
-    // TODO
-    // console.log("saving positions...");
+  async savePositionsAndState() {
+    if(this.cy.data('demo')) {
+      console.log('demo network, not saving positions');
+      return;
+    }
+    console.log("saving positions and UI state...");
 
-    // Deleted nodes are not present in the 'positions' document
-    // const positions = this.cy.nodes()
-    //   .map(node => ({ 
-    //     id: node.data('id'),
-    //     x:  node.position().x,
-    //     y:  node.position().y,
-    //     collapsed: node.data('collapsed')
-    //   }));
+    //Deleted nodes are not present in the 'positions' document
+    const positions = this.cy.nodes()
+      .map(node => ({ 
+        id: node.data('id'),
+        x:  node.position().x,
+        y:  node.position().y,
+      }));
 
-    // const res = await fetch(`/api/${this.networkIDStr}/positions`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     positions
-    //   })
-    // });
+    const state = useUIStateStore.getState();
+    const stateJson = stateToJson(state);
 
-    // if(res.ok) {
-    //   console.log("positions saved");
-    // } 
+    const body = {
+      positions,
+      state: stateJson
+    };
+
+    const res = await fetch(`/api/${this.networkIDStr}/uistate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if(res.ok) {
+      console.log("positions saved");
+    } 
   }
+  
 
   renameNetwork(newName) {
     const networkName = newName != null ? newName.trim() : null;

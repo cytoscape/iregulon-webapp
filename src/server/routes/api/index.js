@@ -44,30 +44,30 @@ http.get('/sample-data', async function(req, res, next) {
 /* 
  * Returns a network given its ID.
  */
-http.get('/:netid', async function(req, res, next) {
+http.get('/:id', async function(req, res, next) {
   try {
-    const { netid } = req.params;
-    const network = await Datastore.getMotifsAndTracks(netid);
+    const { id } = req.params;
+    const results = await Datastore.getMotifsAndTracks(id);
     
-    if (!network) {
+    if(!results) {
       res.sendStatus(404);
     } else {
-      res.send(JSON.stringify(network));
+      res.send(JSON.stringify(results));
     }
   } catch (err) {
     next(err);
   }
 });
 
+
 /* 
  * Update the network data given its ID--right now, this only supports updating the 'networkName'.
  */
-http.put('/:netid', async function(req, res, next) {
+http.put('/:id', async function(req, res, next) {
   try {
-    const { netid } = req.params;
+    const { id } = req.params;
     const { name } = req.body;
-    console.log('updateState', 'networkName:', name);
-    const updated = await Datastore.updateState(netid, { name });
+    const updated = await Datastore.updateState(id, { name });
     
     res.sendStatus(updated ? 204 : 409);
   } catch (err) {
@@ -79,10 +79,10 @@ http.put('/:netid', async function(req, res, next) {
 /*
  * Returns the all the genes and ranks in the given network.
  */
-http.get('/:netid/genesforsearch', async function(req, res, next) {
+http.get('/:id/genesforsearch', async function(req, res, next) {
   try {
-    const { netid } = req.params;
-    const genes = await Datastore.getGenesForSearch(netid);
+    const { id } = req.params;
+    const genes = await Datastore.getGenesForSearch(id);
     res.write(JSON.stringify(genes));
   } catch (err) {
     next(err);
@@ -95,10 +95,10 @@ http.get('/:netid/genesforsearch', async function(req, res, next) {
 /*
  * Returns the iRegulon results associated with a network.
  */
-http.get('/:netid/results', async function(req, res, next) {
+http.get('/:id/results', async function(req, res, next) {
   try {
-    const { netid } = req.params;
-    const results = await Datastore.getResultsForSearch(netid);
+    const { id } = req.params;
+    const results = await Datastore.getResultsForSearch(id);
     res.write(JSON.stringify(results));
   } catch (err) {
     next(err);
@@ -108,51 +108,42 @@ http.get('/:netid/results', async function(req, res, next) {
 });
 
 
-// http.get('/:netid/positions', async function(req, res, next) {
-//   try {
-//     const { netid } = req.params;
+http.get('/:id/uistate', async function(req, res, next) {
+  try {
+    const { id } = req.params;
 
-//     const positions = await Datastore.getPositions(netid);
-//     if(!positions) {
-//       res.sendStatus(404);
-//     } else {
-//       res.send(JSON.stringify(positions));
-//     }
+    const state = await Datastore.getUIState(id);
+    if(!state) {
+      res.sendStatus(404);
+    } else {
+      res.send(JSON.stringify(state));
+    }
 
-//     res.sendStatus(404);
+    res.sendStatus(404);
     
-//   } catch (err) {
-//     next(err);
-//   }
-// });
+  } catch (err) {
+    next(err);
+  }
+});
 
-// http.post('/:netid/positions', async function(req, res, next) {
-//   try {
-//     const { netid } = req.params;
-//     const { positions } = req.body;
+http.post('/:id/uistate', async function(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { positions, state } = req.body;
 
-//     if(!Array.isArray(positions)) {
-//       res.sendStatus(404);
-//       return;
-//     }
+    if(!Array.isArray(positions)) {
+      res.sendStatus(404);
+      return;
+    }
 
-//     await Datastore.setPositions(netid, positions);
+    await Datastore.setUIState(id, positions, state);
 
-//     res.send('OK');
-//   } catch (err) {
-//     next(err);
-//   }
-// });
+    res.send('OK');
+  } catch (err) {
+    next(err);
+  }
+});
 
-// http.delete('/:netid/positions', async function(req, res, next) {
-//   try {
-//     const { netid } = req.params;
-//     await Datastore.deletePositions(netid);
-//     res.send('OK');
-//   } catch (err) {
-//     next(err);
-//   }
-// });
 
 
 export async function writeCursorToResult(cursor, res) {

@@ -234,62 +234,30 @@ class Datastore {
     return res.modifiedCount > 0;
   }
 
-  // /**
-  //  * {
-  //  *   _id: 'asdf',
-  //  *   networkID: "abcdefg",
-  //  *   positions: [
-  //  *     {
-  //  *        id: "asdf-asdf-asdf",
-  //  *        x: 12.34
-  //  *        y: 56.78
-  //  *        collapsed: false
-  //  *     }
-  //  *   ]
-  //  * }
-  //  * Note: Deleted nodes are not part of the positions document.
-  //  */
-  // async setPositions(networkIDString, positions) {
-  //   const networkID = makeID(networkIDString);
-  //   const document = {
-  //     networkID: networkID.bson,
-  //     positions
-  //   };
 
-  //   // Save the document twice, the one in POSITIONS_RESTORE_COLLECTION never changes
-  //   await this.db
-  //     .collection(POSITIONS_RESTORE_COLLECTION)
-  //     .updateOne({ networkID: networkID.bson }, { $setOnInsert: document }, { upsert: true });
+  async setUIState(idStr, positions, state) {
+    const id = makeID(idStr);
+    const document = {
+      motifsAndTracksID: id.bson,
+      positions,
+      state
+    };
 
-  //   await this.db
-  //     .collection(POSITIONS_COLLECTION)
-  //     .replaceOne({ networkID: networkID.bson }, document, { upsert: true });
-  // }
+    await this.db
+      .collection(STATE_DATA_COLLECTION)
+      .replaceOne({ motifsAndTracksID: id.bson }, document, { upsert: true });
+  }
 
-  // async getPositions(networkIDString) {
-  //   const networkID = makeID(networkIDString);
+  
+  async getUIState(idStr) {
+    const id = makeID(idStr);
 
-  //   let result = await this.db
-  //     .collection(POSITIONS_COLLECTION)
-  //     .findOne({ networkID: networkID.bson });
+    const result = await this.db
+      .collection(STATE_DATA_COLLECTION)
+      .findOne({ motifsAndTracksID: id.bson });
 
-  //   if(!result) {
-  //     console.log("Did not find positions, querying POSITIONS_RESTORE_COLLECTION");
-  //     result = await this.db
-  //       .collection(POSITIONS_RESTORE_COLLECTION)
-  //       .findOne({ networkID: networkID.bson });
-  //   }
-    
-  //   return result;  
-  // }
-
-  // async deletePositions(networkIDString) {
-  //   const networkID = makeID(networkIDString);
-  //   // Only delete from POSITIONS_COLLECTION, not from POSITIONS_RESTORE_COLLECTION
-  //   await this.db
-  //     .collection(POSITIONS_COLLECTION)
-  //     .deleteOne({ networkID: networkID.bson } );
-  // }
+    return result;  
+  }
 
 
   async getResultCounts() {
