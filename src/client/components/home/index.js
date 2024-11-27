@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
+import { QueryClient, QueryClientProvider } from "react-query";
+
 import Content from './content';
-import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 import { currentTheme } from '../../theme';
 import { RecentNetworksController } from '../recent-networks-controller';
+
+import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+
+
+const queryClient = new QueryClient();
 
 
 export function Home({ recentNetworksController }) {
@@ -21,12 +27,14 @@ export function Home({ recentNetworksController }) {
   }, []);
 
   return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Content recentNetworksController={recentNetworksController} />
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <QueryClientProvider client={queryClient}>
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Content recentNetworksController={recentNetworksController} />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </QueryClientProvider>
   );
 }
 

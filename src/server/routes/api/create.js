@@ -9,7 +9,8 @@ import {
   IREGULON_STATE_SERVICE_URL,
   IREGULON_RESULTS_SERVICE_URL,
   BRIDGEDB_URL,
-  MONGO_URL,
+  METATARGETOME_TFS_SERVICE_URL,
+  METATARGETOME_SERVICE_URL,
 } from '../../env.js';
 
 const NETWORK_CREATE_ERROR_CODE = 450;
@@ -30,7 +31,6 @@ http.post('/submitJob', async function(req, res) {
     params.append(key, value);
     savedParams[key] = value;
   });
-
 
   const response = await fetch(IREGULON_JOB_SERVICE_URL, {
     method: 'POST',
@@ -118,6 +118,32 @@ http.post('/', async function(req, res) {
   // Return the result of the job
   res.json({ jobID, networkID });
 });
+
+http.post('/queryTranscriptionFactorsWithPredictedTargetome', async function(req, res) {
+  const params = new URLSearchParams();
+  Object.entries(req.body).forEach(([key, value]) => {
+    params.append(key, value);
+  });
+
+  const response = await fetch(METATARGETOME_TFS_SERVICE_URL, {
+    method: 'POST',
+    headers: { 'User-Agent': IREGULON_USER_AGENT },
+    body: params
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    const status = response.status;
+    throw new CreateError({ step: 'submitJob', body, status });
+  }
+
+  const txt = await response.text();
+  const transcriptionFactors = txt.split('\n').map(line => line.split('\t')[1]);
+  transcriptionFactors.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'accent' }));
+
+  res.json({ transcriptionFactors });
+});
+
 
 /**
  * Prevent a potential memory leak by clearing old jobs.
