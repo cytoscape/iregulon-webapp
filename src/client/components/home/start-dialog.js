@@ -6,7 +6,7 @@ import DemoPanel from './demo-panel';
 
 import { makeStyles } from '@mui/styles';
 
-import { Button, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { Accordion, AccordionDetails, AccordionSummary, Radio } from '@mui/material';
 
@@ -46,9 +46,9 @@ const useQueryTypeAccordionStyles = makeStyles((theme) => ({
   details: {
     width: '100%',
     justifyContent: 'center',
-    padding: theme.spacing(0.5, 2, 1, 2),
-    [theme.breakpoints.down('xs')]: {
-      padding: theme.spacing(0.5, 1, 1, 1),
+    padding: theme.spacing(3, 2, 1, 6),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(1.5, 2, 1, 6),
     },
   },
 }));
@@ -105,7 +105,7 @@ export function QueryPanel({
   };
 
   return (
-    <>
+    <Box sx={{ height: '100%', p: 1, bgcolor: (theme) => theme.palette.background.default }}>
       <QueryTypeAccordion
         id={REGULATORS_QUERY}
         title="Predict Regulators and Targets"
@@ -131,7 +131,7 @@ export function QueryPanel({
           onTargetomeDatabasesChanged={onTargetomeDatabasesChanged}
         />
       </QueryTypeAccordion>
-    </>
+    </Box>
   );
 }
 QueryPanel.propTypes = {
@@ -152,11 +152,6 @@ const useStartDialogStyles = makeStyles((theme) => ({
       padding: theme.spacing(2, 1),
     },
   },
-  dividers: {
-    [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(2, 1),
-    },
-  },
   progress: {
     display: 'flex',
     flexDirection: 'column',
@@ -165,6 +160,7 @@ const useStartDialogStyles = makeStyles((theme) => ({
     justifyContent: 'center',
     minWidth: 320,
     textAlign: 'center',
+    padding: theme.spacing(2),
   },
 }));
 
@@ -269,7 +265,7 @@ const StartDialog = ({
         }[step]()
       }
       </DialogTitle>
-      <DialogContent dividers classes={{ dividers: classes.dividers }}>
+      <DialogContent dividers sx={{ p: 0 }}>
       { 
         {
           'INPUT':   () => isDemo ?

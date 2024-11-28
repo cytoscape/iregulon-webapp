@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from "react-query";
 import {
@@ -14,6 +14,8 @@ import {
   ListItemText,
   TextField,
   Typography,
+  Link,
+  Tooltip,
 } from '@mui/material';
 import { FlyIcon, HumanIcon, MouseIcon } from '../svg-icons';
 
@@ -86,6 +88,8 @@ function parseGeneList(text) {
 export function PredictedRegulatorsForm({ initialOrganism, isMobile, onOrganismChanged, onGenesChanged }) {
   const [ organism, setOrganism ] = useState(organisms.indexOf(initialOrganism));
 
+  const geneInputRef = useRef();
+
   const handleOrganismChange = (event) => {
     const idx = event.target.value;
     setOrganism(idx);
@@ -95,6 +99,23 @@ export function PredictedRegulatorsForm({ initialOrganism, isMobile, onOrganismC
     const txt = event.target.value;
     const genes = parseGeneList(txt);
     onGenesChanged(genes);
+  };
+
+  const setExampleGenes = () => {
+    // Select the first organism (must be `human`!)
+    const orgIdx = 0; 
+    setOrganism(orgIdx);
+    onOrganismChanged(organisms[orgIdx]);
+    // Genes frequently mutated in prostate cancer (from GeneMANIA)
+    const exampleGenes = [
+      'AR', 'BDH1', 'CYB5A', 'CYP11A1', 'CYP11B1', 'CYP11B2', 'CYP17A1', 'CYP19A1', 'CYP21A2',
+      'DCXR', 'DECR2', 'DHRS1', 'DHRS11', 'DHRS13', 'DHRS2', 'DHRS4', 'DHRS4L2', 'DHRS7B', 'HSD11B1L',
+      'HSD17B1', 'HSD17B10', 'HSD17B11', 'HSD17B12', 'HSD17B13', 'HSD17B14', 'HSD17B2', 'HSD17B3',
+      'HSD17B4', 'HSD17B6', 'HSD17B7', 'HSD17B8', 'HSD3B1', 'HSD3B2', 'HSD3B7', 'HSDL1', 'HSDL2',
+      'PECR', 'RDH10', 'RDH5', 'RDH8', 'SDR16C5', 'SHBG', 'SRD5A1', 'SRD5A3', 'STAR', 'TECR', 'TECRL'
+    ];
+    geneInputRef.current.value = exampleGenes.join(' ');
+    onGenesChanged(exampleGenes);
   };
 
   return (
@@ -130,17 +151,27 @@ export function PredictedRegulatorsForm({ initialOrganism, isMobile, onOrganismC
           ))}
         </Select>
       </FormControl>
-      <TextField
-        aria-label="gene-list"
-        placeholder="Enter gene list"
-        multiline
-        fullWidth
-        minRows={isMobile ? 8 : 12}
-        maxRows={isMobile ? 8 : 12}
-        inputProps={{ spellCheck: false }}
-        sx={{ minWidth: { sm: 400 } }}
-        onChange={handleGenesChange}
-      />
+      <FormControl sx={{ width: '100%' }}>
+        <TextField
+          inputRef={geneInputRef}
+          aria-label="gene-list"
+          placeholder="Enter gene list"
+          multiline
+          fullWidth
+          minRows={isMobile ? 8 : 12}
+          maxRows={isMobile ? 8 : 12}
+          inputProps={{ spellCheck: false }}
+          sx={{ minWidth: { sm: 400 } }}
+          onChange={handleGenesChange}
+        />
+        <FormHelperText sx={{ textAlign: 'right' }}>
+          <Tooltip title="Try it with some example genes (prostate cancer)" arrow>
+            <Link underline="hover" onClick={setExampleGenes} >
+              Example
+            </Link>
+          </Tooltip>
+        </FormHelperText>
+      </FormControl>
     </Box>
   );
 }
@@ -241,12 +272,14 @@ export function MetatargetomeForm({ isMobile, onTranscriptionFactorChanged, onTa
             </MenuItem>
           ))}
         </Select>
-        <FormHelperText>
-          { defaultOrganism.name } &#40;{ defaultOrganism.assembly }&#41; &mdash; { defaultOrganism.nomenclature }
+        <FormHelperText sx={{ color: (theme) => theme.palette.text.disabled }}>
+          *{ defaultOrganism.name } &#40;{ defaultOrganism.assembly }&#41; &mdash; { defaultOrganism.nomenclature }
         </FormHelperText>
       </FormControl>
       <FormControl variant="filled" size="small" label="Parent" onChange={handleTargetomeDBsChange}>
-        <FormLabel component="legend">Databases:</FormLabel>
+        <FormLabel component="legend" sx={{ mt: 2, mb: 1 }}>
+          Databases:
+        </FormLabel>
         {targetomeDatabases.map(({ id, name }) => (
           <FormControlLabel
             key={id}
@@ -257,6 +290,7 @@ export function MetatargetomeForm({ isMobile, onTranscriptionFactorChanged, onTa
                 size="small"
                 value={id}
                 checked={Boolean(selectedDatabases[id])}
+                sx={{ py: 0.25 }}
               />
             }
           />

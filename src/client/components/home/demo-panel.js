@@ -1,6 +1,6 @@
 import React from 'react';
 import { makeStyles } from '@mui/styles';
-import { Link, Typography } from '@mui/material';
+import { Box, Link, Typography } from '@mui/material';
 
 
 const useDemoPanelStyles = makeStyles((theme) => ({
@@ -16,7 +16,7 @@ const useDemoPanelStyles = makeStyles((theme) => ({
 export function DemoPanel() {
   const classes = useDemoPanelStyles();
   return (
-    <>
+    <Box sx={{ p: { sm: 3, xs: 2 } }}>
       <Typography component="p" variant="body1" className={classes.description}>
         Create a demo network from sample genes.
       </Typography>
@@ -34,7 +34,7 @@ export function DemoPanel() {
           iRegulon Tutorial
         </Link>.
       </Typography>
-    </>
+    </Box>
   );
 }
 
