@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-
-import makeStyles from '@mui/styles/makeStyles';
-
-import { Box, Typography, Link } from '@mui/material';
-import { FormControl, Select, MenuItem, ListItemIcon, ListItemText, TextField } from '@mui/material';
-
+import {
+  Box,
+  FormControl,
+  FormHelperText,
+  MenuItem,
+  Link,
+  ListItemIcon,
+  ListItemText,
+  Select,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { FlyIcon, HumanIcon, MouseIcon } from '../svg-icons';
+
 
 export const organisms = [
   {
@@ -70,8 +79,28 @@ function parseGeneList(text) {
   return [];
 }
 
-export function QueryPanel({ initialOrganism, isMobile, onOrganismChanged, onGenesChanged }) {
+export function QueryForm({ initialOrganism, isMobile, onOrganismChanged, onGenesChanged }) {
   const [ organism, setOrganism ] = useState(organisms.indexOf(initialOrganism));
+
+  const geneInputRef = useRef();
+
+  const setExampleGenes = () => {
+    // Select the first organism (must be `human`!)
+    const orgIdx = 0; 
+    setOrganism(orgIdx);
+    onOrganismChanged(organisms[orgIdx]);
+    // Genes frequently mutated in prostate cancer (from GeneMANIA)
+    const exampleGenes = [
+      'AR', 'BDH1', 'CYB5A', 'CYP11A1', 'CYP11B1', 'CYP11B2', 'CYP17A1', 'CYP19A1', 'CYP21A2',
+      'DCXR', 'DECR2', 'DHRS1', 'DHRS11', 'DHRS13', 'DHRS2', 'DHRS4', 'DHRS4L2', 'DHRS7B', 'HSD11B1L',
+      'HSD17B1', 'HSD17B10', 'HSD17B11', 'HSD17B12', 'HSD17B13', 'HSD17B14', 'HSD17B2', 'HSD17B3',
+      'HSD17B4', 'HSD17B6', 'HSD17B7', 'HSD17B8', 'HSD3B1', 'HSD3B2', 'HSD3B7', 'HSDL1', 'HSDL2',
+      'PECR', 'RDH10', 'RDH5', 'RDH8', 'SDR16C5', 'SHBG', 'SRD5A1', 'SRD5A3', 'STAR', 'TECR', 'TECRL'
+    ];
+    geneInputRef.current.value = exampleGenes.join(' ');
+    onGenesChanged(exampleGenes);
+  };
+
 
   const handleOrganismChange = (event) => {
     const idx = event.target.value;
@@ -117,61 +146,38 @@ export function QueryPanel({ initialOrganism, isMobile, onOrganismChanged, onGen
           ))}
         </Select>
       </FormControl>
-      <TextField
-        aria-label="gene-list"
-        placeholder="Enter gene list"
-        multiline
-        fullWidth
-        minRows={isMobile ? 8 : 12}
-        maxRows={isMobile ? 8 : 12}
-        inputProps={{ spellCheck: false }}
-        sx={{ minWidth: { sm: 400 } }}
-        onChange={handleGenesChange}
-      />
+      <FormControl sx={{ width: '100%' }}>
+        <TextField
+          inputRef={geneInputRef}
+          aria-label="gene-list"
+          placeholder="Enter gene list"
+          multiline
+          fullWidth
+          minRows={isMobile ? 8 : 12}
+          maxRows={isMobile ? 8 : 12}
+          inputProps={{ spellCheck: false }}
+          sx={{ minWidth: { sm: 400 } }}
+          onChange={handleGenesChange}
+        />
+        <FormHelperText>
+          <Tooltip title="Try it with some example genes (prostate cancer)">
+            <Link underline="hover" onClick={setExampleGenes}>
+              <Box component="span" >
+                <AutoAwesomeIcon color="inherit" sx={{ float: 'left', mr: 1, fontSize: '1.25rem' }} />
+                <Box component="span" sx={{ fontSize: '0.85rem' }}>
+                  Example
+                </Box>
+              </Box>
+            </Link>
+          </Tooltip>
+        </FormHelperText>
+      </FormControl>
     </Box>
   );
 }
-QueryPanel.propTypes = {
+QueryForm.propTypes = {
   initialOrganism: PropTypes.object.isRequired,
   isMobile: PropTypes.bool,
   onOrganismChanged: PropTypes.func,
   onGenesChanged: PropTypes.func,
 };
-
-//==[ DemoPanel ]=====================================================================================================
-
-const useDemoPanelStyles = makeStyles((theme) => ({
-  thumbnail: {
-    backgroundColor: theme.palette.background.network,
-    border: `4px solid ${theme.palette.divider}`,
-    borderRadius: '8px',
-    width: '100%',
-    margin: theme.spacing(2.5, 0, 2.5, 0),
-  },
-}));
-
-export function DemoPanel() {
-  const classes = useDemoPanelStyles();
-  return <>
-    <Typography component="p" variant="body1" className={classes.description}>
-      Create a demo network from sample genes.
-    </Typography>
-    <img
-      className={classes.thumbnail}
-      alt="thumbnail of demo network"
-      src="/images/demo_small.png"
-    />
-    <Typography component="p" variant="body1">
-      The data used to create this network is described in the&nbsp;
-      <Link 
-          target="_blank" // open in new tab
-          rel="noopener"
-          href="http://iregulon.aertslab.org/tutorial.html">
-        iRegulon Tutorial
-      </Link>.
-    </Typography>
-  </>;
-}
-DemoPanel.propTypes = {
-};
-

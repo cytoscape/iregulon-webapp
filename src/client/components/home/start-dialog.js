@@ -1,14 +1,14 @@
 import React, { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { QueryPanel, DemoPanel, organisms } from './query-panel';
+import { QueryForm, organisms } from './query-form';
+import { DemoPanel } from './demo-panel';
 
 import makeStyles from '@mui/styles/makeStyles';
 
 import { Button, Typography } from '@mui/material';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
-import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import CloseIcon from '@mui/icons-material/Close';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -107,7 +107,7 @@ const StartDialog = ({
         {
           'INPUT':   () => isDemo ?
                             <DemoPanel /> : 
-                            <QueryPanel isMobile={isMobile} initialOrganism={DEF_ORGANISM} onOrganismChanged={hanleOrganismChanged} onGenesChanged={hanleGenesChanged} />,
+                            <QueryForm isMobile={isMobile} initialOrganism={DEF_ORGANISM} onOrganismChanged={hanleOrganismChanged} onGenesChanged={hanleGenesChanged} />,
           'LOADING': () => <LoadingProgress />,
           'ERROR':   () => <ErrorReport />,
         }[step]()
