@@ -4,7 +4,7 @@ import _ from 'lodash';
 
 import { DEFAULT_PADDING } from '../defaults';
 import { monkeyPatchMathRandom, restoreMathRandom } from '../../rng';
-import { SearchController } from './search-contoller';
+import { SearchController } from './search-controller';
 import { ExportController } from './export-controller';
 import { UndoHandler } from './undo-stack';
 import { useUIStateStore, stateToJson } from './store';
