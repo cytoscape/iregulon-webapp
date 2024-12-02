@@ -104,10 +104,6 @@ export class NetworkEditorController {
     return id.startsWith('CLUSTER') ? this.searchController.getClusterById(id) : this.searchController.getResultById(id);
   }
 
-  isDemoNetwork() {
-    return Boolean(this.cy.data('demo'));
-  }
-
   /**
    * @param {*} results Array of motifs/tracks/clusters with the 'transcriptionFactors' that must be added to the network.
    */
@@ -457,7 +453,7 @@ export class NetworkEditorController {
   
 
   async savePositionsAndState() {
-    if(this.cy.data('demo')) {
+    if (this.cy.isDemo()) {
       console.log('demo network, not saving positions');
       return;
     }

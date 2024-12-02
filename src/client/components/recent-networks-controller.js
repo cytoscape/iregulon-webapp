@@ -26,6 +26,9 @@ const NETWORK_THUMBNAIL_HEIGHT = 344;
   }
 
    async saveRecentNetwork(cy) {
+    if (cy.isDemo()) {
+      return;
+    }
     const id = cy.data('id');
     let created;
     const item = await LocalForage.getItem(id);
@@ -61,12 +64,13 @@ const NETWORK_THUMBNAIL_HEIGHT = 344;
   }
 
   updateRecentNetwork(cy) {
+    if (cy.isDemo()) {
+      return;
+    }
     const id = cy.data('id');
-   
     LocalForage.getItem(id).then((val) => {
       if (val) {
         const newValue = this._localStorageValue({ created: val.created, cy });
-        
         LocalForage.setItem(id, newValue).catch((err) => {
           console.log(err);
         });
