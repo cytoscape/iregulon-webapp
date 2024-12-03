@@ -72,6 +72,8 @@ export function Header({
 
   const classes = useHeaderStyles();
 
+  const cy = controller.cy;
+
   useEffect(() => {
     const onNetworkLoaded = () => setNetworkLoaded(true);
     controller.bus.on('networkLoaded', onNetworkLoaded);
@@ -124,7 +126,7 @@ export function Header({
             </Tooltip>
           </Box>
           <ToolbarDivider classes={classes} unrelated={!isMobile} />
-          <TitleEditor controller={controller} disabled={!networkLoaded} />
+          <TitleEditor controller={controller} disabled={!networkLoaded || cy.isDemo()} />
           <ToolbarDivider classes={classes} unrelated={!isMobile} />
         {toolbarBtnDef.map(({title, icon, description, onClick, unrelated, isEnabled, isSelected, subMenu }, idx) =>
           <Fragment key={idx}>

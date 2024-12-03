@@ -20,6 +20,7 @@ const CssInputBase = styled(InputBase)(({ theme }) => ({
       backgroundColor: theme.palette.background.field,
       '&[disabled]': {
         border: '1px solid transparent !important',
+        backgroundColor: 'inherit',
       },
     },
     '&:focus': {
@@ -29,6 +30,7 @@ const CssInputBase = styled(InputBase)(({ theme }) => ({
     },
   },
 }));
+
 
 /**
  * The network title editor. Shows and edits the attribute `cy.data('name')`.
