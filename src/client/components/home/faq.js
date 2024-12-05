@@ -62,8 +62,8 @@ const faqs = [
         <UnorderedList
           items={[
             <>Co-expressed genes from gene expression profiling experiments</>,
-            <>Genes involved in specific pathways &#40;e.g., KEGG, Reactome, Gene Ontology&#41;</>,
-            <>Genes connected in biological networks &#40;e.g., GeneMania, STRING&#41;</>,
+            <>Genes involved in specific pathways &#40;e.g. <LinkOut href="https://www.kegg.jp/">KEGG</LinkOut>, <LinkOut href="https://reactome.org/">Reactome</LinkOut>, <LinkOut href="https://geneontology.org/">Gene Ontology</LinkOut>&#41;</>,
+            <>Genes connected in biological networks &#40;e.g. <LinkOut href="https://genemania.org/">GeneMania</LinkOut>, <LinkOut href="https://string-db.org/">STRING</LinkOut>&#41;</>,
             <>Shared targets of microRNAs</>,
           ]}
         />
@@ -124,7 +124,7 @@ const faqs = [
               even if the motif itself is not annotated for a human TF.
             </>,
             <>
-              <b>Integration with Cytoscape:</b> iRegulon is also available as a user-friendly <LinkOut href="https://apps.cytoscape.org/apps/iregulon">Cytoscape plugin</LinkOut>, 
+              <b>Integration with Cytoscape:</b> iRegulon is also available as a <LinkOut href="https://apps.cytoscape.org/apps/iregulon">Cytoscape plugin</LinkOut>, 
               allowing seamless integration of predicted regulatory networks with other biological networks and data analysis tools.
             </>,
           ]}
