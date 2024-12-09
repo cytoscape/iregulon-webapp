@@ -17,7 +17,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { DownloadIcon } from '../svg-icons';
 
 
-const filterQueryGenes = true;
+const FILTER_QUERY_GENES = true;
 
 const sortOptions = {
   up: {
@@ -113,7 +113,7 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
   const [searchValue, setSearchValue] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [genes, setGenes] = useState(null);
-  const [sort, setSort] = useState('down');
+  const [sort, setSort] = useState('down'); // TODO: remove if not needed
   const [selectedGene, setSelectedGene] = useState(null);
   const [initialIndex, setInitialIndex] = useState(-1); // -1 means "do NOT change the scroll position"
 
@@ -136,8 +136,26 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
     return _.orderBy(list, args.iteratees, args.orders);
   };
 
-  const fetchAllGenes = async () => {
-    return await controller.fetchGeneList(filterQueryGenes);
+  /**
+   * @returns All query genes plus all the regulator genes, including the ones not the current network snapshot.
+   */
+  const fetchQueryAndRegulatorGenes = () => {
+    const queryGenes = controller.fetchGeneList(FILTER_QUERY_GENES);
+    const regulatorGenes = controller.fetchRegulatoGeneList();
+    const geneSet = new Set([...queryGenes, ...regulatorGenes]);
+    return geneSet.size > 0 ? Array.from(geneSet) : [];
+  };
+
+  /**
+   * @returns All query genes plus the regulator genes that are in the network.
+   */
+  const fetchQueryAndNetworkGenes = () => {
+    const queryGenes = controller.fetchGeneList(FILTER_QUERY_GENES);
+    const regulatorGenes = controller.fetchRegulatoGeneList();
+    const nodeNames = cy.nodes().map(n => n.data('name'));
+    const regulatorGenesInNetwork = regulatorGenes.filter(g => nodeNames.includes(g.name));
+    const geneSet = new Set([...queryGenes, ...regulatorGenesInNetwork]);
+    return geneSet.size > 0 ? Array.from(geneSet) : [];
   };
 
   const fetchGeneListFromElements = (eles) => {
@@ -180,14 +198,14 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
     setTimeout(() => setGenes(genes), 100);
   };
 
-  const debouncedSelectionHandler = _.debounce(async () => {
+  const debouncedSelectionHandler = _.debounce(() => {
     const eles = cy.nodes(':selected');
     if (eles.length > 0) {
       // Sync the node selection with the gene list, by filtering the genes that are in the selection
       const newGenes = fetchGeneListFromElements(eles);
       flashAndSetGenes(sortGenes(newGenes, sortRef.current));
     } else if (_.isEmpty(searchValueRef.current)) {
-      const newGenes = await fetchAllGenes();
+      const newGenes = fetchQueryAndNetworkGenes();
       flashAndSetGenes(sortGenes(newGenes, sortRef.current));
     }
   }, 250);
@@ -202,11 +220,14 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
   const onNetworkLoaded = () => {
     setNetworkLoaded(true);
   };
-  const onGeneListIndexed = () => {console.log('LEFT-DRAWER -- onGeneListIndexed...');
+  const onGeneListIndexed = () => {
     setGeneListIndexed(true);
     debouncedSelectionHandler();
   };
-
+  const onCyNetworkChanged = () => {
+    // Update the gene list when the network changes (nodes added/removed)
+    debouncedSelectionHandler();
+  };
   const onCySelectionChanged = () => {
     debouncedSelectionHandler();
   };
@@ -244,7 +265,7 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
     }
   }, 200);
 
-  const toggleGeneDetails = async (symbol) => {
+  const toggleGeneDetails = (symbol) => {
     const newSymbol = selectedGeneRef.current !== symbol ? symbol : null;
     updateCyHighlights(newSymbol);
     setSelectedGene(newSymbol);
@@ -264,6 +285,7 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
       cancelSearch();
     }, 128);
     
+    cyEmitter.on('add remove', onCyNetworkChanged);
     cyEmitter.on('select unselect', onCySelectionChanged);
     cyEmitter.on('select', () => clearSearch());
     cyEmitter.on('tap', evt => {

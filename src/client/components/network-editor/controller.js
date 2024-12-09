@@ -618,6 +618,10 @@ export class NetworkEditorController {
     return this.searchController.getGenes(isQuery);
   }
 
+  fetchRegulatoGeneList() {
+    return this.searchController.getRegulatorGenes();
+  }
+
   fetchResults(type) {
     return this.searchController.getResults(type);
   }

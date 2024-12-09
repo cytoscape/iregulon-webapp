@@ -52,7 +52,7 @@ const GeneIcon = ({ symbol, regulatoryFunction, isMobile, controller }) => {
     return () => {
       controller.cy.removeListener('add remove', selector, updateInNetwork);
     };
-  }, []);
+  }, [symbol]);
 
   const GeneLegendTooltip = withStyles(theme => ({
     tooltipPlacementTop: {
@@ -452,7 +452,7 @@ const GeneListPanel = ({
   const renderGeneRow = (idx) => {
     const g = genes != null && genes.length > 0 ? genes[idx] : null;
     const symbol = g?.name;
-    const regulatoryFunction = g?.regulatoryFunction;
+    const regulatoryFunction = g?.regulatoryFunction; // TODO - get the regulatory function from the results or the current network snapshot?
     const motifs = g?.motifs;
     const tracks = g?.tracks;
 

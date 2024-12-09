@@ -51,6 +51,13 @@ export class SearchController {
     return genes;
   }
 
+  getRegulatorGenes() {
+    if (!this.isGeneListIndexed()) {
+      throw "The gene list hasn't been fecthed yet!";
+    }
+    return this.getGenes().filter(g => g.regulatoryFunction === 'regulator');
+  }
+
   searchResults(query) {
     if (!this.isResultListIndexed()) {
       throw "The results haven't been fecthed yet!";
