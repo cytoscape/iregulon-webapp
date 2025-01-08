@@ -18,18 +18,6 @@ export const DEFAULT_LAYOUT_OPTIONS = {
 };
 
 
-// Keys for scratch data
-export const Scratch = {
-  // boolean flag indicating if the expand/collapse layout is currently running, attached to parent nodes
-  LAYOUT_RUNNING: '_layoutRunning',
-  // BubblePath instance, attached to parent nodes
-  BUBBLE: '_bubble',
-  // The HTML element for the expand/collapse toggle buttons, attached to parent nodes
-  TOGGLE_BUTTON_ELEM: '_buttonElem',
-  AUTOMOVE_RULE: '_automoveRule'
-};
-
-
 /**
  * The network editor controller contains all high-level model operations that the network
  * editor view can perform.
@@ -222,37 +210,10 @@ export class NetworkEditorController {
     });
   }
 
-  // _computeFCOSEidealEdgeLengthMap(clusterLabels, clusterAttr) {
-  //   const idealLength = size => {
-  //     switch(true) {
-  //       case size < 10: return 40;
-  //       case size < 20: return 75;
-  //       case size < 30: return 120;
-  //       case size < 40: return 180;
-  //       default:        return 250;
-  //     }
-  //   };
-
-  //   const edgeLengthMap = new Map();
-
-  //   clusterLabels.forEach(({ clusterId }) => {
-  //     const cluster = this.cy.elements(`node[${clusterAttr}="${clusterId}"]`);
-  //     if(!cluster.empty()) {
-  //       const ideal = idealLength(cluster.size());
-  //       cluster.internalEdges().forEach(edge => {
-  //         edgeLengthMap.set(edge.data('id'), ideal);
-  //       });
-  //     }
-  //   });
-
-  //   return edgeLengthMap;
-  // }
-
-
-  async applyLayout(options) {
+  async applyLayout(eles, options) {
     const { cy } = this;
 
-    await this._applyLayoutToEles(cy.elements(), options);
+    await this._applyLayoutToEles(eles || cy.elements(), options || DEFAULT_LAYOUT_OPTIONS);
     cy.fit(DEFAULT_PADDING);
   }
 
@@ -279,16 +240,6 @@ export class NetworkEditorController {
     // unrestricted zoom, since the old restrictions may not apply if things have changed
     cy.minZoom(-1e50);
     cy.maxZoom(1e50);
-
-    // const idealLengths = this._computeFCOSEidealEdgeLengthMap(clusterLabels, clusterAttr);
-
-    // const options = {
-    //   name: 'fcose',
-    //   animate: false,
-    //   // idealEdgeLength: edge => idealLengths.get(edge.data('id')) || 50,
-    //   nodeRepulsion: 100000
-    // };
-    options = options || DEFAULT_LAYOUT_OPTIONS;
 
     const allNodes = eles.nodes();
     const disconnectedNodes = allNodes.filter(n => n.degree() === 0); // careful, our compound nodes have degree 0
@@ -599,17 +550,17 @@ export class NetworkEditorController {
   }
 
 
-  /**
-   * Delete the selected (i.e. :selected) elements in the graph
-   */
-  deleteSelectedNodes() {
-    let selectedNodes = this.cy.nodes(':selected');
-    selectedNodes = selectedNodes.filter(n => n.children().empty()); // Filter out parent nodes
-    if (!selectedNodes.empty()) {
-      const deletedNodes = selectedNodes.remove();
-      this.bus.emit('deletedSelectedNodes', deletedNodes);
-    }
-  }
+  // /**
+  //  * Delete the selected (i.e. :selected) elements in the graph
+  //  */
+  // deleteSelectedNodes() {
+  //   let selectedNodes = this.cy.nodes(':selected');
+  //   selectedNodes = selectedNodes.filter(n => n.children().empty()); // Filter out parent nodes
+  //   if (!selectedNodes.empty()) {
+  //     const deletedNodes = selectedNodes.remove();
+  //     this.bus.emit('deletedSelectedNodes', deletedNodes);
+  //   }
+  // }
 
   /**
    * @param {boolean} isQuery if `true`, the returned list will contain only query genes
