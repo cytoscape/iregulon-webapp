@@ -307,7 +307,9 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     if (checked) {
       const eles = controller.addToNetwork([{ ...row, transcriptionFactors: [tfs[0]] }]);
       updateNetworkStyle();
-      await controller.applyLayout(eles);
+      await controller.applyLayout();
+      cy.elements().unselect();
+      eles.nodes().select();
     } else {
       controller.removeFromNetwork([row]);
       updateNetworkStyle();
@@ -340,7 +342,9 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     if (checked) {
       const eles = controller.addToNetwork([row]);
       updateNetworkStyle();
-      await controller.applyLayout(eles);
+      await controller.applyLayout();
+      cy.elements().unselect();
+      eles.nodes().select();
     } else {
       controller.removeFromNetwork([row]);
       updateNetworkStyle();
