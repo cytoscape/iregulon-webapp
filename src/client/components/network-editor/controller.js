@@ -94,6 +94,7 @@ export class NetworkEditorController {
 
   /**
    * @param {*} results Array of motifs/tracks/clusters with the 'transcriptionFactors' that must be added to the network.
+   * @returns {Collection} Cytoscape collection of elements that were added to the network.
    */
   addToNetwork(results) {
     const cy = this.cy;
@@ -123,6 +124,7 @@ export class NetworkEditorController {
           resultIds: [],
         };
         node = cy.add({ group: 'nodes', data })[0];
+        node.scratch('_new', true);
         node.scratch('_isQuery', isQuery);
       } else {
         node = node[0];
@@ -165,13 +167,19 @@ export class NetworkEditorController {
                   clusterNumber,
                   resultTFId: resId + '::' + name1,
                 };
-                cy.add({ group: 'edges', data });
+                const edge = cy.add({ group: 'edges', data });
+                edge.scratch('_new', true);
               }
             }
           });
         });
       }
     });
+
+    const newElements = cy.elements().filter(e => e.scratch('_new'));
+    newElements.removeScratch('_new');
+
+    return newElements;
   }
 
   removeFromNetwork(results) {
@@ -213,8 +221,16 @@ export class NetworkEditorController {
   async applyLayout(eles, options) {
     const { cy } = this;
 
-    await this._applyLayoutToEles(eles || cy.elements(), options || DEFAULT_LAYOUT_OPTIONS);
+    let otherEles;
+    if (eles && eles.length > 0) {
+      otherEles = cy.nodes().difference(eles.nodes());
+      otherEles.lock();
+    }
+
+    await this._applyLayoutToEles(cy.elements(), options || DEFAULT_LAYOUT_OPTIONS);
     cy.fit(DEFAULT_PADDING);
+
+    otherEles?.unlock();
   }
 
   _partitionComponentsByNES(eles) {

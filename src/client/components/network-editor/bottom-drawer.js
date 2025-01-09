@@ -305,9 +305,9 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     triggerUpdate();
     // Update the network
     if (checked) {
-      controller.addToNetwork([{ ...row, transcriptionFactors: [tfs[0]] }]);
+      const eles = controller.addToNetwork([{ ...row, transcriptionFactors: [tfs[0]] }]);
       updateNetworkStyle();
-      await controller.applyLayout();
+      await controller.applyLayout(eles);
     } else {
       controller.removeFromNetwork([row]);
       updateNetworkStyle();
@@ -338,9 +338,9 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     const tf = tfs.find(el => el.geneID.name === tfInfo.name);
     row = { ...row, transcriptionFactors: [tf] };
     if (checked) {
-      controller.addToNetwork([row]);
+      const eles = controller.addToNetwork([row]);
       updateNetworkStyle();
-      await controller.applyLayout();
+      await controller.applyLayout(eles);
     } else {
       controller.removeFromNetwork([row]);
       updateNetworkStyle();
