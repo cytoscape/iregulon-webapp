@@ -284,6 +284,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const handleTypeChange = (evt, value) => {
     if (value != null) {
       setType(value);
+      setSearchValue('');
       const results = controller.fetchResults(value);
       setData(toTableData(results, value, sortFnRef.current));
     }
