@@ -141,22 +141,22 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
    */
   const fetchQueryAndRegulatorGenes = () => {
     const queryGenes = controller.fetchGeneList(FILTER_QUERY_GENES);
-    const regulatorGenes = controller.fetchRegulatoGeneList();
+    const regulatorGenes = controller.fetchRegulatorGeneList();
     const geneSet = new Set([...queryGenes, ...regulatorGenes]);
     return geneSet.size > 0 ? Array.from(geneSet) : [];
   };
 
-  /**
-   * @returns All query genes plus the regulator genes that are in the network.
-   */
-  const fetchQueryAndNetworkGenes = () => {
-    const queryGenes = controller.fetchGeneList(FILTER_QUERY_GENES);
-    const regulatorGenes = controller.fetchRegulatoGeneList();
-    const nodeNames = cy.nodes().map(n => n.data('name'));
-    const regulatorGenesInNetwork = regulatorGenes.filter(g => nodeNames.includes(g.name));
-    const geneSet = new Set([...queryGenes, ...regulatorGenesInNetwork]);
-    return geneSet.size > 0 ? Array.from(geneSet) : [];
-  };
+  // /**
+  //  * @returns All query genes plus the regulator genes that are in the network.
+  //  */
+  // const fetchQueryAndNetworkGenes = () => {
+  //   const queryGenes = controller.fetchGeneList(FILTER_QUERY_GENES);
+  //   const regulatorGenes = controller.fetchRegulatorGeneList();
+  //   const nodeNames = cy.nodes().map(n => n.data('name'));
+  //   const regulatorGenesInNetwork = regulatorGenes.filter(g => nodeNames.includes(g.name));
+  //   const geneSet = new Set([...queryGenes, ...regulatorGenesInNetwork]);
+  //   return geneSet.size > 0 ? Array.from(geneSet) : [];
+  // };
 
   const fetchGeneListFromElements = (eles) => {
     const genes = [];
@@ -205,7 +205,7 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
       const newGenes = fetchGeneListFromElements(eles);
       flashAndSetGenes(sortGenes(newGenes, sortRef.current));
     } else if (_.isEmpty(searchValueRef.current)) {
-      const newGenes = fetchQueryAndNetworkGenes();
+      const newGenes = fetchQueryAndRegulatorGenes();
       flashAndSetGenes(sortGenes(newGenes, sortRef.current));
     }
   }, 250);

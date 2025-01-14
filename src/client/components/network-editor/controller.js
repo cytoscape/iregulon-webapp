@@ -585,7 +585,7 @@ export class NetworkEditorController {
     return this.searchController.getGenes(isQuery);
   }
 
-  fetchRegulatoGeneList() {
+  fetchRegulatorGeneList() {
     return this.searchController.getRegulatorGenes();
   }
 
