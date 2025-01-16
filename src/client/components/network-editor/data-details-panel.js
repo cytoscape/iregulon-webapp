@@ -8,16 +8,25 @@ import { useUIStateStore } from './store';
 import { NetworkEditorController } from './controller';
 
 import { useTheme } from '@mui/material/styles';
-
 import makeStyles from '@mui/styles/makeStyles';
-
-import { Table, TableHead, TableBody, TableCell, TableRow, TableSortLabel } from '@mui/material';
-import { Grid, Paper, Typography, Tooltip } from '@mui/material';
-import { Checkbox, IconButton } from '@mui/material';
-
+import {
+  Grid,
+  Paper,
+  Checkbox,
+  IconButton,
+  Table,
+  TableHead,
+  TableBody,
+  TableCell,
+  TableRow,
+  TableSortLabel,
+  Typography,
+  Tooltip,
+} from '@mui/material';
 import IndeterminateCheckBoxOutlinedIcon from '@mui/icons-material/IndeterminateCheckBoxOutlined';
 import NotIncludedIcon from '@mui/icons-material/NotInterested';
 import IncludedIcon from '@mui/icons-material/Check';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 
 const TARGET_COLUMNS = [
@@ -82,7 +91,7 @@ const TF_COLUMNS = [
     render: (row, col) => typeof row[col.id] === 'number' ? `${Math.round(row[col.id] * 100)}%` : 'N/A',
   },
   { 
-    id: 'maxFDR',
+    id: 'maxMotifSimilarityFDR',
     numeric: true,
     sortable: true,
     hideOnMobile: false,
@@ -100,6 +109,15 @@ const TF_COLUMNS = [
     label: <>&nbsp;</>,
     tooltip: (type) => `Whether the selected ${type.toLowerCase()} is annotated for this TF`,
     show: (type) => type === 'CLUSTER',
+    render: () => <></>,
+  },
+  {
+    id: 'details', // Special column for icons
+    numeric: false,
+    sortable: false,
+    hideOnMobile: true,
+    label: <>&nbsp;</>,
+    show: (type) => type !== 'CLUSTER',
     render: () => <></>,
   },
 ];
@@ -130,9 +148,9 @@ export function DataDetailsPanel({
   visible,
   data, // Track, Motif or TF
   selectedMotifOrTrack, // Only used for CLUSTER data
-  controller,
   isMobile,
   onTFCheckChange,
+  onOpenTFDetails,
 }) {
   const classes = useDataDetailsPanelStyles();
   const theme = useTheme();
@@ -143,11 +161,10 @@ export function DataDetailsPanel({
       name: geneID.name
     };
   });
-  const tfRows = data.transcriptionFactors?.map(({ geneID, maxMotifSimilarityFDR, minOrthologousIdentity }) => {
+  const tfRows = data.transcriptionFactors?.map((tf) => {
     return {
-      name: geneID.name,
-      maxFDR: maxMotifSimilarityFDR,
-      minOrthologousIdentity,
+      name: tf.geneID.name,
+      ...tf,
     };
   });
 
@@ -221,6 +238,7 @@ export function DataDetailsPanel({
             motifOrTrackGenes={selectedMotifOrTrack?.transcriptionFactors}
             isMobile={isMobile}
             onRowCheckChange={handleRowCheck}
+            onOpenTFDetails={onOpenTFDetails}
           />
         </Grid>
       )}
@@ -232,9 +250,9 @@ DataDetailsPanel.propTypes = {
   visible: PropTypes.bool.isRequired,
   data: PropTypes.object.isRequired,
   selectedMotifOrTrack: PropTypes.object,
-  controller: PropTypes.instanceOf(NetworkEditorController).isRequired,
   isMobile: PropTypes.bool,
   onTFCheckChange: PropTypes.func,
+  onOpenTFDetails: PropTypes.func,
 };
 
 //==[ GeneTable ]=====================================================================================================
@@ -291,16 +309,31 @@ const useGeneTableStyles = makeStyles((theme) => ({
   minOrthologousIdentityCell: {
     ...userSelectTextProps,
   },
-  maxFDRCell: {
+  maxMotifSimilarityFDRCell: {
     ...userSelectTextProps,
   },
   includedCell: {
     width: 26,
     textAlign: 'center',
   },
+  detailsCell: {
+    width: 26,
+    textAlign: 'center',
+  },
 }));
 
-function GeneTable({ parentId, type, columns, data, defOrderBy, defOrder, motifOrTrackGenes, isMobile, onRowCheckChange }) {
+function GeneTable({
+  parentId,
+  type,
+  columns,
+  data,
+  defOrderBy,
+  defOrder,
+  motifOrTrackGenes,
+  isMobile,
+  onRowCheckChange,
+  onOpenTFDetails,
+}) {
   const [orderBy, setOrderBy] = useState(defOrderBy);
   const [order, setOrder] = useState(defOrder);
   const selectedTFs = useUIStateStore(state => state.selectedTFs);
@@ -339,6 +372,10 @@ function GeneTable({ parentId, type, columns, data, defOrderBy, defOrder, motifO
       });
     }
     evt.stopPropagation();
+  };
+
+  const handleTFDetailsClick = (row) => {
+    onOpenTFDetails?.(row);
   };
 
   const columnTooltip = (col) => {
@@ -414,6 +451,18 @@ function GeneTable({ parentId, type, columns, data, defOrderBy, defOrder, motifO
             :
             <NotIncludedIcon sx={{ color: (theme) => theme.palette.text.disabled, opacity: 0.4, fontSize: 16, display: 'block', m: 'auto' }} />
         );
+      case 'details':
+        return (
+          <Tooltip title="More Details">
+            <IconButton
+              size="small"
+              sx={{ color: (theme) => theme.palette.text.primary }}
+              onClick={() => handleTFDetailsClick(row)}
+            >
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        );
       default:
         return (
           <Typography
@@ -483,6 +532,7 @@ GeneTable.propTypes = {
   motifOrTrackGenes: PropTypes.array,
   isMobile: PropTypes.bool,
   onRowCheckChange: PropTypes.func,
+  onOpenTFDetails: PropTypes.func,
 };
 
 export default DataDetailsPanel;

@@ -8,6 +8,7 @@ import { EventEmitterProxy } from '../../../model/event-emitter-proxy';
 import { NetworkEditorController } from './controller';
 import DataTable, { DEF_SORT_FN, PRECISION, roundNumber } from './data-table';
 import DataDetailsPanel from './data-details-panel';
+import TFDetailsDialog from './tf-details-dialog';
 import SearchBar from './search-bar';
 import { updateNetworkStyle } from './network-style';
 import { motifName, motifTrackLinkOut, resultId } from '../util';
@@ -174,6 +175,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const [ searchTerms, setSearchTerms ] = useState();
   const [ currentRow, setCurrentRow ] = useState();
   const [ selectedMotifOrTrack, setSelectedMotifOrTrack ] = useState();
+  const [ currentTF, setCurrentTF ] = useState(null);
   const [ _, forceUpdate ] = useState(0); // Dummy state to force update
 
   const setSelectedTF = useUIStateStore((state) => state.setSelectedTF);
@@ -352,6 +354,10 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     }
   };
 
+  const onOpenTFDetails = (tf) => {
+    setCurrentTF(tf);
+  };
+
   const shiftDrawer = leftDrawerOpen && !isMobile && !isTablet; 
   const total = disabled ? 0 : data.length;
 
@@ -459,13 +465,20 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
               visible={open && currentRow != null}
               data={currentRow || {}}
               selectedMotifOrTrack={selectedMotifOrTrack}
-              controller={controller}
               isMobile={isMobile}
               onTFCheckChange={onTFCheckChange}
+              onOpenTFDetails={onOpenTFDetails}
             />
           </Collapse>
         </AppBar>
       </div>
+      <TFDetailsDialog
+        open={currentTF != null}
+        tf={currentTF}
+        motifOrTrack={currentRow}
+        isMobile={isMobile}
+        onClose={() => setCurrentTF(null)}
+      />
     </Drawer>
   );
 }
