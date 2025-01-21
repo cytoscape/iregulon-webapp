@@ -1,7 +1,6 @@
 import EventEmitter from 'eventemitter3';
 import { SENTRY } from '../../env';
 import * as Sentry from "@sentry/browser";
-import { replace } from 'lodash';
 
 
 export class QueryController {
@@ -41,84 +40,8 @@ export class QueryController {
 
   async createDemoNetwork(requestID) {
     this.bus.emit('finished', { networkID: '7cea4157-341a-4fc6-b6c4-9c7ac5bcc8d4', requestID });
-
-    // this.bus.emit('loading', true);
-
-    // const res = await fetch('/api/create/demo', {
-    //   method: 'POST',
-    // });
-
-    // if (res.ok) {
-    //   const networkID = await res.text();
-    //   this.bus.emit('finished', { networkID, requestID });
-    //   return networkID;
-    // } else if (res.status == 450) {
-    //   // custom status code, error while running create data pipeline
-    //   const body = await res.json();
-    //   const errors = this.errorMessagesForCreateError(body.details);
-    //   this.bus.emit('error', { errors, requestID });
-    // } else {
-    //   this.bus.emit('error', { errors: ['could not create demo network'], requestID });
-    // }
   }
 
-  // async upload(files, format) {
-  //   const file = files && files.length > 0 ? files[0] : null;
-  //   if (!file)
-  //     return;
-
-  //   this.bus.emit('loading', true);
-    
-  //   const name = file.name.replace(FILE_EXT_REGEX, '');
-  //   const ext  = file.name.split('.').pop().toLowerCase();
-
-  //   if (SENTRY) {
-  //     const attachmentName = file.name;
-  //     const attachmentContentType = file.type;
-  //     const arrayBuffer = await file.arrayBuffer();
-  //     const attachmentData = new Uint8Array(arrayBuffer);
-
-  //     Sentry.configureScope(scope => {
-  //       scope.clearAttachments();
-  //       scope.addAttachment({ filename: attachmentName, data: attachmentData, contentType: attachmentContentType });
-  //     });
-  //   }
-
-  //   try {
-  //     let readFile;
-  //     if(TSV_EXTS.includes(ext)) {
-  //       readFile = readTextFile;
-  //     } else if(EXCEL_EXTS.includes(ext)) {
-  //       readFile = readExcelFile;
-  //     } else {
-  //       const exts = TSV_EXTS.join(', ') + ', ' + EXCEL_EXTS.join(', ');
-  //       this.bus.emit('error', { errors: [`File extension not supported. Must be one of: ${exts}`] });
-  //       return;
-  //     }
-
-  //     const fileInfo = await readFile(file);
-  //     fileInfo.fileName = file.name;
-  //     fileInfo.networkName = name;
-  //     if(format) {
-  //       fileInfo.format = format;
-  //     }
-  //     console.log('File uploaded', fileInfo);
-
-  //     // Check if there's errors when uploading the file.
-  //     const { errors } = fileInfo;
-  //     if(errors && errors.length > 0) {
-  //       this.bus.emit('error', { errors });
-  //     } else {
-  //       this.bus.emit('fileUploaded', fileInfo);
-  //     }
-  //   } catch (e) {
-  //     console.log(e);
-  //     this.bus.emit('error', { errors: ['Internal Error'] });
-  //     this.captureNondescriptiveErrorInSentry('Some error in handling uploaded file:' + e.message);
-  //     return;
-  //   }
-  // }
-  
   async submitQuery({ organism, genes, requestID }) {
     // 1. Submit the job
     const params = {

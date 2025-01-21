@@ -19,7 +19,6 @@ export const REPORT_SECRET = process.env.REPORT_SECRET;
 export const IREGULON_JOB_SERVICE_URL = process.env.IREGULON_JOB_SERVICE_URL;
 export const IREGULON_STATE_SERVICE_URL = process.env.IREGULON_STATE_SERVICE_URL;
 export const IREGULON_RESULTS_SERVICE_URL = process.env.IREGULON_RESULTS_SERVICE_URL;
-export const BRIDGEDB_URL = process.env.BRIDGEDB_URL;
 
 // Mongo config
 export const MONGO_URL = process.env.MONGO_URL;

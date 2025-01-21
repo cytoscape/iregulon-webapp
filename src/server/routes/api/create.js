@@ -1,5 +1,4 @@
 import Express from 'express';
-import * as Sentry from "@sentry/node";
 import fetch from 'node-fetch';
 import { performance } from 'perf_hooks';
 
@@ -11,7 +10,6 @@ import {
   IREGULON_JOB_SERVICE_URL,
   IREGULON_STATE_SERVICE_URL,
   IREGULON_RESULTS_SERVICE_URL,
-  BRIDGEDB_URL,
 } from '../../env.js';
 
 
@@ -33,7 +31,6 @@ http.post('/submitJob', async function(req, res) {
     params.append(key, value);
     savedParams[key] = value;
   });
-
 
   const response = await fetch(IREGULON_JOB_SERVICE_URL, {
     method: 'POST',
@@ -125,50 +122,6 @@ http.post('/', async function(req, res) {
   res.json({ jobID, networkID });
 });
 
-/**
- * Prevent a potential memory leak by clearing old jobs.
- */
-function clearOldJobParams() {
-  const maxAge = 1000 * 60 * 60 * 24; // 24 hours
-  const now = new Date();
-  let count = 0;
-  for (const [jobID, params] of jobParams.entries()) {
-    const timestamp = params.timestamp;
-    if (now - timestamp > maxAge) {
-      jobParams.delete(jobID);
-      count++;
-    }
-  }
-  if(count > 0) {
-    console.log('Cleared ' + count + ' old job params.');
-  }
-}
-
-/*
- */
-http.post('/demo', async function(req, res, next) {
-  const perf = createPeformanceHook();
-  try {
-    // const rankFile = './public/geneset-db/brca_hd_tep_ranks.rnk';
-    // let data = await fs.readFile(rankFile, 'utf8');
-    
-    // const networkID = await runDataPipeline({
-    //   demo: true,
-    //   networkName: 'Demo Network',
-    //   contentType: 'text/tab-separated-values',
-    //   type: 'preranked',
-    //   body: data,
-    //   perf
-    // });
-
-    // res.send(networkID);
-  } catch (err) {
-    next(err);
-  } finally {
-    perf.dispose();
-  }
-});
-
 
 async function fetchJobResults(jobID, savedParams) {
   console.log('Fetching results for job ' + jobID + '...');
@@ -195,6 +148,25 @@ async function fetchJobResults(jobID, savedParams) {
   return { text, results };
 }
 
+/**
+ * Prevent a potential memory leak by clearing old jobs.
+ */
+function clearOldJobParams() {
+  const maxAge = 1000 * 60 * 60 * 24; // 24 hours
+  const now = new Date();
+  let count = 0;
+  for (const [jobID, params] of jobParams.entries()) {
+    const timestamp = params.timestamp;
+    if (now - timestamp > maxAge) {
+      jobParams.delete(jobID);
+      count++;
+    }
+  }
+  if (count > 0) {
+    console.log('Cleared ' + count + ' old job params.');
+  }
+}
+
 function createPeformanceHook() {
   const tag = Date.now();
   const markNames = [];
@@ -215,135 +187,6 @@ function createPeformanceHook() {
     }
   };
 }
-
-
-/**
- * If the first gene is an ensembl ID then assume they all are.
- */
-function isEnsembl(body) {
-  const secondLine = body.split('\n', 2)[1]; // First line is the header row, skip it
-  return secondLine && secondLine.startsWith('ENS');
-}
-
-
-/**
- * Sends a POST request to the BridgeDB xrefsBatch endpoint.
- * https://www.bridgedb.org/swagger/
- */
-async function runBridgeDB(ensemblIDs, species='Human', sourceType='En') {
-  // Note the 'dataSource' query parameter seems to have no effect.
-  const url = `${BRIDGEDB_URL}/${species}/xrefsBatch/${sourceType}`;
-  const body = ensemblIDs.join('\n');
-
-  let response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/html' }, // thats what it wants
-      body
-    });
-  } catch(e) {
-    throw new CreateError({ step: 'bridgedb', cause: e });
-  }
-  if(!response.ok) {
-    const body = await response.text();
-    const status = response.status;
-    throw new CreateError({ step: 'bridgedb', body, status });
-  }
-
-  const responseBody = await response.text();
-
-  // Parse response to get symbol names
-  const hgncIDs = responseBody
-    .split('\n')
-    .map(line => {
-      const symbol = line.split(',').filter(m => m.startsWith('H:'))[0];
-      return symbol && symbol.slice(2); // remove 'H:'
-    });
-    
-  return hgncIDs;
-}
-
-
-async function runEnsemblToHGNCMapping(body, contentType) {
-  // Convert CSV/TSV to a 2D array 
-  const lines = body.split('\n');
-  const header  = lines[0];
-  const delim = contentType === 'text/csv' ? ',' : '\t';
-
-  const content = lines
-    .slice(1)
-    .filter(line => line && line.length > 0)
-    .map(line => line.split(delim));
-
-  const removeVersionCode = (ensID) => {
-    const i = ensID.indexOf('.');
-    if(i > 0) {
-      return ensID.slice(0, i);
-    }
-    return ensID;
-  };
-
-  // Call BridgeDB
-  const ensemblIDs = content.map(row => row[0]).map(removeVersionCode);
-
-  const hgncIDs = await runBridgeDB(ensemblIDs);
-
-  // Replace old IDs with the new ones
-  const newContent = [];
-  const invalidIDs = [];
-  for(var i = 0; i < content.length; i++) {
-    const row = content[i];
-    const newID = hgncIDs[i];
-    if(newID) {
-      newContent.push([newID, ...row.slice(1)]);
-    } else {
-      invalidIDs.push(row[0]);
-    }
-  }
-
-  if(invalidIDs.length > 0) {
-    console.log("Sending id-mapping warning to Sentry. Number of invalid IDs: " + invalidIDs.length);
-    sendMessagesToSentry('bridgedb', [{
-      level: 'warning',
-      type: 'ids_not_mapped',
-      text: 'IDs not mapped',
-      data: {
-        'Total IDs Mapped': ensemblIDs.length, 
-        'Invalid ID Count': invalidIDs.length,
-        'Invalid IDs (First 100)': invalidIDs.slice(0, 100),
-       }
-    }]);
-  } 
-
-  // Convert back to a big string
-  const newBody = header + '\n' + newContent.map(line => line.join(delim)).join('\n');
-  return newBody;
-}
-
-
-function sendMessagesToSentry(service, messages) {
-  if(!messages || messages.length == 0)
-    return;
-
-  for(const message of messages) {
-    const { level, type, text, data } = message;
-    
-    // https://docs.sentry.io/platforms/node/usage/set-level/
-    const event = {
-      level,
-      tags: { message_type:type, service },
-      message: "Service Message: " + text,
-      extra: data,
-    };
-
-    // This method is actually asynchronous
-    // https://github.com/getsentry/sentry-javascript/issues/2049
-    Sentry.captureEvent(event);
-  }
-}
-
-
 
 class CreateError extends Error {
   constructor(details) {
