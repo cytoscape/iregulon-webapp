@@ -1,12 +1,9 @@
 import fs from 'fs';
 import readline from 'readline';
-import { 
-  MOTIF_RANKINGS_DATABASE,
-  TRACK_RANKINGS_DATABASE,
-} from './env.js';
 
 
-export const organisms = {
+// TODO: Parse this file instead: https://github.com/aertslab/iRegulon/blob/master/src/infrastructure/configuration.xml
+export const speciesNomenclatureDef = {
   '1_hg38': {
     id: '5',
     name: 'Homo sapiens',
@@ -124,8 +121,11 @@ export function annotateGenes(genes, results) {
   });
 }
 
-export function parseMotifsAndTracks(results) {
+export function parseMotifsAndTracks(results, params) {
   const motifsAndTracks = [];
+
+  const motifRankingsDatabase = params.selectedMotifRankingsDatabase;
+  const trackRankingsDatabase = params.selectedTrackRankingsDatabase;
 
   try {
     // Get and parse the results.
@@ -164,7 +164,7 @@ export function parseMotifsAndTracks(results) {
         //    16	orthologousGeneName (separated by ;) of the corresponding TF
         //    17	orthologousSpecies (separated by ;) of the corresponding TF
         const assembly = col[1].split("_", 2)[0];
-        const sn = organisms[parseInt(col[0]) + '_' + assembly];
+        const sn = speciesNomenclatureDef[parseInt(col[0]) + '_' + assembly];
 
         // The candidate target genes.
         const candidateTargetGenes = [];
@@ -239,7 +239,7 @@ export function parseMotifsAndTracks(results) {
           }
         }
 
-        if (col[1] === MOTIF_RANKINGS_DATABASE) {
+        if (col[1] === motifRankingsDatabase) {
           // Create a motif cluster name with the original motif cluster number.
           const originalMotifClusterCode = "M" + col[8];
 
@@ -272,7 +272,7 @@ export function parseMotifsAndTracks(results) {
             clusterNumber: motifClusterNumber,
           };
           motifsAndTracks.push(mtf);
-        } else if (col[1] === TRACK_RANKINGS_DATABASE) {
+        } else if (col[1] === trackRankingsDatabase) {
           // Create a track cluster name with the original motif cluster number.
           const originalTrackClusterCode = "T" + col[8];
 

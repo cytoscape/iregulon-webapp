@@ -13,7 +13,6 @@ export class QueryController {
   constructor(bus) {
     /** @type {EventEmitter} */
     this.bus = bus || new EventEmitter();
-
     this.jobs = new Map();
   }
   
@@ -123,19 +122,16 @@ export class QueryController {
   async submitQuery({ organism, genes, requestID }) {
     // 1. Submit the job
     const params = {
-      // == TODO: Create advanced options for the user to set these values (?) ==
       jobName: 'iRegulon-Web_' + requestID,
-      AUCThreshold: 0.03,
-      rankThreshold: 5000,
-      NESThreshold: 3.0,
-      minOrthologous: 0.0,
-      maxMotifSimilarityFDR: 0.001,
-      selectedMotifRankingsDatabase: 'hg38__refseq-r80__10kb_up_and_down_tss__mc_v9',
-      selectedTrackRankingsDatabase: 'hg38__refseq-r80__10kb_up_and_down_tss__tc_v1',
-      // == END ==
       SpeciesNomenclature: organism.nomenclatureCode,
+      ...organism.defaultRankingParams,
+      ...organism.defaultRecoveryParams,
+      ...organism.defaultRegionBasedParams,
+      ...organism.defaultTFPredictionParams,
       genes: genes.join(';'),
     };
+
+    console.log('Submitting job with params:', params);
 
     const jobID = await this._submitJob(organism, params, requestID);
           

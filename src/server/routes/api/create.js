@@ -101,18 +101,21 @@ http.get('/checkStatus/:jobID', async function(req, res) {
 http.post('/', async function(req, res) {
   const jobID = req.body.jobID;
   const params = req.body.params;
+  const savedParams = jobParams.get(jobID);
 
   console.log('Fetching results for job ' + jobID + '...', params);
-  const { text, results } = await fetchJobResults(jobID);
+  console.log(savedParams);
+  const { text, results } = await fetchJobResults(jobID, savedParams);
                 
   const geneSymbols = params.genes.split(';').map(name => name.trim()).filter(name => name.length > 0);
   const genes = geneSymbols.map(name => ({ name }));
   annotateGenes(genes, results);
 
-  const savedParams = jobParams.get(jobID);
   jobParams.delete(jobID);
 
-  const networkID = await Datastore.saveResults({ genes, results, text, params: savedParams });
+  const name = createDefaultNetworkName(params);
+
+  const networkID = await Datastore.saveResults({ genes, results, text, name, params: savedParams });
   console.log(networkID);
 
   // Return the result of the job
@@ -164,7 +167,7 @@ http.post('/demo', async function(req, res, next) {
 });
 
 
-async function fetchJobResults(jobID) {
+async function fetchJobResults(jobID, savedParams) {
   console.log('Fetching results for job ' + jobID + '...');
 
   const params = new URLSearchParams({ jobID });
@@ -184,7 +187,7 @@ async function fetchJobResults(jobID) {
   }
 
   const text = await res.text();
-  const results = parseMotifsAndTracks(text);
+  const results = parseMotifsAndTracks(text, savedParams);
 
   return { text, results };
 }

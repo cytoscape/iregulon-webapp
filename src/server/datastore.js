@@ -57,39 +57,51 @@ class Datastore {
   }
 
   async loadDemo() {
-    if(await this.idExists(DEMO_ID)) {
+    if (await this.idExists(DEMO_ID)) {
       console.log("- Demo Results Already Loaded");
       return;
     }
 
     // Load demo file (public/sample-data/hypoxia_geneset-results.tsv) into cache
-    fs.readFile('public/sample-data/hypoxia_geneset-results.tsv', 'utf8', (err, resultsData) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      const results = parseMotifsAndTracks(resultsData);
-      console.log("- Demo Results Loaded:", results.length);
-
-      fs.readFile('public/sample-data/hypoxia_geneset.txt', 'utf8', (err, geneData) => {
-        if (err) {
-          console.error(err);
-          return;
-        }
-        const geneSymbols = geneData.split('\n').map(name => name.trim()).filter(name => name.length > 0);
-        const genes = geneSymbols.map(name => ({ name }));
-        annotateGenes(genes, results);
-        console.log("- Demo Genes Loaded:", genes.length);
-
-        this.saveResults({ 
-          genes, 
-          results, 
-          text: resultsData, 
-          name: "Demo Network", 
-          demoID: DEMO_ID 
+    const readFile = (path, encoding) => {
+      return new Promise((resolve, reject) => {
+        fs.readFile(path, encoding, (err, data) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(data);
+          }
         });
       });
-    });
+    };
+
+    try {
+      // Load the demo parameters (json)
+      const paramsData = await readFile('public/sample-data/hypoxia_geneset-params.json', 'utf8');
+      const params = JSON.parse(paramsData);
+      console.log("- Demo Parameters Loaded:", params);
+
+      const resultsData = await readFile('public/sample-data/hypoxia_geneset-results.tsv', 'utf8');
+      const results = parseMotifsAndTracks(resultsData, params);
+      console.log("- Demo Results Loaded:", results.length);
+
+      const geneData = params.genes;
+      const geneSymbols = geneData.split(';').map(name => name.trim()).filter(name => name.length > 0);
+      const genes = geneSymbols.map(name => ({ name }));
+      annotateGenes(genes, results);
+      console.log("- Demo Genes Loaded:", genes.length);
+
+      await this.saveResults({
+        genes,
+        results,
+        text: resultsData,
+        name: "Demo Network",
+        params,
+        demoID: DEMO_ID
+      });
+    } catch (err) {
+      console.error(err);
+    }
   }
 
 

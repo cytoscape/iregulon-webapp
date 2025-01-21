@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+import { organismParams as organisms } from '../../../util';
 import {
   Box,
   FormControl,
@@ -17,56 +18,14 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { FlyIcon, HumanIcon, MouseIcon } from '../svg-icons';
 
 
-export const organisms = [
-  {
-    id: '5',
-    name: 'Homo sapiens',
-    assembly: 'hg38',
-    nomenclatureCode: 1,
-    nomenclature: 'HGNC symbols',
-    icon: (props) => <HumanIcon {...props} />,
-  },
-  {
-    id: '1',
-    name: 'Homo sapiens',
-    assembly: 'hg19',
-    nomenclatureCode: 1,
-    nomenclature: 'HGNC symbols',
-    icon: (props) => <HumanIcon {...props} />,
-  },
-  {
-    id: '6',
-    name: 'Mus musculus',
-    assembly: 'mm10',
-    nomenclatureCode: 2,
-    nomenclature: 'MGI symbols',
-    icon: (props) => <MouseIcon {...props} />,
-  },
-  {
-    id: '2',
-    name: 'Mus musculus',
-    assembly: 'mm9',
-    nomenclatureCode: 2,
-    nomenclature: 'MGI symbols',
-    icon: (props) => <MouseIcon {...props} />,
-  },
-  {
-    id: '4',
-    name: 'Drosophila melanogaster',
-    assembly: 'dm6',
-    nomenclatureCode: 3,
-    nomenclature: 'FlyBase names',
-    icon: (props) => <FlyIcon {...props} />,
-  },
-  {
-    id: '3',
-    name: 'Drosophila melanogaster',
-    assembly: 'dm3',
-    nomenclatureCode: 3,
-    nomenclature: 'FlyBase names',
-    icon: (props) => <FlyIcon {...props} />,
-  },
-];
+const organismIcons = {
+  '1': (props) => <HumanIcon {...props} />,
+  '2': (props) => <MouseIcon {...props} />,
+  '3': (props) => <FlyIcon {...props} />,
+  '4': (props) => <FlyIcon {...props} />,
+  '5': (props) => <HumanIcon {...props} />,
+  '6': (props) => <MouseIcon {...props} />,
+};
 
 //==[ QueryPanel ]====================================================================================================
 
@@ -126,7 +85,7 @@ export function QueryForm({ initialOrganism, isMobile, onOrganismChanged, onGene
               <Box display="flex" gap={1}>
                 {idx !== '' ?
                   <>
-                    { organisms[idx].icon({color: 'inherit', fontSize: 'medium'}) }
+                    { organismIcons[organisms[idx].id]({color: 'inherit', fontSize: 'medium'}) }
                     { organisms[idx].name} &#40;{organisms[idx].assembly}&#41;
                   </>
                   :
@@ -136,10 +95,10 @@ export function QueryForm({ initialOrganism, isMobile, onOrganismChanged, onGene
             );
           }}
         >
-          {organisms.map(({ id, name, assembly, nomenclature, icon }, idx) => (
+          {organisms.map(({ id, name, assembly, nomenclature }, idx) => (
             <MenuItem key={id} value={idx}>
               <ListItemIcon sx={{ pr: 2, color: (theme) => theme.palette.text.primary }}>
-                { icon({ color: 'inherit', fontSize: 'large' }) }
+                { organismIcons[id]({ color: 'inherit', fontSize: 'large' }) }
               </ListItemIcon>
               <ListItemText primary={`${name} (${assembly})`} secondary={nomenclature} />
             </MenuItem>

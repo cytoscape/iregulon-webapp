@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { QueryForm, organisms } from './query-form';
+import { organismParams as organisms } from '../../../util';
+import { QueryForm } from './query-form';
 import { DemoPanel } from './demo-panel';
 
 import makeStyles from '@mui/styles/makeStyles';

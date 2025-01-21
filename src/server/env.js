@@ -21,9 +21,6 @@ export const IREGULON_STATE_SERVICE_URL = process.env.IREGULON_STATE_SERVICE_URL
 export const IREGULON_RESULTS_SERVICE_URL = process.env.IREGULON_RESULTS_SERVICE_URL;
 export const BRIDGEDB_URL = process.env.BRIDGEDB_URL;
 
-export const MOTIF_RANKINGS_DATABASE = process.env.MOTIF_RANKINGS_DATABASE;
-export const TRACK_RANKINGS_DATABASE = process.env.TRACK_RANKINGS_DATABASE;
-
 // Mongo config
 export const MONGO_URL = process.env.MONGO_URL;
 export const MONGO_ROOT_NAME = process.env.MONGO_ROOT_NAME;
