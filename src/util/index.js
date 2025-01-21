@@ -3,13 +3,57 @@ export const isServer = () => typeof window === typeof undefined;
 export const isClient = () => !isServer();
 
 // TODO: Parse this file instead: https://github.com/aertslab/iRegulon/blob/master/src/infrastructure/configuration.xml
-export const organismParams = [
-  {
+export const speciesNomenclatureDef = {
+  hg38: {
     id: '5',
     name: 'Homo sapiens',
     assembly: 'hg38',
     nomenclatureCode: 1,
     nomenclature: 'HGNC symbols',
+  },
+  hg19: {
+    id: '1',
+    name: 'Homo sapiens',
+    assembly: 'hg19',
+    nomenclatureCode: 1,
+    nomenclature: 'HGNC symbols',
+  },
+  mm10: {
+    id: '6',
+    name: 'Mus musculus',
+    assembly: 'mm10',
+    nomenclatureCode: 2,
+    nomenclature: 'MGI symbols',
+  },
+  mm9: {
+    id: '2',
+    name: 'Mus musculus',
+    assembly: 'mm9',
+    nomenclatureCode: 2,
+    nomenclature: 'MGI symbols',
+  },
+  dm6: {
+    id: '4',
+    name: 'Drosophila melanogaster',
+    assembly: 'dm6',
+    nomenclatureCode: 3,
+    nomenclature: 'FlyBase names',
+  },
+  dm3: {
+    id: '3',
+    name: 'Drosophila melanogaster',
+    assembly: 'dm3',
+    nomenclatureCode: 3,
+    nomenclature: 'FlyBase names',
+  },
+};
+
+// TODO: Parse this file instead: https://github.com/aertslab/iRegulon/blob/master/src/infrastructure/configuration.xml
+export const organismParams = [
+  {
+    speciesNomenclature: {
+      ...speciesNomenclatureDef['hg38'],
+    },
     defaultRankingParams: {
       selectedMotifRankingsDatabase: 'hg38__refseq-r80__10kb_up_and_down_tss__mc_v9',
       selectedTrackRankingsDatabase: 'hg38__refseq-r80__10kb_up_and_down_tss__tc_v1',
@@ -25,11 +69,9 @@ export const organismParams = [
     },
   },
   {
-    id: '1',
-    name: 'Homo sapiens',
-    assembly: 'hg19',
-    nomenclatureCode: 1,
-    nomenclature: 'HGNC symbols',
+    speciesNomenclature: {
+      ...speciesNomenclatureDef['hg19'],
+    },
     defaultRankingParams: {
       selectedMotifRankingsDatabase: 'hg19_tss_centered_10kb_7sp_mc_v9',
       selectedTrackRankingsDatabase: 'hg19_tss_centered_10kb_tc_v1',
@@ -45,11 +87,9 @@ export const organismParams = [
     },
   },
   {
-    id: '6',
-    name: 'Mus musculus',
-    assembly: 'mm10',
-    nomenclatureCode: 2,
-    nomenclature: 'MGI symbols',
+    speciesNomenclature: {
+      ...speciesNomenclatureDef['mm10'],
+    },
     defaultRankingParams: {
       selectedMotifRankingsDatabase: 'mm10__refseq-r80__10kb_up_and_down_tss__mc_v9',
       selectedTrackRankingsDatabase: 'none',
@@ -65,11 +105,9 @@ export const organismParams = [
     },
   },
   {
-    id: '2',
-    name: 'Mus musculus',
-    assembly: 'mm9',
-    nomenclatureCode: 2,
-    nomenclature: 'MGI symbols',
+    speciesNomenclature: {
+      ...speciesNomenclatureDef['mm9'],
+    },
     defaultRankingParams: {
       selectedMotifRankingsDatabase: 'mm9_tss_centered_10kb_7sp_mc_v9',
       selectedTrackRankingsDatabase: 'none',
@@ -85,11 +123,9 @@ export const organismParams = [
     },
   },
   {
-    id: '4',
-    name: 'Drosophila melanogaster',
-    assembly: 'dm6',
-    nomenclatureCode: 3,
-    nomenclature: 'FlyBase names',
+    speciesNomenclature: {
+      ...speciesNomenclatureDef['dm6'],
+    },
     defaultRankingParams: {
       selectedMotifRankingsDatabase: 'dm6_regions_pwm_11sp_mc_v9',
       selectedTrackRankingsDatabase: 'none',
@@ -109,11 +145,9 @@ export const organismParams = [
     },
   },
   {
-    id: '3',
-    name: 'Drosophila melanogaster',
-    assembly: 'dm3',
-    nomenclatureCode: 3,
-    nomenclature: 'FlyBase names',
+    speciesNomenclature: {
+      ...speciesNomenclatureDef['dm3'],
+    },
     defaultRankingParams: {
       selectedMotifRankingsDatabase: 'dm3_regions_pwm_11sp_mc_v9',
       selectedTrackRankingsDatabase: 'none',
@@ -133,4 +167,3 @@ export const organismParams = [
     },
   },
 ];
-

@@ -1,52 +1,7 @@
 import fs from 'fs';
 import readline from 'readline';
 
-
-// TODO: Parse this file instead: https://github.com/aertslab/iRegulon/blob/master/src/infrastructure/configuration.xml
-export const speciesNomenclatureDef = {
-  hg38: {
-    id: '5',
-    name: 'Homo sapiens',
-    assembly: 'hg38',
-    nomenclatureCode: 1,
-    nomenclature: 'HGNC symbols',
-  },
-  hg19: {
-    id: '1',
-    name: 'Homo sapiens',
-    assembly: 'hg19',
-    nomenclatureCode: 1,
-    nomenclature: 'HGNC symbols',
-  },
-  mm10: {
-    id: '6',
-    name: 'Mus musculus',
-    assembly: 'mm10',
-    nomenclatureCode: 2,
-    nomenclature: 'MGI symbols',
-  },
-  mm9: {
-    id: '2',
-    name: 'Mus musculus',
-    assembly: 'mm9',
-    nomenclatureCode: 2,
-    nomenclature: 'MGI symbols',
-  },
-  dm6: {
-    id: '4',
-    name: 'Drosophila melanogaster',
-    assembly: 'dm6',
-    nomenclatureCode: 3,
-    nomenclature: 'FlyBase names',
-  },
-  dm3: {
-    id: '3',
-    name: 'Drosophila melanogaster',
-    assembly: 'dm3',
-    nomenclatureCode: 3,
-    nomenclature: 'FlyBase names',
-  },
-};
+import { speciesNomenclatureDef } from '../util/index.js';
 
 
 export function createDefaultNetworkName(params) {

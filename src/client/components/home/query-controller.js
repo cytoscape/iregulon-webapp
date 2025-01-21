@@ -46,7 +46,7 @@ export class QueryController {
     // 1. Submit the job
     const params = {
       jobName: 'iRegulon-Web_' + requestID,
-      SpeciesNomenclature: organism.nomenclatureCode,
+      SpeciesNomenclature: organism.speciesNomenclature.nomenclatureCode,
       ...organism.defaultRankingParams,
       ...organism.defaultRecoveryParams,
       ...organism.defaultRegionBasedParams,
@@ -56,7 +56,7 @@ export class QueryController {
 
     console.log('Submitting job with params:', params);
 
-    const jobID = await this._submitJob(organism, params, requestID);
+    const jobID = await this._submitJob(params, requestID);
           
     if (jobID && jobID.length > 0) {
       // 2. Check the job status
@@ -90,7 +90,7 @@ export class QueryController {
     }
   }
 
-  async _submitJob(organism, params) {
+  async _submitJob(params) {
     const url = '/api/create/submitJob';
 
     const res = await fetch(url, {

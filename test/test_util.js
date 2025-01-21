@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import fs from 'fs';
 import {
-  speciesNomenclatureDef,
   createDefaultNetworkName,
   abbreviateSpeciesName,
   parseMotifsAndTracks,
   annotateGenes
 } from '../src/server/util.js';
+import { speciesNomenclatureDef } from '../src/util/index.js';
 
 
 describe('createDefaultNetworkName', () => {

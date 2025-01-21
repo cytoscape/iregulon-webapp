@@ -323,7 +323,6 @@ export function Content({ recentNetworksController }) {
    * fileFormat is a separate argument because its a ref in the StartDialog
    */
   const onSubmit = async ({ demo, organism, genes }) => {
-    console.log('onSubmit', demo, organism, genes);
     requestID = uuid.v4();
     updateUploadState({ step: STEP.LOADING });
 

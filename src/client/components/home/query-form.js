@@ -85,8 +85,8 @@ export function QueryForm({ initialOrganism, isMobile, onOrganismChanged, onGene
               <Box display="flex" gap={1}>
                 {idx !== '' ?
                   <>
-                    { organismIcons[organisms[idx].id]({color: 'inherit', fontSize: 'medium'}) }
-                    { organisms[idx].name} &#40;{organisms[idx].assembly}&#41;
+                    { organismIcons[organisms[idx].speciesNomenclature.id]({color: 'inherit', fontSize: 'medium'}) }
+                    { organisms[idx].speciesNomenclature.name} &#40;{organisms[idx].speciesNomenclature.assembly}&#41;
                   </>
                   :
                   <Typography variant="body2">-- Select an organism --</Typography>
@@ -95,12 +95,12 @@ export function QueryForm({ initialOrganism, isMobile, onOrganismChanged, onGene
             );
           }}
         >
-          {organisms.map(({ id, name, assembly, nomenclature }, idx) => (
-            <MenuItem key={id} value={idx}>
+          {organisms.map(({ speciesNomenclature }, idx) => (
+            <MenuItem key={speciesNomenclature.id} value={idx}>
               <ListItemIcon sx={{ pr: 2, color: (theme) => theme.palette.text.primary }}>
-                { organismIcons[id]({ color: 'inherit', fontSize: 'large' }) }
+                { organismIcons[speciesNomenclature.id]({ color: 'inherit', fontSize: 'large' }) }
               </ListItemIcon>
-              <ListItemText primary={`${name} (${assembly})`} secondary={nomenclature} />
+              <ListItemText primary={`${speciesNomenclature.name} (${speciesNomenclature.assembly})`} secondary={speciesNomenclature.nomenclature} />
             </MenuItem>
           ))}
         </Select>
