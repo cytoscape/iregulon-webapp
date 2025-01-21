@@ -1,23 +1,26 @@
 import Express from 'express';
 import * as Sentry from "@sentry/node";
 import fetch from 'node-fetch';
-import Datastore from '../../datastore.js';
-import { annotateGenes, parseMotifsAndTracks } from '../../util.js';
 import { performance } from 'perf_hooks';
+
+import Datastore from '../../datastore.js';
+import { speciesNomenclatureDef } from '../../util.js';
+import { annotateGenes, parseMotifsAndTracks } from '../../util.js';
+
 import { 
   IREGULON_JOB_SERVICE_URL,
   IREGULON_STATE_SERVICE_URL,
   IREGULON_RESULTS_SERVICE_URL,
   BRIDGEDB_URL,
-  MONGO_URL,
 } from '../../env.js';
+
 
 const NETWORK_CREATE_ERROR_CODE = 450;
 const IREGULON_USER_AGENT = 'iRegulon/1.4 (build: 2024-08-06; Cytoscape: 3.11.0-SNAPSHOT; Mac OS X; 14.5; aarch64)';
 
 const http = Express.Router();
-
 const jobParams = new Map(); // jobID -> params
+
 
 /*
  * Endpoint to submit a job to the iRegulon service--returns the "jobID".
@@ -121,6 +124,27 @@ http.post('/', async function(req, res) {
   // Return the result of the job
   res.json({ jobID, networkID });
 });
+
+export function createDefaultNetworkName(params) {
+  const { selectedMotifRankingsDatabase, genes } = params;
+  // Handle edge cases
+  if (!selectedMotifRankingsDatabase || !genes) {
+      return null;
+  }
+  const geneList = genes.split(';');
+  const assembly = selectedMotifRankingsDatabase?.split('_')[0];
+  const speciesNomenclature = speciesNomenclatureDef[assembly];
+  // Generate the gene preview (first few genes and count of remaining genes)
+  const totalGenes = geneList.length;
+  const maxGenesToShow = 3; // Number of genes to display in the title
+  const displayedGenes = geneList.slice(0, maxGenesToShow).join(",");
+  const remainingCount = totalGenes - maxGenesToShow;
+  const genePreview = remainingCount > 0 
+  ? `${displayedGenes}, and ${remainingCount} others`
+      : displayedGenes;
+  // Construct the title
+  return `${speciesNomenclature?.name} (${assembly}): ${genePreview}`;
+}
 
 /**
  * Prevent a potential memory leak by clearing old jobs.

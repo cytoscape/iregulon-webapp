@@ -4,42 +4,42 @@ import readline from 'readline';
 
 // TODO: Parse this file instead: https://github.com/aertslab/iRegulon/blob/master/src/infrastructure/configuration.xml
 export const speciesNomenclatureDef = {
-  '1_hg38': {
+  hg38: {
     id: '5',
     name: 'Homo sapiens',
     assembly: 'hg38',
     nomenclatureCode: 1,
     nomenclature: 'HGNC symbols',
   },
-  '1_hg19': {
+  hg19: {
     id: '1',
     name: 'Homo sapiens',
     assembly: 'hg19',
     nomenclatureCode: 1,
     nomenclature: 'HGNC symbols',
   },
-  '2_mm10': {
+  mm10: {
     id: '6',
     name: 'Mus musculus',
     assembly: 'mm10',
     nomenclatureCode: 2,
     nomenclature: 'MGI symbols',
   },
-  '2_mm9': {
+  mm9: {
     id: '2',
     name: 'Mus musculus',
     assembly: 'mm9',
     nomenclatureCode: 2,
     nomenclature: 'MGI symbols',
   },
-  '3_dm6': {
+  dm6: {
     id: '4',
     name: 'Drosophila melanogaster',
     assembly: 'dm6',
     nomenclatureCode: 3,
     nomenclature: 'FlyBase names',
   },
-  '3_dm3': {
+  dm3: {
     id: '3',
     name: 'Drosophila melanogaster',
     assembly: 'dm3',
@@ -164,7 +164,7 @@ export function parseMotifsAndTracks(results, params) {
         //    16	orthologousGeneName (separated by ;) of the corresponding TF
         //    17	orthologousSpecies (separated by ;) of the corresponding TF
         const assembly = col[1].split("_", 2)[0];
-        const sn = speciesNomenclatureDef[parseInt(col[0]) + '_' + assembly];
+        const sn = speciesNomenclatureDef[assembly];
 
         // The candidate target genes.
         const candidateTargetGenes = [];
