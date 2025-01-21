@@ -1,6 +1,78 @@
 import { expect } from 'chai';
 import fs from 'fs';
-import { parseMotifsAndTracks } from '../src/server/util.js';
+import {
+  speciesNomenclatureDef,
+  createDefaultNetworkName,
+  abbreviateSpeciesName,
+  parseMotifsAndTracks,
+  annotateGenes
+} from '../src/server/util.js';
+
+
+describe('createDefaultNetworkName', () => {
+  it('should return null if selectedMotifRankingsDatabase is missing', () => {
+    const params = { genes: 'gene1;gene2;gene3' };
+    const result = createDefaultNetworkName(params);
+    expect(result).to.be.null;
+  });
+
+  it('should return null if genes are missing', () => {
+    const params = { selectedMotifRankingsDatabase: 'assembly__database' };
+    const result = createDefaultNetworkName(params);
+    expect(result).to.be.null;
+  });
+
+  it('should return correct network name for valid params', () => {
+    const params = {
+      selectedMotifRankingsDatabase: 'hg00_database',
+      genes: 'gene1;gene2;gene3;gene4'
+    };
+    speciesNomenclatureDef['hg00'] = { name: 'Homo sapiens' };
+    const result = createDefaultNetworkName(params);
+    expect(result).to.equal('H. sapiens (hg00): gene1,gene2,gene3, and 1 others');
+  });
+
+  it('should return correct network name when genes are less than maxGenesToShow', () => {
+    const params = {
+      selectedMotifRankingsDatabase: 'mm00__database',
+      genes: 'gene1;gene2'
+    };
+    speciesNomenclatureDef['mm00'] = { name: 'Mus musculus' };
+    const result = createDefaultNetworkName(params);
+    expect(result).to.equal('M. musculus (mm00): gene1,gene2');
+  });
+
+  it('should return the original species name if it cannot be abbreviated', () => {
+    const params = {
+      selectedMotifRankingsDatabase: 'dm0_database',
+      genes: 'gene1;gene2'
+    };
+    speciesNomenclatureDef['dm0'] = { name: 'Fly' };
+    const result = createDefaultNetworkName(params);
+    expect(result).to.equal('Fly (dm0): gene1,gene2');
+  });
+
+  it('should handle edge case when speciesNomenclature is undefined', () => {
+    const params = {
+      selectedMotifRankingsDatabase: 'xx0_database',
+      genes: 'gene1;gene2;gene3'
+    };
+    const result = createDefaultNetworkName(params);
+    expect(result).to.equal('undefined (xx0): gene1,gene2,gene3');
+  });
+});
+
+describe('abbreviateSpeciesName', () => {
+  it('should throw an error for invalid species names', () => {
+    expect(() => abbreviateSpeciesName('')).to.throw();
+    expect(() => abbreviateSpeciesName('Homo')).to.throw(); // must have two words!
+  });
+
+  it('should return the abbreviated species name', () => {
+    expect(abbreviateSpeciesName('Homo sapiens')).to.equal('H. sapiens');
+    expect(abbreviateSpeciesName('Mus musculus')).to.equal('M. musculus');
+  });
+});
 
 describe('parseMotifsAndTracks', () => {
   let params;
@@ -46,5 +118,22 @@ describe('parseMotifsAndTracks', () => {
     expect(track.nes).to.equal(3.1499);
     expect(track.candidateTargetGenes).to.be.an('array').that.has.lengthOf(5);
     expect(track.transcriptionFactors).to.be.an('array').that.has.lengthOf(1);
+  });
+});
+
+describe('annotateGenes', () => {
+  it('should annotate genes correctly', () => {
+    const genes = [{ name: 'gene1' }, { name: 'gene2' }];
+    const results = [
+      {
+        type: 'MOTIF',
+        name: 'motif1',
+        candidateTargetGenes: [{ geneID: { name: 'gene1' } }],
+        transcriptionFactors: [{ geneID: { name: 'gene2' } }]
+      }
+    ];
+    annotateGenes(genes, results);
+    expect(genes[0].motifs).to.include('motif1');
+    expect(genes[1].motifs).to.include('motif1');
   });
 });

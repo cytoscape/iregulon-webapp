@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 import { performance } from 'perf_hooks';
 
 import Datastore from '../../datastore.js';
-import { speciesNomenclatureDef } from '../../util.js';
+import { createDefaultNetworkName } from '../../util.js';
 import { annotateGenes, parseMotifsAndTracks } from '../../util.js';
 
 import { 
@@ -124,27 +124,6 @@ http.post('/', async function(req, res) {
   // Return the result of the job
   res.json({ jobID, networkID });
 });
-
-export function createDefaultNetworkName(params) {
-  const { selectedMotifRankingsDatabase, genes } = params;
-  // Handle edge cases
-  if (!selectedMotifRankingsDatabase || !genes) {
-      return null;
-  }
-  const geneList = genes.split(';');
-  const assembly = selectedMotifRankingsDatabase?.split('_')[0];
-  const speciesNomenclature = speciesNomenclatureDef[assembly];
-  // Generate the gene preview (first few genes and count of remaining genes)
-  const totalGenes = geneList.length;
-  const maxGenesToShow = 3; // Number of genes to display in the title
-  const displayedGenes = geneList.slice(0, maxGenesToShow).join(",");
-  const remainingCount = totalGenes - maxGenesToShow;
-  const genePreview = remainingCount > 0 
-  ? `${displayedGenes}, and ${remainingCount} others`
-      : displayedGenes;
-  // Construct the title
-  return `${speciesNomenclature?.name} (${assembly}): ${genePreview}`;
-}
 
 /**
  * Prevent a potential memory leak by clearing old jobs.

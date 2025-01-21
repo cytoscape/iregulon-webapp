@@ -49,6 +49,52 @@ export const speciesNomenclatureDef = {
 };
 
 
+export function createDefaultNetworkName(params) {
+  const { selectedMotifRankingsDatabase, genes } = params;
+  // Handle edge cases
+  if (!selectedMotifRankingsDatabase || !genes) {
+      return null;
+  }
+  const geneList = genes.split(';');
+  const assembly = selectedMotifRankingsDatabase?.split('_')[0];
+  const speciesNomenclature = speciesNomenclatureDef[assembly];
+  // Abbreviate the species name
+  const speciesName = speciesNomenclature?.name;
+  const speciesAbbreviation = speciesName && speciesName.includes(' ') ? abbreviateSpeciesName(speciesName) : speciesName;
+  // Generate the gene preview (first few genes and count of remaining genes)
+  const totalGenes = geneList.length;
+  const maxGenesToShow = 3; // Number of genes to display in the title
+  const displayedGenes = geneList.slice(0, maxGenesToShow).join(",");
+  const remainingCount = totalGenes - maxGenesToShow;
+  const genePreview = remainingCount > 0 
+  ? `${displayedGenes}, and ${remainingCount} others`
+      : displayedGenes;
+  // Construct the title
+  return `${speciesAbbreviation} (${assembly}): ${genePreview}`;
+}
+ 
+/**
+ * Abbreviates a species name in scientific nomenclature.
+ * @param {string} speciesName - The full species name (e.g., "Homo sapiens").
+ * @returns {string} - The abbreviated species name (e.g., "H. sapiens").
+ */
+export function abbreviateSpeciesName(speciesName) {
+  if (!speciesName || typeof speciesName !== 'string') {
+    throw new Error('Invalid species name. Please provide a valid scientific name.');
+  }
+
+  const parts = speciesName.trim().split(/\s+/); // Split by whitespace
+  if (parts.length < 2) {
+    throw new Error('Scientific names must contain at least two parts: genus and species.');
+  }
+
+  const genus = parts[0];
+  const species = parts[1];
+  const genusAbbreviation = genus.charAt(0).toUpperCase(); // Get the first letter and capitalize
+
+  return `${genusAbbreviation}. ${species}`;
+}
+
 export async function fileForEachLine(filePath, lineCallback) {
   const fileStream = fs.createReadStream(filePath);
   const rl = readline.createInterface({
