@@ -78,14 +78,14 @@ const StartDialog = ({
         {
           (!errorMessages || errorMessages.length == 0)
           ? <>
-              <Typography variant="body1">We were unable to process your experimental data.</Typography>
+              <Typography variant="body2">We were unable to process your submitted data at this moment.</Typography>
               <br />
-              <Typography variant="body2" color="secondary">
-                Please ensure that your data is formatted properly,<br />either in <i>RNA&#8209;Seq Expression</i> format or in <i>Pre-Ranked Gene</i> format.
-              </Typography>
+              <Typography variant="body2">Please try again later.</Typography>
             </>
-          : errorMessages.slice(0,7).map((message, index) =>
-              <p key={index} style={{whiteSpace: "pre-wrap"}}>{message}</p>
+          : errorMessages.slice(0, 7).map((message, index) =>
+              <Typography key={index} variant="body2" sx={{ textAlign: 'left', whiteSpace: 'pre-wrap' }}>
+                { message }
+              </Typography>
             )
         }
       </div>
@@ -108,7 +108,12 @@ const StartDialog = ({
         {
           'INPUT':   () => isDemo ?
                             <DemoPanel /> : 
-                            <QueryForm isMobile={isMobile} initialOrganism={DEF_ORGANISM} onOrganismChanged={hanleOrganismChanged} onGenesChanged={hanleGenesChanged} />,
+                            <QueryForm
+                              isMobile={isMobile}
+                              initialOrganism={DEF_ORGANISM}
+                              onOrganismChanged={hanleOrganismChanged}
+                              onGenesChanged={hanleGenesChanged}
+                            />,
           'LOADING': () => <LoadingProgress />,
           'ERROR':   () => <ErrorReport />,
         }[step]()

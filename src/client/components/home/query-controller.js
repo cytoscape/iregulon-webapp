@@ -62,6 +62,7 @@ export class QueryController {
       // 2. Check the job status
       let status;
       let i = 1;
+
       const myLoop = () => {
         setTimeout(async () => {
           console.log(`Checking state of job ${jobID} (attempt #${i})...`);
@@ -72,21 +73,25 @@ export class QueryController {
           if (i < 50 && status !== 'FINISHED' && status !== 'ERROR') {
             myLoop();
           } else {
-            // 3. Get the results
+            // 3. Get the results or handle the error
             if (status === 'FINISHED') {
               const networkID = await this._fetchJobResults(jobID);
               
               console.log('finished', { networkID, requestID });
               this.bus.emit('finished', { networkID, requestID });
-            } else {
-              // TODO handle error
+            } else if (status === 'ERROR') {
+              const errorMessage = await this._fetchErrorMessage(jobID);
+              console.log('error', { requestID, errorMessage });
+              this.bus.emit('error', { requestID, errors: [errorMessage] });
             }
           } 
         }, 10000);
       };
+
       myLoop();
     } else {
-      // TODO handle error
+      console.log('error', { requestID, errorMessage: 'No jobID returned from iRegulon' });
+      this.bus.emit('error', { requestID, errors: ['Unknown error. Please try again later.'] });
     }
   }
 
@@ -154,32 +159,21 @@ export class QueryController {
     }
   }
 
-  errorMessagesForCreateError(details) {
-    // File format validation errors can be found in data-file-reader.js
-    const { step, detail } = details;
-    const errors = [];
+  async _fetchErrorMessage(jobID) {
+    const url = `/api/create/getErrorMessage/${jobID}`;
 
-    if(step === 'fgsea') {
-      errors.push('Error running FGSEA service.', 'Please try again later.');
-    } else if(step == 'em') {
-      if(detail === 'empty') {
-         // Probable causes: The gene IDs don't match whats in our pathway database or none of the enriched pathways passed the filter cutoff.
-        errors.push('Not able to create a network from the provided data.');
-        errors.push('There are not enough significantly enriched pathways.');
-      } else {
-        errors.push('Error running iRegulon service.', 'Please try again later.');
-      }
-    } else if(step == 'bridgedb') {
-      errors.push('Error running BridgeDB service.', 'Could not map Ensembl gene IDs to HGNC.', 'Please try again later.');
+    const res = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    });
+
+    if (res.ok) {
+      const { errorMessage } = await res.json();
+      
+      return errorMessage?.replace(/\\n/g, '\n'); // iRegulon sends '\\n' instead of '\n'
+    } else {
+      console.log(await res.text());
     }
-
-    return errors;
-  }
-}
-
-class NondescriptiveHandledError extends Error { // since we don't have well-defined errors
-  constructor(message) {
-    message = message ?? 'A non-descriptive error occurred.  Check the attached file.';
-    super(message);
-  }
+  } 
 }

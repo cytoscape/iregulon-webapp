@@ -62,6 +62,7 @@ The following environment variables can be used to configure the server:
 - `IREGULON_JOB_SERVICE_URL` : the full path of the iRegulon `submitJob` service
 - `IREGULON_STATE_SERVICE_URL` : the full path of the iRegulon `stateCheck` service
 - `IREGULON_RESULTS_SERVICE_URL` : the full path of the iRegulon `results` service
+- `IREGULON_ERROR_SERVICE_URL` : the full path of the iRegulon `getErrorMessage` service
 - `MONGO_URL`: the MongoDB connection URL
 - `MONGO_ROOT_NAME`: the name of the app's DB in Mongo
 - `MONGO_COLLECTION_QUERIES`: the name of the query collection

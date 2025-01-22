@@ -32,7 +32,6 @@ export const STEP = {
   WAITING: 'WAITING',
   INPUT:  'INPUT',
   LOADING: 'LOADING',
-  COLUMNS: 'COLUMNS',
   ERROR:   'ERROR',
 };
 
@@ -82,12 +81,6 @@ async function showFileDialog() {
   });
 }
 
-function guessRnaseqClasses(columns) {
-  // Just assign first half to 'A' and second half to 'B'
-  const mid = columns.length / 2;
-  return columns.map((c,i) => i < mid ? 'A' : 'B');
-}
-
 //==[ Content ]=======================================================================================================
 
 const useContentStyles = makeStyles(theme => ({
@@ -97,11 +90,8 @@ const useContentStyles = makeStyles(theme => ({
     position: 'absolute',
     display: 'flex',
     flexDirection: 'column',
-    border: '4px solid transparent', // necessary for the drop area border
+    border: '4px solid transparent',
     backgroundColor: theme.palette.background.paper,
-  },
-  rootDropping: {
-    borderColor: 'rgb(54, 102, 209)'
   },
   main: {
     marginBottom: theme.spacing(6),
@@ -205,21 +195,17 @@ export function Content({ recentNetworksController }) {
   const [ mobile, setMobile ] = useState(() => isMobileWidth(theme));
   const [ tablet, setTablet ] = useState(() => isTabletWidth(theme));
   const [ openMobileMenu, setOpenMobileMenu ] = useState(false);
-  const [ droppingFile, setDroppingFile ] = useState(false);
   const [ showRecentNetworks, setShowRecentNetworks ] = useState(false);
 
   // This state must be kept as a single object because the eventbus callbacks run asyncronously, 
   // so this state must be updated atomically to avoid extra re-renders (which also cause errors).
-  // Each of the onXXX callbacks below must call setUploadState at most once.
-  const [ uploadState, setUploadState ] = useState({
+  // Each of the onXXX callbacks below must call setJobState at most once.
+  const [ jobState, setJobState ] = useState({
     step: STEP.WAITING,
     demo: null,
-    geneCol: null,
-    rankCol: null,
-    rnaseqClasses: null,
     errorMessages: null,
   });
-  const updateUploadState = (update) => setUploadState(prev => ({ ...prev, ...update }));
+  const updateUploadState = (update) => setJobState(prev => ({ ...prev, ...update }));
 
   /** Effects */
 
@@ -240,8 +226,7 @@ export function Content({ recentNetworksController }) {
   }, []);
 
   useEffect(() => {
-    bus.on('fileUploaded', onFileUploaded);
-    bus.on('loading', onLoading); // maybe should be called 'running'
+    bus.on('loading', onLoading);
     bus.on('finished', onFinished);
     bus.on('error', onError);
     return () => bus.removeAllListeners();
@@ -253,7 +238,7 @@ export function Content({ recentNetworksController }) {
   const onCloseMobileMenu = () => setOpenMobileMenu(false);
 
   const loadSampleNetwork = async (fileName, format) => {
-    if (uploadState.step == STEP.LOADING)
+    if (jobState.step == STEP.LOADING)
       return;
     const file = await controller.fetchSampleData(fileName);
     if (file) {
@@ -261,38 +246,15 @@ export function Content({ recentNetworksController }) {
     }
   };
 
-  const onDropUpload = async (event) => {
-    event.preventDefault();
-    if (uploadState.step == STEP.LOADING)
-      return;
-
-    const files = Array.from(event.dataTransfer.items)
-        .filter(item => item.kind === 'file')
-        .map(item => item.getAsFile());
-
-    setDroppingFile(false);
-    await controller.upload(files);
-  };
-
-  const onDragOverUpload = (event) => {
-    event.preventDefault();
-    setDroppingFile(true);
-  };
-
-  const onDragEndUpload = (event) => {
-    event.preventDefault();
-    setDroppingFile(false);
-  };
-
   const onClickGetStarted = () => {
-    if (uploadState.step != STEP.LOADING) {
-      setUploadState({ step: STEP.INPUT });
+    if (jobState.step != STEP.LOADING) {
+      setJobState({ step: STEP.INPUT });
     }
   };
 
   const onClickCreateDemo = () => {
-    if (uploadState.step != STEP.LOADING) {
-      setUploadState({ step: STEP.INPUT, demo: true });
+    if (jobState.step != STEP.LOADING) {
+      setJobState({ step: STEP.INPUT, demo: true });
     }
   };
 
@@ -303,20 +265,6 @@ export function Content({ recentNetworksController }) {
 
   const onLoading = () => {
     updateUploadState({ step: STEP.LOADING });
-  };
-
-  /** 
-   * Called after the file has been uploaded and quick-parsed for basic info.
-   * @param fileInfo The object returned by readTextFile/readExcelFile in data-file-reader.js
-   */
-  const onFileUploaded = async (fileInfo) => {
-    const { numericCols, geneCols } = fileInfo;
-    // Make guesses for these initial values
-    const rnaseqClasses = guessRnaseqClasses(numericCols);
-    const rankCol = numericCols[0];
-    const geneCol = geneCols[0];
-
-    setUploadState({ step: STEP.COLUMNS, fileInfo, geneCol, rankCol, rnaseqClasses }); 
   };
 
   /**
@@ -337,10 +285,10 @@ export function Content({ recentNetworksController }) {
  
   const onError = ({ errors, requestID }) => {
     if (cancelledRequests.includes(requestID)) {
-      console.log(`Ignoring error from cancelled request: { requestID:${requestID} }`);
+      console.log(`Ignoring error from cancelled request: { requestID: ${requestID} }`);
       return;
     }
-    setUploadState({ step: STEP.ERROR, errorMessages: errors });
+    setJobState({ step: STEP.ERROR, errorMessages: errors });
   };
 
   const onCancel = () => {
@@ -348,7 +296,7 @@ export function Content({ recentNetworksController }) {
       console.log(`Cancelling request: ${requestID}`);
       cancelledRequests.push(requestID);
     }
-    setUploadState({ step: STEP.WAITING });
+    setJobState({ step: STEP.WAITING });
   };
 
   const onFinished = ({ networkID, requestID }) => {
@@ -357,7 +305,7 @@ export function Content({ recentNetworksController }) {
       return;
     }
     if (requestID && cancelledRequests.includes(requestID)) {
-      console.log(`Ignoring cancelled request: { networkID:${networkID}, requestID:${requestID} }`);
+      console.log(`Ignoring cancelled request: { networkID: ${networkID}, requestID: ${requestID} }`);
       return;
     }
     showNetwork(networkID);
@@ -369,7 +317,7 @@ export function Content({ recentNetworksController }) {
 
   /** Render Components */
   return (
-    <div className={classNames({ [classes.root]: true, [classes.rootDropping]: droppingFile })}>
+    <div className={classNames({ [classes.root]: true })}>
       <Header
         menuDef={menuDef}
         showRecentNetworks={showRecentNetworks}
@@ -379,62 +327,54 @@ export function Content({ recentNetworksController }) {
         onOpenMobileMenu={onOpenMobileMenu}
       />
       <Container maxWidth="lg" disableGutters className={classes.main}>
-        <div
-          className={classes.drop} 
-          onDrop={onDropUpload} 
-          onDragOver={onDragOverUpload} 
-          onDragLeave={onDragEndUpload} 
-          onDragEnd={onDragEndUpload}
-        >
-          <Grid container direction="column" justifyContent="center" alignItems="center">
-            <Grid item className={classes.heroSection} xs={12}>
-              <RecentNetworksList
-                isMobile={mobile}
-                recentNetworksController={recentNetworksController}
-                onRefresh={onRecentNetworksRefresh}
-              />
-            </Grid>
-            <Grid item>
-              <Grid
-                container
-                className={clsx(classes.content, { [classes.contentWithRecentNetworks]: showRecentNetworks })}
-                direction={mobile || tablet ? 'column' : 'row'}
-                justifyContent="center"
-                alignItems="center"
-              >
-                <Grid item xs={mobile || tablet ? 12 : 6}>
-                  <Grid container direction="column" justifyContent="center" alignItems={mobile || tablet ? 'center' : 'flex-start'}>
-                    <Grid item>
-                      <Typography variant="h1" className={classes.tagline}>Gene Regulatory Networks</Typography>
-                    </Grid>
-                    <Grid item>
-                      <p className={classes.description}>
-                        Identify regulons using motif and track discovery in a set of co&#8209;regulated genes.
-                      </p>
-                    </Grid>
-                    <Grid item className={classes.heroSection}>
-                      {mobile || tablet 
-                        ? <Figure /> 
-                        : <GetStartedSection mobile={mobile} tablet={tablet} onClickGetStarted={onClickGetStarted} onClickCreateDemo={onClickCreateDemo} />
-                      }
-                    </Grid>
-                  {(mobile || tablet) && (
-                    <Grid item className={classes.heroSection}>
-                      <GetStartedSection mobile={mobile} tablet={tablet} onClickGetStarted={onClickGetStarted} onClickCreateDemo={onClickCreateDemo} />
-                    </Grid>
-                  )}
+        <Grid container direction="column" justifyContent="center" alignItems="center">
+          <Grid item className={classes.heroSection} xs={12}>
+            <RecentNetworksList
+              isMobile={mobile}
+              recentNetworksController={recentNetworksController}
+              onRefresh={onRecentNetworksRefresh}
+            />
+          </Grid>
+          <Grid item>
+            <Grid
+              container
+              className={clsx(classes.content, { [classes.contentWithRecentNetworks]: showRecentNetworks })}
+              direction={mobile || tablet ? 'column' : 'row'}
+              justifyContent="center"
+              alignItems="center"
+            >
+              <Grid item xs={mobile || tablet ? 12 : 6}>
+                <Grid container direction="column" justifyContent="center" alignItems={mobile || tablet ? 'center' : 'flex-start'}>
+                  <Grid item>
+                    <Typography variant="h1" className={classes.tagline}>Gene Regulatory Networks</Typography>
                   </Grid>
+                  <Grid item>
+                    <p className={classes.description}>
+                      Identify regulons using motif and track discovery in a set of co&#8209;regulated genes.
+                    </p>
+                  </Grid>
+                  <Grid item className={classes.heroSection}>
+                    {mobile || tablet 
+                      ? <Figure /> 
+                      : <GetStartedSection mobile={mobile} tablet={tablet} onClickGetStarted={onClickGetStarted} onClickCreateDemo={onClickCreateDemo} />
+                    }
+                  </Grid>
+                {(mobile || tablet) && (
+                  <Grid item className={classes.heroSection}>
+                    <GetStartedSection mobile={mobile} tablet={tablet} onClickGetStarted={onClickGetStarted} onClickCreateDemo={onClickCreateDemo} />
+                  </Grid>
+                )}
                 </Grid>
-              {!mobile && !tablet && (
-                <Grid item className={classes.heroSection} xs={6}>
-                  <Figure />
-                </Grid>
-              )}
               </Grid>
+            {!mobile && !tablet && (
+              <Grid item className={classes.heroSection} xs={6}>
+                <Figure />
+              </Grid>
+            )}
             </Grid>
           </Grid>
-          <LogoBar mobile={mobile} />
-        </div>
+        </Grid>
+        <LogoBar mobile={mobile} />
       </Container>
       <section id="faq" className={clsx(classes.section, classes.alternateSection)} >
         <Container maxWidth="lg" className={classes.sectionContainer}>
@@ -452,12 +392,12 @@ export function Content({ recentNetworksController }) {
       </section>
       <Footer mobile={mobile} tablet={tablet} />
       <MobileMenu menuDef={menuDef} open={openMobileMenu} onClose={onCloseMobileMenu} />
-    {uploadState.step !== STEP.WAITING && (
+    {jobState.step !== STEP.WAITING && (
       <StartDialog
-        step={uploadState.step}
+        step={jobState.step}
         isMobile={mobile}
-        isDemo={uploadState.demo}
-        errorMessages={uploadState.errorMessages}
+        isDemo={jobState.demo}
+        errorMessages={jobState.errorMessages}
         onUpload={onUpload}
         onSubmit={onSubmit}
         onCancelled={onCancel}

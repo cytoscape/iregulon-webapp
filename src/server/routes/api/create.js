@@ -10,6 +10,7 @@ import {
   IREGULON_JOB_SERVICE_URL,
   IREGULON_STATE_SERVICE_URL,
   IREGULON_RESULTS_SERVICE_URL,
+  IREGULON_ERROR_SERVICE_URL,
 } from '../../env.js';
 
 
@@ -91,8 +92,54 @@ http.get('/checkStatus/:jobID', async function(req, res) {
     }
   }
   
-  // Return the current status of the job
-  res.json({ jobID, status });
+  res.json({ jobID, status }); // Return the current status of the job to the client
+});
+
+/**
+ * Endpoint to get the error message for a job.
+ */
+http.get('/getErrorMessage/:jobID', async function(req, res) {
+  const jobID = req.params.jobID;
+  const params = new URLSearchParams({ jobID });
+
+  console.log('Fetching error message for job ' + jobID + '...');
+
+  const response = await fetch(IREGULON_ERROR_SERVICE_URL, {
+    method: 'POST',
+    headers: {
+      'User-Agent': IREGULON_USER_AGENT,
+    },
+    body: params
+  });
+  console.log('Finished fetching error message: ' + res.ok);
+
+  if (!response.ok) {
+    const body = await response.text();
+    const status = response.status;
+    throw new CreateError({ step: 'getErrorMessage', body, status });
+  }
+
+  let errorMessage = '';
+  const txt = await response.text();
+  const lines = txt.split('\n');
+
+  for (const line of lines) {
+    const entry = line.split('\t');
+    
+    if (entry.length === 2) {
+      const key = entry[0].toUpperCase();
+      
+      if (key === 'JOB_ERROR:') {
+        errorMessage = entry[1];
+        break;
+      } else if (key === 'ERROR:') {
+        errorMessage = entry[1].replaceAll("\\\\n", " ");
+        break;
+      }
+    }
+  }
+
+  res.json({ jobID, errorMessage });
 });
 
 /*
