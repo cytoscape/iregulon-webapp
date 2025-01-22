@@ -118,9 +118,6 @@ http.get('/:id/uistate', async function(req, res, next) {
     } else {
       res.send(JSON.stringify(state));
     }
-
-    res.sendStatus(404);
-    
   } catch (err) {
     next(err);
   }
