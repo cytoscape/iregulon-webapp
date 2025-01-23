@@ -113,9 +113,6 @@ export function annotateGenes(genes, results) {
       if (!gene) {
         gene = newGene(geneName);
       }
-      if (gene.regulatoryFunction === 'regulated') {
-        console.log(`>>> Gene ${geneName} is both a regulator and a target`);
-      }
       gene.regulatoryFunction = 'regulator';
       addMotifOrTrack(gene, motifOrTrack);
     });

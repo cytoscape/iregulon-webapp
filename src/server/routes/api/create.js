@@ -152,6 +152,7 @@ http.post('/', async function(req, res) {
 
   console.log('Fetching results for job ' + jobID + '...', params);
   console.log(savedParams);
+
   const { text, results } = await fetchJobResults(jobID, savedParams);
                 
   const geneSymbols = params.genes.split(';').map(name => name.trim()).filter(name => name.length > 0);

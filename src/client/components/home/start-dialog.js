@@ -68,7 +68,7 @@ const StartDialog = ({
     <div className={classes.progress}>
       <CircularProgressIcon color="primary" />
       <Typography component="p" variant="body1">Preparing your figure...</Typography>
-      <Typography component="p" variant="body1">This will take about a minute.</Typography>
+      <Typography component="p" variant="body1">This will take a couple of minutes.</Typography>
     </div>;
 
   const ErrorReport = () => {
