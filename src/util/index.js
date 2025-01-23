@@ -128,7 +128,7 @@ export const organismParams = [
     },
     defaultRankingParams: {
       selectedMotifRankingsDatabase: 'dm6_regions_pwm_11sp_mc_v9',
-      selectedTrackRankingsDatabase: 'none',
+      selectedTrackRankingsDatabase: 'dm6_regions_tc_v1',
     },
     defaultRegionBasedParams: {
       conversionFractionOfOverlap: 0.4,
@@ -150,7 +150,7 @@ export const organismParams = [
     },
     defaultRankingParams: {
       selectedMotifRankingsDatabase: 'dm3_regions_pwm_11sp_mc_v9',
-      selectedTrackRankingsDatabase: 'none',
+      selectedTrackRankingsDatabase: 'dm3_regions_tc_v1',
     },
     defaultRegionBasedParams: {
       conversionFractionOfOverlap: 0.4,
