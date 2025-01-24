@@ -240,16 +240,20 @@ const GeneMetadataPanel = ({ symbol, showSymbol, motifs=[], tracks=[] }) => {
               </Typography>
             </Grid>
           )}
-            <Grid item xs={12}>
+            {/* <Grid item xs={12}>
+              <Tooltip title={motifs.join('\n')}>
               <Typography variant="body2" component="div" color="textSecondary" sx={{fontSize: '0.75rem', mt: 1}}>
                 Motifs:&nbsp;&nbsp;{motifs.length}
               </Typography>
+              </Tooltip>
             </Grid>
             <Grid item xs={12}>
+              <Tooltip title={tracks.join('\n')}>
               <Typography variant="body2" color="textSecondary" sx={{fontSize: '0.75rem'}}>
                 Tracks:&nbsp;&nbsp;{tracks.length}
               </Typography>
-            </Grid>
+              </Tooltip>
+            </Grid> */}
             <Grid item xs={12} sx={{marginTop: 1}}>  
               <Grid container direction="row" justifyContent="space-between" alignItems='center'>
                 <Grid item>
