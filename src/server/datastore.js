@@ -239,7 +239,7 @@ class Datastore {
     const res = await this.db
       .collection(STATE_DATA_COLLECTION)
       .updateOne(
-        { 'motifsAndTracksID': id.bson }, 
+        { motifsAndTracksID: id.bson }, 
         { $set: { name: name } }
       );
 
@@ -249,15 +249,15 @@ class Datastore {
 
   async setUIState(idStr, positions, state) {
     const id = makeID(idStr);
-    const document = {
-      motifsAndTracksID: id.bson,
-      positions,
-      state
-    };
 
-    await this.db
+    const res = await this.db
       .collection(STATE_DATA_COLLECTION)
-      .replaceOne({ motifsAndTracksID: id.bson }, document, { upsert: true });
+      .updateOne(
+        { motifsAndTracksID: id.bson }, 
+        { $set: { positions, state } }
+      );
+
+    return res.modifiedCount > 0;
   }
 
   
