@@ -296,9 +296,10 @@ export class SearchController {
         }
       });
     });
-  
-    const tfAttributes = Array.from(tf2attributes.values()).sort();
-  
+
+    const tfAttributes = Array.from(tf2attributes.values());
+    this._sortTranscriptionFactorAttributes(tfAttributes);
+
     const result = [];
     const ids = new Set();
     for (const attributes of tfAttributes) {
@@ -337,13 +338,41 @@ export class SearchController {
       targetGenes.push(candidateTargetGene);
     }
 
-    targetGenes.sort((a, b) => {
+    this._sortCandidateTargetGenes(targetGenes);
+  
+    return targetGenes;
+  }
+   
+  _sortTranscriptionFactorAttributes(attributes) {
+    return attributes.sort((a, b) => {
+      // Compare `presentInSignature`
+      if (a.presentInSignature && !b.presentInSignature) return -1;
+      if (!a.presentInSignature && b.presentInSignature) return 1;
+      // Compare NES in descending order
+      if (b.nes !== a.nes) {
+        return b.nes - a.nes;
+      }
+       // Compare `maxMotifSimilarityFDR` (ascending)
+      if (a.transcriptionFactor.maxMotifSimilarityFDR !== b.transcriptionFactor.maxMotifSimilarityFDR) {
+        return a.transcriptionFactor.maxMotifSimilarityFDR - b.transcriptionFactor.maxMotifSimilarityFDR;
+      }
+      // Compare `minOrthologousIdentity` (descending)
+      if (a.transcriptionFactor.minOrthologousIdentity !== b.transcriptionFactor.minOrthologousIdentity) {
+        return b.transcriptionFactor.minOrthologousIdentity - a.transcriptionFactor.minOrthologousIdentity;
+      }
+      // Compare `transcriptionFactor.name` lexicographically (case-insensitive)
+      return a.transcriptionFactor.geneID.name.localeCompare(b.transcriptionFactor.geneID.name, undefined, { sensitivity: 'base' });
+    });
+  }
+
+  _sortCandidateTargetGenes(genes) {
+    return genes.sort((a, b) => {
+      // Compare by `rank` (ascending)
       if (a.rank !== b.rank) {
         return a.rank - b.rank;
       }
-      return a.geneID.name.localeCompare(b.geneID.name, undefined, { sensitivity: 'accent' });
+      // Compare by `geneName` (case-insensitive alphabetical order)
+      return a.geneID.name.localeCompare(b.geneID.name, undefined, { sensitivity: 'base' });
     });
-  
-    return targetGenes;
   }
 }
