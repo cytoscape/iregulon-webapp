@@ -27,6 +27,26 @@ const organismIcons = {
   '6': (props) => <MouseIcon {...props} />,
 };
 
+const exampleGenes = {
+  // Human -- genes frequently mutated in prostate cancer (from GeneMANIA)
+  1: [
+    'AR', 'BDH1', 'CYB5A', 'CYP11A1', 'CYP11B1', 'CYP11B2', 'CYP17A1', 'CYP19A1', 'CYP21A2',
+    'DCXR', 'DECR2', 'DHRS1', 'DHRS11', 'DHRS13', 'DHRS2', 'DHRS4', 'DHRS4L2', 'DHRS7B', 'HSD11B1L',
+    'HSD17B1', 'HSD17B10', 'HSD17B11', 'HSD17B12', 'HSD17B13', 'HSD17B14', 'HSD17B2', 'HSD17B3',
+    'HSD17B4', 'HSD17B6', 'HSD17B7', 'HSD17B8', 'HSD3B1', 'HSD3B2', 'HSD3B7', 'HSDL1', 'HSDL2',
+    'PECR', 'RDH10', 'RDH5', 'RDH8', 'SDR16C5', 'SHBG', 'SRD5A1', 'SRD5A3', 'STAR', 'TECR', 'TECRL'
+  ],
+  // Mouse -- genes encoding aldehyde dehydrogenases
+  2: [
+    'Abl1', 'Actb', 'Adora2a', 'Adora2b', 'Adora3', 'Adrb1', 'Adrb2', 'Adrb3', 'Agt', 'Aldh1a1',
+    'Aldh1a2', 'Aldh1a3', 'Aldh1l1'
+  ],
+  // Fly -- genes encoding aminoacyl-tRNA synthetases
+  3: [
+    'twi', 'sna', 'dpp', 'sog', 'rho', 'pip'
+  ],
+};
+
 //==[ QueryPanel ]====================================================================================================
 
 function parseGeneList(text) {
@@ -39,31 +59,21 @@ function parseGeneList(text) {
 }
 
 export function QueryForm({ initialOrganism, isMobile, onOrganismChanged, onGenesChanged }) {
-  const [ organism, setOrganism ] = useState(organisms.indexOf(initialOrganism));
+  const [ organismIndex, setOrganismIndex ] = useState(organisms.indexOf(initialOrganism));
 
   const geneInputRef = useRef();
 
   const setExampleGenes = () => {
-    // Select the first organism (must be `human`!)
-    const orgIdx = 0; 
-    setOrganism(orgIdx);
-    onOrganismChanged(organisms[orgIdx]);
-    // Genes frequently mutated in prostate cancer (from GeneMANIA)
-    const exampleGenes = [
-      'AR', 'BDH1', 'CYB5A', 'CYP11A1', 'CYP11B1', 'CYP11B2', 'CYP17A1', 'CYP19A1', 'CYP21A2',
-      'DCXR', 'DECR2', 'DHRS1', 'DHRS11', 'DHRS13', 'DHRS2', 'DHRS4', 'DHRS4L2', 'DHRS7B', 'HSD11B1L',
-      'HSD17B1', 'HSD17B10', 'HSD17B11', 'HSD17B12', 'HSD17B13', 'HSD17B14', 'HSD17B2', 'HSD17B3',
-      'HSD17B4', 'HSD17B6', 'HSD17B7', 'HSD17B8', 'HSD3B1', 'HSD3B2', 'HSD3B7', 'HSDL1', 'HSDL2',
-      'PECR', 'RDH10', 'RDH5', 'RDH8', 'SDR16C5', 'SHBG', 'SRD5A1', 'SRD5A3', 'STAR', 'TECR', 'TECRL'
-    ];
-    geneInputRef.current.value = exampleGenes.join(' ');
-    onGenesChanged(exampleGenes);
+    // Load example genes for the selected organism
+    const organism = organisms[organismIndex];
+    const genes = exampleGenes[organism.speciesNomenclature.nomenclatureCode];
+    geneInputRef.current.value = genes.join(' ');
+    onGenesChanged(genes);
   };
-
 
   const handleOrganismChange = (event) => {
     const idx = event.target.value;
-    setOrganism(idx);
+    setOrganismIndex(idx);
     onOrganismChanged(organisms[idx]);
   };
   const handleGenesChange = (event) => {
@@ -78,7 +88,7 @@ export function QueryForm({ initialOrganism, isMobile, onOrganismChanged, onGene
         <Select
           variant="outlined"
           displayEmpty
-          value={organism}
+          value={organismIndex}
           onChange={handleOrganismChange}
           renderValue={(idx) => {
             return (
