@@ -6,6 +6,7 @@ import { useQuery } from "react-query";
 import chroma from 'chroma-js';
 import { linkoutProps } from '../defaults';
 import { NetworkEditorController } from './controller';
+import { speciesNomenclatureDef } from '../../../util'; 
 
 import { useTheme } from '@mui/material/styles';
 
@@ -151,13 +152,13 @@ const useGeneMetadataPanelStyles = makeStyles((theme) => ({
   },
 }));
 
-const GeneMetadataPanel = ({ symbol, showSymbol, motifs=[], tracks=[] }) => {
+const GeneMetadataPanel = ({ symbol, showSymbol, taxonomy, commonOrganismName, motifs=[], tracks=[] }) => {
   const classes = useGeneMetadataPanelStyles();
 
   const queryGeneData = useQuery(
     ['gene-metadata', symbol],
     () =>
-      fetch(`https://api.ncbi.nlm.nih.gov/datasets/v1/gene/symbol/${symbol}/taxon/9606`, {
+      fetch(`https://api.ncbi.nlm.nih.gov/datasets/v1/gene/symbol/${symbol}/taxon/${taxonomy}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       })
@@ -258,7 +259,7 @@ const GeneMetadataPanel = ({ symbol, showSymbol, motifs=[], tracks=[] }) => {
               <Grid container direction="row" justifyContent="space-between" alignItems='center'>
                 <Grid item>
                   <Link
-                    href={ncbiId ? `https://www.ncbi.nlm.nih.gov/gene/${ncbiId}` : `https://www.ncbi.nlm.nih.gov/gene?term=(${symbol}%5BGene%20Name%5D)%20AND%209606%5BTaxonomy%20ID%5D`}
+                    href={ncbiId ? `https://www.ncbi.nlm.nih.gov/gene/${ncbiId}` : `https://www.ncbi.nlm.nih.gov/gene?term=(${symbol}%5BGene%20Name%5D)%20AND%20${taxonomy}%5BTaxonomy%20ID%5D`}
                     className={classes.linkout}
                     {...linkoutProps}
                   >
@@ -267,7 +268,7 @@ const GeneMetadataPanel = ({ symbol, showSymbol, motifs=[], tracks=[] }) => {
                 </Grid>
                 <Grid item>
                   <Link
-                    href={`https://genemania.org/search/human/${symbol}`}
+                    href={`https://genemania.org/search/${commonOrganismName}/${symbol}`} // see: https://pages.genemania.org/help/#linking-to-genemania
                     className={classes.linkout}
                     {...linkoutProps}
                   >
@@ -286,6 +287,8 @@ const GeneMetadataPanel = ({ symbol, showSymbol, motifs=[], tracks=[] }) => {
 GeneMetadataPanel.propTypes = {
   symbol: PropTypes.string.isRequired,
   showSymbol: PropTypes.func,
+  taxonomy: PropTypes.number.isRequired,
+  commonOrganismName: PropTypes.string.isRequired,
   motifs: PropTypes.array,
   tracks: PropTypes.array,
 };
@@ -487,6 +490,12 @@ const GeneListPanel = ({
         onGeneClick(symbol);
     };
 
+    // Get the taxonomy ID and common organism name from the query parameters
+    const nomenclatureCode = controller.cy.data('parameters')?.SpeciesNomenclature;
+    const species = Object.values(speciesNomenclatureDef).find(species => species.nomenclatureCode === nomenclatureCode);
+    const taxonomy = species?.taxonomy;
+    const commonOrganismName = species?.commonName;
+
     return (
       <ListItem key={idx} alignItems="flex-start" className={classes.listItem}>
         <ListItemText
@@ -526,6 +535,8 @@ const GeneListPanel = ({
               <GeneMetadataPanel
                 symbol={symbol}
                 showSymbol={() => isGeneTextOverflowing(geneTextElemId)}
+                taxonomy={taxonomy}
+                commonOrganismName={commonOrganismName}
                 motifs={motifs}
                 tracks={tracks}
               />
