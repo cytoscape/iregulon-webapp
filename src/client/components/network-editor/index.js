@@ -73,7 +73,7 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
 
   cy.data({ 
     name: results.name, 
-    parameters: results.parameters,
+    parameters: results.params,
     demo: isDemo
   });
 
