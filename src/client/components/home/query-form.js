@@ -91,12 +91,15 @@ export function QueryForm({ initialOrganism, isMobile, onOrganismChanged, onGene
           value={organismIndex}
           onChange={handleOrganismChange}
           renderValue={(idx) => {
+            const organism = organisms[idx];
+            // Show assembly only if there are multiple organisms with the same nomenclature
+            const showAssembly = organisms.filter(o => o.speciesNomenclature.nomenclatureCode === organism.speciesNomenclature.nomenclatureCode).length > 1;
             return (
               <Box display="flex" gap={1}>
                 {idx !== '' ?
                   <>
-                    { organismIcons[organisms[idx].speciesNomenclature.id]({color: 'inherit', fontSize: 'medium'}) }
-                    { organisms[idx].speciesNomenclature.name} &#40;{organisms[idx].speciesNomenclature.assembly}&#41;
+                    { organismIcons[organism.speciesNomenclature.id]({color: 'inherit', fontSize: 'medium'}) }
+                    { organism.speciesNomenclature.name} {showAssembly && `(${organism.speciesNomenclature.assembly})`}
                   </>
                   :
                   <Typography variant="body2">-- Select an organism --</Typography>
@@ -105,14 +108,18 @@ export function QueryForm({ initialOrganism, isMobile, onOrganismChanged, onGene
             );
           }}
         >
-          {organisms.map(({ speciesNomenclature }, idx) => (
-            <MenuItem key={speciesNomenclature.id} value={idx}>
-              <ListItemIcon sx={{ pr: 2, color: (theme) => theme.palette.text.primary }}>
-                { organismIcons[speciesNomenclature.id]({ color: 'inherit', fontSize: 'large' }) }
-              </ListItemIcon>
-              <ListItemText primary={`${speciesNomenclature.name} (${speciesNomenclature.assembly})`} secondary={speciesNomenclature.nomenclature} />
-            </MenuItem>
-          ))}
+          {organisms.map(({ speciesNomenclature }, idx) => {
+            // Show assembly only if there are multiple organisms with the same nomenclature
+            const showAssembly = organisms.filter(o => o.speciesNomenclature.nomenclatureCode === speciesNomenclature.nomenclatureCode).length > 1;
+            return (
+              <MenuItem key={speciesNomenclature.id} value={idx}>
+                <ListItemIcon sx={{ pr: 2, color: (theme) => theme.palette.text.primary }}>
+                  { organismIcons[speciesNomenclature.id]({ color: 'inherit', fontSize: 'large' }) }
+                </ListItemIcon>
+                <ListItemText primary={`${speciesNomenclature.name} ${showAssembly ? `(${speciesNomenclature.assembly})` : ''}`} secondary={speciesNomenclature.nomenclature} />
+              </MenuItem>
+            );
+          })}
         </Select>
       </FormControl>
       <FormControl sx={{ width: '100%' }}>
