@@ -20,7 +20,6 @@ const Path = {
   IMAGE_MEDIUM:  'images/iregulon_medium.png',
   IMAGE_LARGE:   'images/iregulon_large.png',
   IMAGE_PDF:     'images/iregulon.pdf',
-  IMAGE_LEGEND:  'images/node_color_legend_NES.svg',
   DATA_FOLDER:   'data',
   DATA_RESULTS:  'data/iregulon_results.txt',
   DATA_PARAMS:   'data/parameters.txt',
@@ -62,7 +61,7 @@ export class ExportController {
     const blob1 = await this._createNetworkImageBlob(ImageSize.MEDIUM);
     const blob2 = await this._createNetworkImageBlob(ImageSize.LARGE);
     const blob3 = await this._createNetworkPDFBlob();
-    // const readme = createREADME(this.controller);
+    const readme = createREADME(this.controller);
 
     const files = await filesPromise;
     const motifBlobs = await motifsPromise;
@@ -75,7 +74,7 @@ export class ExportController {
     zip.file(Path.DATA_RESULTS,  files[0]);
     zip.file(Path.DATA_PARAMS,   files[1]);
     zip.file(Path.DATA_IRF,      files[2]);
-    // zip.file(Path.README,        readme);
+    zip.file(Path.README,        readme);
 
     for(const { path, blob } of motifBlobs) {
       const fileName = path.split('/').pop();
@@ -170,33 +169,33 @@ export class ExportController {
 function createREADME(controller) {
   const { cy } = controller;
   const name = cy.data('name');
-  const parameters = cy.data('parameters');
-  const db = cy.data('geneSetCollection');
   const link = window.location.href;
 
   return dedent`
     iRegulon - ${name}
-    -------------------------${'-'.repeat(name.length)}
+    -----------${'-'.repeat(name.length)}
 
     Network Permalink: ${link}
 
-    iRegulon is a web-app that allows you to perform functional enrichment analysis on 
-    gene lists derived from RNA-seq experiments and visualise the results as a network.
+    iRegulon is a bioinformatics tool that predicts the master regulators 
+    and their target genes within a set of co-expressed genes. It uses a 
+    comprehensive collection of transcription factor binding site motifs 
+    and ChIP-Seq data to identify enriched regulatory elements and infers 
+    potential regulatory networks.
 
     This archive contains the following files:
     * ${Path.IMAGE_LARGE}
     * ${Path.IMAGE_MEDIUM}
     * ${Path.IMAGE_SMALL}
       * Network PNG images in various sizes.
-    * ${Path.IMAGE_LEGEND}
-      * An SVG image of the NES color legend used for the nodes in the network.
-    * ${Path.DATA_ENRICH}
-      * Results of Gene Set Enrichment Analysis from the FGSEA R package.
-    * ${Path.DATA_RANKS}
-      * Gene ranks.
-    * ${Path.DATA_GENESETS}
-      * Gene sets (pathways) that correspond to nodes in the network.
-
+    * ${Path.IMAGE_PDF}
+      * Network image PDF file. 
+    * ${Path.DATA_PARAMS}
+      * The query parameters used to get the results from the iRegulon database.
+    * ${Path.DATA_RESULTS}
+      * Raw iRegulon data results in TSV format.
+    * ${Path.DATA_IRF}
+      * Results in the .IRF format that can be imported into Cytoscape using the iRegulon app.
 
     How to cite iRegulon
     -------------------------
@@ -208,20 +207,17 @@ function createREADME(controller) {
     iRegulon: From a Gene List to a Gene Regulatory Network Using Large Motif and Track Collections.
     PLoS Comput Biol. 2014 Jul 24;10(7):e1003731. 
 
-
     Importing data into the Cytoscape iRegulon App
     ---------------------------------------------------
     * Download and install Cytoscape
       * https://cytoscape.org/download.html
     * Download and install the iRegulon App
       * https://apps.cytoscape.org/apps/iregulon
-    * TODO...
+    * Go to the main menu and select Apps > iRegulon > Load results from file
+    * Select the .IRF file from the data folder.
+    * Note: If you encounter difficulty importing the results into Cytoscape, 
+      please try using Cytoscape version 3.9.1.
     * Documentation for the iRegulon Cytoscape App is available here...
       * http://iregulon.aertslab.org/index.html
-    
-    
-    iRegulon parameters
-    -----------------------------
-    * TODO...
   `;
 }
