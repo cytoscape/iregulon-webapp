@@ -170,6 +170,8 @@ const useBottomDrawerStyles = makeStyles((theme) => ({
 export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTablet, onToggle }) {
   const [ disabled, setDisabled ] = useState(true);
   const [ searchValue, setSearchValue ] = useState('');
+  const [ motifCount, setMotifCount ] = useState(0);
+  const [ trackCount, setTrackCount ] = useState(0);
   const [ data, setData ] = useState([]);
   const [ type, setType ] = useState(DEFAULT_NETWORK_TYPE_SELECTION);
   const [ searchTerms, setSearchTerms ] = useState();
@@ -257,6 +259,8 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
 
   const onResultsIndexed = () => {
     const results = controller.fetchResults(type);
+    setMotifCount(controller.countResults('MOTIF'));
+    setTrackCount(controller.countResults('TRACK'));
     setData(toTableData(results, type));
     setDisabled(false);
   };
@@ -426,7 +430,9 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
               exclusive
               onChange={handleTypeChange}
             >
-            {Object.entries(typeOptions).map(([k, { label, description }]) => (
+            {Object.entries(typeOptions).map(([k, { label, description }]) => 
+              // Hide the 'Motifs' and 'Tracks' buttons if there are no motifs or tracks in the results
+              !(k === 'MOTIF' && motifCount === 0) && !(k === 'TRACK' && trackCount === 0) && (
               <ToggleButton
                 key={`type-${k}`}
                 value={k}

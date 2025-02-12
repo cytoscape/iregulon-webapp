@@ -104,6 +104,18 @@ export class SearchController {
     return results;
   }
 
+  countResults(type) {
+    if (type === 'CLUSTER') {
+      return this.clustersMiniSearch.documentCount;
+    }
+    if (type == null) {
+      // All results, including clusters
+      return this.clustersMiniSearch.documentCount + this.resultsMiniSearch.documentCount;
+    }
+    // Motifs or tracks
+    return Object.values(this.resultsMiniSearch.toJSON().storedFields).filter(r => r.type === type).length;
+  }
+
 
   /**
    * Initializes all genes (query + results).

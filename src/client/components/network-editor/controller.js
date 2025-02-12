@@ -587,6 +587,10 @@ export class NetworkEditorController {
     return this.searchController.getResults(type);
   }
 
+  countResults(type) {
+    return this.searchController.countResults(type);
+  }
+
   fetchGene(name) {
     const genes = this.searchController.searchGenes(name);
     return genes.length > 0 ? genes[0] : null;
