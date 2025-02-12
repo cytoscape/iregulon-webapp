@@ -292,31 +292,6 @@ const Main = ({
     setExportEnabled(true);
   };
 
-  const createClusterArrays = () => {
-    const clusters = window.cy.elements().markovClustering();
-    for (var i = 0; i < clusters.length; i++) {
-      for (var j = 0; j < clusters[i].length; j++) {
-        clusters[i][j]._private.data.clusterID = i;
-      }
-    }
-    
-    const arrayOfClusterArrays = [];
-    const uniqueClusterIDs = clusters.map(cluster => cluster[0].data('clusterID'));
-    controller.cy.nodes().forEach(node => {
-     const clusterID = node.data('clusterID');
-     if (uniqueClusterIDs.includes(clusterID)) {
-       if (arrayOfClusterArrays[clusterID] == undefined) {
-         arrayOfClusterArrays[clusterID] = [];
-       } else {
-         arrayOfClusterArrays[clusterID].push(node.data('id'));
-       }
-     } else {
-       arrayOfClusterArrays.push([node.data('id')]);
-     }
-    });
-    return arrayOfClusterArrays;
-  };
-
   const menuDef = [ 
     {
       title: "Zoom to Fit",
