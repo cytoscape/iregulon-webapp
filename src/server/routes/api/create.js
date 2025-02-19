@@ -163,11 +163,11 @@ http.post('/', async function(req, res) {
 
   const name = createDefaultNetworkName(params);
 
-  const networkID = await Datastore.saveResults({ genes, results, text, name, params: savedParams });
-  console.log(networkID);
+  const resultsID = await Datastore.saveResults({ genes, results, text, name, params: savedParams });
+  console.log(resultsID);
 
   // Return the result of the job
-  res.json({ jobID, networkID });
+  res.json({ jobID, resultsID });
 });
 
 

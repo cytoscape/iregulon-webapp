@@ -67,6 +67,7 @@ The following environment variables can be used to configure the server:
 - `MONGO_ROOT_NAME`: the name of the app's DB in Mongo
 - `MONGO_COLLECTION_QUERIES`: the name of the query collection
 - `SENTRY_ENVIRONMENT`: the Sentry environment name to use (automatic in prod mode, set to `test*` like `test_joe` to get Sentry reports in debug instances)
+- `CYTOSCAPE_WEB_URL`: the base URL of Cytoscape Web
 
 ## Run targets
 

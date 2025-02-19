@@ -6,15 +6,24 @@ import fs from 'fs';
 import { parseMotifsAndTracks, annotateGenes } from './util.js';
 
 
-// This is the promary collection, each document represents the results 
-// of an analysis returned by the iregulon service. Documens in this collection
-// are created once and are (mostly) static.
+/**
+ * This is the promary collection, each document represents the results 
+ * of an analysis returned by the iregulon service. Documens in this collection
+ * are created once and are (mostly) static.
+ */
 const MOTIFS_AND_TRACKS_COLLECTION = 'motifsAndTracks'; 
 
-// This collection contains state data that is associated with a document in the 
-// motifsAndTracks collection. It contains mutable state data like the name
-// of the document and UI state (like whats selected in the data table).
+/**
+ * This collection contains state data that is associated with a document in the 
+ * motifsAndTracks collection. It contains mutable state data like the name
+ * of the document and UI state (like whats selected in the data table).
+ */
 const STATE_DATA_COLLECTION = 'stateData';
+
+/**
+ * This collection contains exported networks in CX2 format.
+ */
+const EXPORTED_NETWORKS_COLLECTION = 'exportedNetworks';
 
 // const PERFORMANCE_COLLECTION = 'performance';
 
@@ -316,6 +325,35 @@ class Datastore {
     return cursor;
   }
 
+  async saveExportedNetwork({ resultsID: resultsIdStr, network }) {
+    const id = makeID();
+    const resultsId = makeID(resultsIdStr);
+
+    const result = await this.db
+      .collection(EXPORTED_NETWORKS_COLLECTION)
+      .insertOne({
+        _id: id.bson,
+        motifsAndTracksID: resultsId.bson,
+        cx2: network,
+        creationTime: new Date(),
+    });
+
+    if (result && result.acknowledged ) {
+      console.log("Inserted network snapshot _id:", id.string);
+      return id.string;
+    } else {
+      throw new Error("Failed to insert network snapshot document or inserted document is empty.");
+    }
+  }
+
+  async getExportedNetwork(idStr) {
+    const id = makeID(idStr);
+    const result = await this.db
+      .collection(EXPORTED_NETWORKS_COLLECTION)
+      .findOne({ _id: id.bson });
+
+    return result;
+  }
 }
 
 const ds = new Datastore(); // singleton

@@ -54,10 +54,6 @@ const getNodeColor = _.memoize(node => {
   }
 }, n => n.id());
 
-const getNodeShape = _.memoize(n => {
-  return n.data('regulatoryFunction') === 'regulator' ? 'ellipse' : 'ellipse';
-}, n => n.id());
-
 const getNodeSize = _.memoize(n => {
   return n.data('regulatoryFunction') === 'regulator' ? 60 : 40;
 }, n => n.id());
@@ -81,7 +77,6 @@ const getEdgeColor = _.memoize(e => {
 const memoizeFunctions = [
   getNodeLabel,
   getNodeColor,
-  getNodeShape,
   getNodeSize,
   getNodeFontSize,
   getTextOutlineWidth,
@@ -108,7 +103,6 @@ export function createNetworkStyle(cy) {
     minNES,
     magNES,
     getNodeColor,
-    getNodeShape,
     getEdgeColor,
     cyJSON: [
       {
@@ -128,7 +122,7 @@ export function createNetworkStyle(cy) {
           'color': TEXT_COLOR,
           'background-color':   getNodeColor,
           'text-outline-color': getNodeColor,
-          'shape': getNodeShape,
+          'shape': 'ellipse',
           'z-index': 1,
           'label': getNodeLabel,
         }

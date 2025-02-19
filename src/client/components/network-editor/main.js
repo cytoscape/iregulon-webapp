@@ -8,6 +8,7 @@ import { useTheme } from '@mui/material/styles';
 import makeStyles from '@mui/styles/makeStyles';
 
 import { DEFAULT_PADDING, HEADER_HEIGHT, LEFT_DRAWER_WIDTH, BOTTOM_DRAWER_HEIGHT, bottomDrawerHeight } from '../defaults';
+import { CYTOSCAPE_WEB_URL } from '../../env.js';
 import { NetworkEditorController } from './controller';
 import { Header } from './header';
 import LeftDrawer from './left-drawer';
@@ -29,7 +30,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import UndoIcon from '@mui/icons-material/Undo';
 import RestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import KeyboardReturnIcon from '@mui/icons-material/KeyboardReturn';
-import { DragSelectIcon, DownloadIcon, ShareIcon } from '../svg-icons';
+import { DragSelectIcon, DownloadIcon, ShareIcon, Cy3LogoIcon } from '../svg-icons';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -292,6 +293,17 @@ const Main = ({
     setExportEnabled(true);
   };
 
+  // Save the current network snapshot and then open Cytoscape Web, passing the URL that will load the snapshot
+  const handleCyWeb = async () => {
+    // Save the network snapshot to the database
+    const networkID = await controller.saveExportedNetwork();
+    // Open Cytoscape Web in a new tab
+    const currentOrigin = window.location.origin;
+    window.open(`${CYTOSCAPE_WEB_URL}/?import=${currentOrigin}/api/${networkID}/cx2`);
+    snack.showMessage("Cytoscape Web has been opened in a new tab");
+  };
+
+  // Top Menu Definition
   const menuDef = [ 
     {
       title: "Zoom to Fit",
@@ -340,6 +352,11 @@ const Main = ({
       title: "Share",
       icon: <ShareIcon />,
       onClick: handleCopyLink,
+    }, {
+      title: "Send to Cytoscape Web",
+      icon: <Cy3LogoIcon />,
+      onClick: handleCyWeb,
+      isEnabled: () => !cy.isDemo(), // The demo network cannot be sent to Cytoscape Web, because the same results are used by multiple users
     },
   ];
 

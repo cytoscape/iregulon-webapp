@@ -54,7 +54,7 @@ const isTabletWidth = (theme) => !isMobileWidth(theme) && window.innerWidth <= t
 let requestID = null;
 let cancelledRequests = [];
 
-function showNetwork(id) {
+function showResults(id) {
   location.href = `/document/${id}`;
 }
 
@@ -299,16 +299,16 @@ export function Content({ recentNetworksController }) {
     setJobState({ step: STEP.WAITING });
   };
 
-  const onFinished = ({ networkID, requestID }) => {
-    if (networkID === 'blah') {
+  const onFinished = ({ resultsID, requestID }) => {
+    if (resultsID === 'blah') {
       onCancel();
       return;
     }
     if (requestID && cancelledRequests.includes(requestID)) {
-      console.log(`Ignoring cancelled request: { networkID: ${networkID}, requestID: ${requestID} }`);
+      console.log(`Ignoring cancelled request: { resultsID: ${resultsID}, requestID: ${requestID} }`);
       return;
     }
-    showNetwork(networkID);
+    showResults(resultsID);
   };
 
   const onRecentNetworksRefresh = () => {

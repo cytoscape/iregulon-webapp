@@ -23,7 +23,7 @@ http.get('/iamerror', async function(req, res) {
   res.sendStatus(500);
 });
 
-/**
+/*
  * Get file names of sample input data.
  */
 http.get('/sample-data', async function(req, res, next) {
@@ -42,7 +42,7 @@ http.get('/sample-data', async function(req, res, next) {
 
 
 /* 
- * Returns a network given its ID.
+ * Returns the results given its ID.
  */
 http.get('/:id', async function(req, res, next) {
   try {
@@ -141,6 +141,45 @@ http.post('/:id/uistate', async function(req, res, next) {
   }
 });
 
+
+/* 
+ * Endpoint to save a new network snapshot to the database.
+ * The `id` parameter is the ID of the results the network was created from.
+ * The request body must contain the `network` parameter (CX2 format).
+ * It returns the ID of the network snapshot.
+ */
+http.post('/:id/cx2', async function(req, res, next) {
+  try {
+    const { id: resultsID } = req.params;
+    const { network } = req.body;
+
+    const networkID = await Datastore.saveExportedNetwork({ resultsID, network });
+
+    res.json({ networkID });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+/* 
+ * Endpoint that returns a network in CX2 format given the network ID.
+ */
+http.get('/:netId/cx2', async function(req, res, next) {
+  try {
+    const { netId } = req.params;
+    const doc = await Datastore.getExportedNetwork(netId);
+
+    if (!doc || !doc.cx2) {
+      res.sendStatus(404);
+    } else {
+      res.set('Access-Control-Allow-Origin', '*');
+      res.send(JSON.stringify(doc.cx2));
+    }
+  } catch (err) {
+    next(err);
+  }
+});
 
 
 export async function writeCursorToResult(cursor, res) {
