@@ -18,7 +18,7 @@ import { ListItem, ListItemText } from '@mui/material';
 import { Box, Grid, Paper, Typography, Link, Tooltip } from '@mui/material';
 import Skeleton from '@mui/material/Skeleton';
 
-import { NODE_COLOR_REGULATED, NODE_COLOR_REGULATOR } from './network-style';
+import { NODE_COLOR_REGULATED, NODE_COLOR_REGULATOR } from './util/network-style';
 
 import InfoIcon from '@mui/icons-material/Info';
 import SadFaceIcon from '@mui/icons-material/SentimentVeryDissatisfied';

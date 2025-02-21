@@ -8,7 +8,8 @@ import { SearchController } from './search-controller';
 import { ExportController } from './export-controller';
 import { UndoHandler } from './undo-stack';
 import { useUIStateStore, stateToJson } from './store';
-import { cyJsonToCx2 } from '../../../util/cx2';
+import { createCX2Style } from './util/cx2-style';
+import { cyJsonToCx2 } from './util/cx2';
 
 
 export const DEFAULT_LAYOUT_OPTIONS = {
@@ -472,7 +473,7 @@ export class NetworkEditorController {
     const resultsID = this.cy.data('id');
     // Convert the network to CX2 format (must include the node positions)
     const positions = this.getPositions();
-    const cx2 = cyJsonToCx2(this.cy.json(), positions);
+    const cx2 = cyJsonToCx2(this.cy.json(), positions, createCX2Style(this.cy));
     console.log('cx2:', (typeof cx2));
     console.log('cx2:', cx2);
 
