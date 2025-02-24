@@ -173,7 +173,7 @@ http.get('/:netId/cx2', async function(req, res, next) {
     if (!doc || !doc.cx2) {
       res.sendStatus(404);
     } else {
-      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Access-Control-Allow-Origin', '*'); // To prevent CORS policy errors
       res.send(JSON.stringify(doc.cx2));
     }
   } catch (err) {

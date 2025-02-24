@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import uuid from 'uuid';
 import MUUID from 'uuid-mongodb';
 import _ from 'lodash';
@@ -151,6 +151,10 @@ class Datastore {
   async createIndexes() {
     await this.db
       .collection(STATE_DATA_COLLECTION)
+      .createIndex({ motifsAndTracksID: 1 });
+
+    await this.db
+      .collection(EXPORTED_NETWORKS_COLLECTION)
       .createIndex({ motifsAndTracksID: 1 });
   }
 
@@ -326,31 +330,52 @@ class Datastore {
   }
 
   async saveExportedNetwork({ resultsID: resultsIdStr, network }) {
-    const id = makeID();
     const resultsId = makeID(resultsIdStr);
 
     const result = await this.db
       .collection(EXPORTED_NETWORKS_COLLECTION)
-      .insertOne({
-        _id: id.bson,
-        motifsAndTracksID: resultsId.bson,
-        cx2: network,
-        creationTime: new Date(),
-    });
+      .updateOne(
+        { motifsAndTracksID: resultsId.bson },
+        {
+          $set: {
+            motifsAndTracksID: resultsId.bson,
+            cx2: network,
+            creationTime: new Date(),
+          }
+        },
+        { upsert: true }
+      );
 
-    if (result && result.acknowledged ) {
-      console.log("Inserted network snapshot _id:", id.string);
-      return id.string;
+    let documentId;
+
+    if (result.acknowledged) {
+      if (result.upsertedCount > 0) {
+        // Document inserted...
+        documentId = result.upsertedId;
+        console.log(`${EXPORTED_NETWORKS_COLLECTION} document inserted successfully: ${documentId}, ${resultsIdStr}`);
+      } else if (result.modifiedCount > 0) {
+        // Document updated...
+        console.log(`${EXPORTED_NETWORKS_COLLECTION} document updated successfully: ${resultsIdStr}`);
+        // Get the _id of the updated document
+        const document = await this.db
+          .collection(EXPORTED_NETWORKS_COLLECTION)
+          .findOne({ motifsAndTracksID: resultsId.bson });
+        documentId = document._id;
+      } else {
+        console.error(`No document inserted or updated in ${EXPORTED_NETWORKS_COLLECTION}: ${resultsIdStr}`);
+      }
     } else {
-      throw new Error("Failed to insert network snapshot document or inserted document is empty.");
+      console.error(`Update operation not acknowledged in ${EXPORTED_NETWORKS_COLLECTION}: ${resultsIdStr}`);
     }
+
+    return documentId;
   }
 
   async getExportedNetwork(idStr) {
-    const id = makeID(idStr);
+    const id = new ObjectId(idStr);
     const result = await this.db
       .collection(EXPORTED_NETWORKS_COLLECTION)
-      .findOne({ _id: id.bson });
+      .findOne({ _id: id });
 
     return result;
   }
