@@ -33,9 +33,9 @@ export function cyJsonToCx2(networkJson, positions, visualStyle) {
 
   const attributeDeclarations = [{
     networkAttributes: {
+      "iRegulonWebID": { "d": "string" },
       "name": { "d": "string" },
       "description": { "d": "string" },
-      "iRegulonWebID": { "d": "string" },
     },
     nodes: {
       "name": { "d": "string" },
@@ -51,9 +51,9 @@ export function cyJsonToCx2(networkJson, positions, visualStyle) {
   }];
 
   const networkAttributes = [{
-    "name": networkJson.data.name,
-    "description": Object.entries(networkJson.data.parameters)?.map(([k, v]) => `${k}: ${v}`).join("\n"),
     "iRegulonWebID": networkJson.data.id,
+    "name": networkJson.data.name,
+    "description": Object.entries(networkJson.data.parameters)?.map(([k, v]) => `<p>${k}: ${v}</p>`).join(''),
   }];
 
   const nodes = cyNodes.map(node => {
@@ -154,6 +154,9 @@ export function cyJsonToCx2(networkJson, positions, visualStyle) {
       }
     },
   };
+  let edgeMapping = {
+    // No default edge mappings for now...
+  };
 
   // Merge with the passed `visualStyle` properties
   if (visualStyle?.default?.network) {
@@ -174,11 +177,16 @@ export function cyJsonToCx2(networkJson, positions, visualStyle) {
       ...visualStyle.default.edge
     };
   }
-
   if (visualStyle?.nodeMapping) {
     nodeMapping = {
       ...nodeMapping,
       ...visualStyle.nodeMapping
+    };
+  }
+  if (visualStyle?.edgeMapping) {
+    edgeMapping = {
+      ...edgeMapping,
+      ...visualStyle.edgeMapping
     };
   }
 
@@ -188,8 +196,8 @@ export function cyJsonToCx2(networkJson, positions, visualStyle) {
       "node": defaultNodeVisualProperties,
       "edge": defaultEdgeVisualProperties,
     },
-    "nodeMapping": nodeMapping,
-    "edgeMapping": visualStyle?.edgeMapping,
+    nodeMapping,
+    edgeMapping,
   }];
 
   const status = [{

@@ -114,9 +114,11 @@ export function createCX2Style(cy) {
   };
 
   return {
-    defaultNetworkVisualProperties,
-    defaultNodeVisualProperties,
-    defaultEdgeVisualProperties,
+    "default": {
+      "network": defaultNetworkVisualProperties,
+      "node": defaultNodeVisualProperties,
+      "edge": defaultEdgeVisualProperties,
+    },
     nodeMapping,
     edgeMapping,
   };

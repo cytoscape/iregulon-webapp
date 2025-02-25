@@ -474,8 +474,6 @@ export class NetworkEditorController {
     // Convert the network to CX2 format (must include the node positions)
     const positions = this.getPositions();
     const cx2 = cyJsonToCx2(this.cy.json(), positions, createCX2Style(this.cy));
-    console.log('cx2:', (typeof cx2));
-    console.log('cx2:', cx2);
 
     const body = { network: cx2 };
     const res = await fetch(`/api/${resultsID}/cx2`, {
