@@ -1,3 +1,17 @@
+const queryParametersDef = {
+  "AUCThreshold": { "d": "double" },
+  "NESThreshold": { "d": "double" },
+  "SpeciesNomenclature": { "d": "integer" },
+  "conversionDelineation": { "d": "string" },
+  "conversionFractionOfOverlap": { "d": "double" },
+  "genes": { "d": "string" },
+  "maxMotifSimilarityFDR": { "d": "double" },
+  "minOrthologous": { "d": "double" },
+  "rankThreshold": { "d": "integer" },
+  "selectedMotifRankingsDatabase": { "d": "string" },
+  "selectedTrackRankingsDatabase": { "d": "string" },
+};
+
 /**
  * @param {*} networkJson 
  * @param {*} positions 
@@ -33,9 +47,10 @@ export function cyJsonToCx2(networkJson, positions, visualStyle) {
 
   const attributeDeclarations = [{
     networkAttributes: {
-      "iRegulonWebID": { "d": "string" },
       "name": { "d": "string" },
       "description": { "d": "string" },
+      "permalink": { "d": "string" },
+      ...queryParametersDef,
     },
     nodes: {
       "name": { "d": "string" },
@@ -50,11 +65,17 @@ export function cyJsonToCx2(networkJson, positions, visualStyle) {
     }
   }];
 
+  const link = window.location.href;
+
   const networkAttributes = [{
-    "iRegulonWebID": networkJson.data.id,
     "name": networkJson.data.name,
-    "description": Object.entries(networkJson.data.parameters)?.map(([k, v]) => `<p>${k}: ${v}</p>`).join(''),
+    "description": `Network exported by <a href="${link}" target="_blank">iRegulon Web</a>.`,
+    "permalink": link,
   }];
+  // Add the query parameters
+  Object.entries(queryParametersDef).forEach(([ key, ]) => {
+    networkAttributes[0][key] = networkJson.data.parameters[key];
+  });
 
   const nodes = cyNodes.map(node => {
     const { data } = node;
