@@ -49,7 +49,7 @@ export function createCX2Style(cy) {
     "NODE_BACKGROUND_COLOR": Style.NODE_COLOR,
     "NODE_HEIGHT": Style.NODE_SIZE_REGULATED,
     "NODE_WIDTH": Style.NODE_SIZE_REGULATED,
-    "NODE_LABEL_COLOR": Style.NODE_LABEL_COLOR,
+    // "NODE_LABEL_COLOR": Style.NODE_LABEL_COLOR, // Don't set this if 'white', because Cytoscape Web does not support text-outline
     "NODE_LABEL_OPACITY": Style.NODE_LABEL_OPACITY,
     "NODE_LABEL_FONT_SIZE": Style.NODE_LABEL_FONT_SIZE_REGULATED,
     "NODE_LABEL_POSITION": {
