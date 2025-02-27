@@ -40,17 +40,10 @@ export function createCX2Style(cy) {
     "NETWORK_BACKGROUND_COLOR": Style.NETWORK_BACKGROUND_COLOR,
   };
   let defaultNodeVisualProperties = {
-    "NODE_BACKGROUND_OPACITY": Style.NODE_OPACITY,
-    "NODE_SHAPE": Style.NODE_SHAPE,
-    "NODE_BORDER_COLOR": Style.NODE_BORDER_COLOR,
-    "NODE_BORDER_STYLE": Style.NODE_BORDER_STYLE,
-    "NODE_BORDER_OPACITY": Style.NODE_BORDER_OPACITY,
-    "NODE_BORDER_WIDTH": Style.NODE_BORDER_WIDTH,
     "NODE_BACKGROUND_COLOR": Style.NODE_COLOR,
     "NODE_HEIGHT": Style.NODE_SIZE_REGULATED,
     "NODE_WIDTH": Style.NODE_SIZE_REGULATED,
-    // "NODE_LABEL_COLOR": Style.NODE_LABEL_COLOR, // Don't set this if 'white', because Cytoscape Web does not support text-outline
-    "NODE_LABEL_OPACITY": Style.NODE_LABEL_OPACITY,
+    "NODE_LABEL_COLOR": "#333333", // Don't use our default 'white' if the background is also white, because Cytoscape Web does not support text-outline and
     "NODE_LABEL_FONT_SIZE": Style.NODE_LABEL_FONT_SIZE_REGULATED,
     "NODE_LABEL_POSITION": {
       "HORIZONTAL_ALIGN": "center",
@@ -65,10 +58,7 @@ export function createCX2Style(cy) {
     "nodeSizeLocked": true,
   };
   let defaultEdgeVisualProperties = {
-    "EDGE_WIDTH": Style.EDGE_WIDTH,
-    "EDGE_LINE_STYLE": Style.EDGE_LINE_STYLE,
-    "EDGE_OPACITY": Style.EDGE_OPACITY,
-    "EDGE_TARGET_ARROW_SHAPE": Style.EDGE_TARGET_ARROW_SHAPE,
+    // Add our edge visual properties here, if necessary...
   };
 
   // Visual property mappings
@@ -86,12 +76,6 @@ export function createCX2Style(cy) {
           "v": "regulated",
           "vp": Style.NODE_COLOR_REGULATED,
         }]
-      }
-    },
-    "NODE_LABEL": {
-      "type": "PASSTHROUGH",
-      "definition": {
-        "attribute": "name"
       }
     },
     "NODE_LABEL_FONT_SIZE": {

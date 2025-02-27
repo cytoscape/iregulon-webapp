@@ -28,7 +28,7 @@ export const SELECTED_NODE_BORDER_WIDTH = 8;
 export const EDGE_WIDTH = 2;
 export const EDGE_COLOR = '#000000';
 export const EDGE_COLOR_HIGHLIGHT = '#ff0000';
-export const EDGE_OPACITY = 0.3;
+export const EDGE_OPACITY = 1.0;
 export const EDGE_LINE_STYLE = 'solid';
 export const EDGE_TARGET_ARROW_SHAPE = 'triangle';
 export const SELECTED_EDGE_COLOR = '#ff0000';
@@ -76,11 +76,11 @@ const getNodeColor = _.memoize(node => {
 }, n => n.id());
 
 const getNodeSize = _.memoize(n => {
-  return n.data('regulatoryFunction') === 'regulator' ? `${NODE_SIZE_REGULATOR}px` : `${NODE_SIZE_REGULATED}px`;
+  return n.data('regulatoryFunction') === 'regulator' ? NODE_SIZE_REGULATOR : NODE_SIZE_REGULATED;
 }, n => n.id());
 
 const getNodeFontSize = _.memoize(n => {
-  return n.data('regulatoryFunction') === 'regulator' ? `${NODE_LABEL_FONT_SIZE_REGULATOR}px` : `${NODE_LABEL_FONT_SIZE_REGULATED}px`;
+  return n.data('regulatoryFunction') === 'regulator' ? NODE_LABEL_FONT_SIZE_REGULATOR : NODE_LABEL_FONT_SIZE_REGULATED;
 }, n => n.id());
 
 const getTextOutlineWidth = _.memoize(n => {
@@ -134,7 +134,7 @@ export function createNetworkStyle(cy) {
           'border-color': NODE_BORDER_COLOR,
           'border-opacity': NODE_BORDER_OPACITY,
           'border-style': NODE_BORDER_STYLE,
-          'width':  getNodeSize,
+          'width': getNodeSize,
           'height': getNodeSize,
           'font-size': getNodeFontSize,
           'text-valign': 'center',
@@ -143,7 +143,7 @@ export function createNetworkStyle(cy) {
           'text-outline-width': getTextOutlineWidth,
           'text-outline-opacity': NODE_LABEL_OPACITY,
           'color': NODE_LABEL_COLOR,
-          'background-color':   getNodeColor,
+          'background-color': getNodeColor,
           'text-outline-color': getNodeColor,
           'shape': NODE_SHAPE,
           'z-index': 1,
@@ -171,7 +171,7 @@ export function createNetworkStyle(cy) {
       {
         selector: 'edge',
         style: {
-          'line-color' : getEdgeColor,
+          'line-color': getEdgeColor,
           'line-opacity': EDGE_OPACITY,
           'line-style': EDGE_LINE_STYLE,
           'curve-style': 'bezier',

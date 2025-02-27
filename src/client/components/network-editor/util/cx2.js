@@ -12,6 +12,35 @@ const queryParametersDef = {
   "selectedTrackRankingsDatabase": { "d": "string" },
 };
 
+// Map the node/edge `selector` properties from the Cytoscape JSON to the CX2 format
+// (this is a simplified mapping, and does not cover all cases)
+const cyToCx2NodeMapping = {
+  "NODE_BACKGROUND_COLOR": "background-color",
+  "NODE_BORDER_COLOR": "border-color",
+  "NODE_BORDER_WIDTH": "border-width",
+  "NODE_BORDER_STYLE": "border-style",
+  "NODE_BORDER_OPACITY": "border-opacity",
+  "NODE_LABEL_COLOR": "color",
+  "NODE_LABEL_FONT_SIZE": "font-size",
+  "NODE_LABEL_OPACITY": "text-opacity",
+  "NODE_BACKGROUND_OPACITY": "background-opacity",
+  "NODE_OPACITY": "opacity",
+  "NODE_SHAPE": "shape",
+  "NODE_HEIGHT": "height",
+  "NODE_WIDTH": "width",
+};
+const cyToCx2EdgeMapping = {
+  "EDGE_LINE_COLOR": "line-color",
+  "EDGE_OPACITY": "line-opacity",
+  "EDGE_LINE_STYLE": "line-style",
+  "EDGE_WIDTH": "width",
+  "EDGE_SOURCE_ARROW_COLOR": "source-arrow-color",
+  "EDGE_SOURCE_ARROW_SHAPE": "source-arrow-shape",
+  "EDGE_TARGET_ARROW_COLOR": "target-arrow-color",
+  "EDGE_TARGET_ARROW_SHAPE": "target-arrow-shape",
+};
+
+
 /**
  * @param {*} networkJson 
  * @param {*} positions 
@@ -114,58 +143,8 @@ export function cyJsonToCx2(networkJson, positions, visualStyle) {
   let defaultNetworkVisualProperties = {
     "NETWORK_BACKGROUND_COLOR": "#ffffff"
   };
-  let defaultNodeVisualProperties = {
-    "NODE_BACKGROUND_OPACITY": 1,
-    "NODE_SHAPE": "ellipse",
-    "NODE_BORDER_COLOR": "#ffffff",
-    "NODE_BORDER_STYLE": "solid",
-    "NODE_BORDER_OPACITY": 1.0,
-    "NODE_BORDER_WIDTH": 8,
-    "NODE_BACKGROUND_COLOR": "#cccccc",
-    "NODE_HEIGHT": 40,
-    "NODE_LABEL": "",
-    "NODE_LABEL_COLOR": "#000000",
-    "NODE_LABEL_FONT_FACE": {
-      "FONT_FAMILY": "sans-serif",
-      "FONT_STYLE": "normal",
-      "FONT_WEIGHT": "normal"
-    },
-    "NODE_LABEL_FONT_SIZE": 10,
-    "NODE_LABEL_OPACITY": 1,
-    "NODE_LABEL_POSITION": {
-      "HORIZONTAL_ALIGN": "center",
-      "VERTICAL_ALIGN": "center",
-      "HORIZONTAL_ANCHOR": "center",
-      "VERTICAL_ANCHOR": "center",
-      "JUSTIFICATION": "center",
-      "MARGIN_X": 0,
-      "MARGIN_Y": 0
-    },
-    "NODE_LABEL_MAX_WIDTH": 80,
-    "nodeSizeLocked": true,
-  };
-  let defaultEdgeVisualProperties = {
-    "EDGE_LABEL_COLOR": "#000000",
-    "EDGE_LABEL_FONT_FACE": {
-      "FONT_FAMILY": "sans-serif",
-      "FONT_STYLE": "normal",
-      "FONT_WEIGHT": "normal"
-    },
-    "EDGE_LABEL_FONT_SIZE": 12,
-    "EDGE_LABEL_OPACITY": 1,
-    "EDGE_LABEL_ROTATION": 0,
-    "EDGE_LABEL_MAX_WIDTH": 100,
-    "EDGE_LINE_COLOR": "#666666",
-    "EDGE_LINE_STYLE": "solid",
-    "EDGE_OPACITY": 0.3,
-    "EDGE_SOURCE_ARROW_COLOR": "#666666",
-    "EDGE_SOURCE_ARROW_SHAPE": "none",
-    "EDGE_TARGET_ARROW_COLOR": "#666666",
-    "EDGE_TARGET_ARROW_SHAPE": "triangle",
-    "EDGE_VISIBILITY": "element",
-    "EDGE_WIDTH": 2,
-    "EDGE_Z_LOCATION": 0,
-  };
+  let defaultNodeVisualProperties = toCx2VisualProperties(networkJson, 'node', cyToCx2NodeMapping);
+  let defaultEdgeVisualProperties = toCx2VisualProperties(networkJson, 'edge', cyToCx2EdgeMapping);
 
   let nodeMapping = {
     "NODE_LABEL": {
@@ -239,4 +218,25 @@ export function cyJsonToCx2(networkJson, positions, visualStyle) {
     { visualProperties },
     { status }
   ];
+}
+
+function toCx2VisualProperties(networkJson, selector, mapping) {
+  const defaultVisualProperties = {};
+  const styleJson = networkJson.style.find(style => style.selector === selector);
+  if (styleJson) {
+    Object.entries(mapping).forEach(([ cx2Key, cyKey ]) => {
+      let value = styleJson.style[cyKey];
+      if (value && value !== 'fn') { // ignore functions
+        // Remove the 'px' suffix from width, height and size values
+        if (cyKey.endsWith('width') || cyKey.endsWith('height') || cyKey.endsWith('size') || cyKey.endsWith('opacity')) {
+            if (typeof value === 'string' && value.endsWith('px')) {
+              value = value.slice(0, -2);
+            }
+            value = parseFloat(value);
+        }
+        defaultVisualProperties[cx2Key] = value;
+      }
+    });
+  }
+  return defaultVisualProperties;
 }
