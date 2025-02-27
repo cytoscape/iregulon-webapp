@@ -155,7 +155,7 @@ export function createNetworkStyle(cy) {
         selector: 'edge',
         style: {
           'line-color' : getEdgeColor,
-          'line-opacity': 0.3,
+          'line-opacity': 1.0,
           'curve-style': 'bezier',
           'width': 2,
           'target-arrow-shape': 'triangle',
