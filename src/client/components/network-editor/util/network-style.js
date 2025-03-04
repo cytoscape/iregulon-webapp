@@ -187,7 +187,7 @@ export function createNetworkStyle(cy) {
         style: {
           'border-width': SELECTED_NODE_BORDER_WIDTH,
           'border-color': SELECTED_NODE_BORDER_COLOR,
-          'border-opacity': NODE_BORDER_OPACITY,
+          'border-opacity': 1.0,
           'text-outline-color': SELECTED_NODE_BORDER_COLOR,
           'z-index': 99999999,
         }
