@@ -10,7 +10,7 @@ import DataTable, { DEF_SORT_FN, PRECISION, roundNumber } from './data-table';
 import DataDetailsPanel from './data-details-panel';
 import TFDetailsDialog from './tf-details-dialog';
 import SearchBar from './search-bar';
-import { updateNetworkStyle } from './network-style';
+import { updateNetworkStyle } from './util/network-style';
 import { motifName, motifTrackLinkOut, resultId } from '../util';
 import { useUIStateStore } from './store';
 

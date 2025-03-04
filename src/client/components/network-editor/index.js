@@ -14,7 +14,7 @@ import { useUIStateStore, jsonToState } from './store';
 import { NetworkEditorController } from './controller';
 import Main from './main';
 
-import createNetworkStyle from './network-style';
+import createNetworkStyle from './util/network-style';
 import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { RecentNetworksController } from '../recent-networks-controller';

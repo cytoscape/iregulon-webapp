@@ -5,7 +5,7 @@ import clsx from 'clsx';
 import { dataTableHeight } from '../defaults';
 import { getComparator, stableSort } from '../util';
 import { NetworkEditorController } from './controller';
-import { clusterColor } from './network-style';
+import { clusterColor } from './util/network-style';
 import { useUIStateStore } from './store';
 
 import { useTheme } from '@mui/material/styles';

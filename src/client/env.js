@@ -15,3 +15,6 @@ export const PORT = parseInt(process.env.PORT, 10);
 // Sentry config
 export const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT;
 export const SENTRY = NODE_ENV === 'production' || (SENTRY_ENVIRONMENT && SENTRY_ENVIRONMENT.startsWith('test'));
+
+// Cytoscape integration
+export const CYTOSCAPE_WEB_URL = process.env.CYTOSCAPE_WEB_URL;

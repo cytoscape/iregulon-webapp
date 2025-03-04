@@ -7,7 +7,7 @@ export class SearchController {
 
   constructor(cy, bus) {
     this.cy = cy;
-    this.networkIDStr = cy.data('id');
+    this.resultsIDStr = cy.data('id');
     this.bus = bus || new EventEmitter();
 
     this.genesReady = false;

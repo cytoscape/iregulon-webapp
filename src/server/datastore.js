@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import uuid from 'uuid';
 import MUUID from 'uuid-mongodb';
 import _ from 'lodash';
@@ -6,15 +6,24 @@ import fs from 'fs';
 import { parseMotifsAndTracks, annotateGenes } from './util.js';
 
 
-// This is the promary collection, each document represents the results 
-// of an analysis returned by the iregulon service. Documens in this collection
-// are created once and are (mostly) static.
+/**
+ * This is the promary collection, each document represents the results 
+ * of an analysis returned by the iregulon service. Documens in this collection
+ * are created once and are (mostly) static.
+ */
 const MOTIFS_AND_TRACKS_COLLECTION = 'motifsAndTracks'; 
 
-// This collection contains state data that is associated with a document in the 
-// motifsAndTracks collection. It contains mutable state data like the name
-// of the document and UI state (like whats selected in the data table).
+/**
+ * This collection contains state data that is associated with a document in the 
+ * motifsAndTracks collection. It contains mutable state data like the name
+ * of the document and UI state (like whats selected in the data table).
+ */
 const STATE_DATA_COLLECTION = 'stateData';
+
+/**
+ * This collection contains exported networks in CX2 format.
+ */
+const EXPORTED_NETWORKS_COLLECTION = 'exportedNetworks';
 
 // const PERFORMANCE_COLLECTION = 'performance';
 
@@ -142,6 +151,10 @@ class Datastore {
   async createIndexes() {
     await this.db
       .collection(STATE_DATA_COLLECTION)
+      .createIndex({ motifsAndTracksID: 1 });
+
+    await this.db
+      .collection(EXPORTED_NETWORKS_COLLECTION)
       .createIndex({ motifsAndTracksID: 1 });
   }
 
@@ -316,6 +329,56 @@ class Datastore {
     return cursor;
   }
 
+  async saveExportedNetwork({ resultsID: resultsIdStr, network }) {
+    const resultsId = makeID(resultsIdStr);
+
+    const result = await this.db
+      .collection(EXPORTED_NETWORKS_COLLECTION)
+      .updateOne(
+        { motifsAndTracksID: resultsId.bson },
+        {
+          $set: {
+            motifsAndTracksID: resultsId.bson,
+            cx2: network,
+            creationTime: new Date(),
+          }
+        },
+        { upsert: true }
+      );
+
+    let documentId;
+
+    if (result.acknowledged) {
+      if (result.upsertedCount > 0) {
+        // Document inserted...
+        documentId = result.upsertedId;
+        console.log(`${EXPORTED_NETWORKS_COLLECTION} document inserted successfully: ${documentId}, ${resultsIdStr}`);
+      } else if (result.modifiedCount > 0) {
+        // Document updated...
+        console.log(`${EXPORTED_NETWORKS_COLLECTION} document updated successfully: ${resultsIdStr}`);
+        // Get the _id of the updated document
+        const document = await this.db
+          .collection(EXPORTED_NETWORKS_COLLECTION)
+          .findOne({ motifsAndTracksID: resultsId.bson });
+        documentId = document._id;
+      } else {
+        console.error(`No document inserted or updated in ${EXPORTED_NETWORKS_COLLECTION}: ${resultsIdStr}`);
+      }
+    } else {
+      console.error(`Update operation not acknowledged in ${EXPORTED_NETWORKS_COLLECTION}: ${resultsIdStr}`);
+    }
+
+    return documentId;
+  }
+
+  async getExportedNetwork(idStr) {
+    const id = new ObjectId(idStr);
+    const result = await this.db
+      .collection(EXPORTED_NETWORKS_COLLECTION)
+      .findOne({ _id: id });
+
+    return result;
+  }
 }
 
 const ds = new Datastore(); // singleton

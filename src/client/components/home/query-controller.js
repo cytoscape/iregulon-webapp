@@ -39,7 +39,7 @@ export class QueryController {
   }
 
   async createDemoNetwork(requestID) {
-    this.bus.emit('finished', { networkID: '7cea4157-341a-4fc6-b6c4-9c7ac5bcc8d4', requestID });
+    this.bus.emit('finished', { resultsID: '7cea4157-341a-4fc6-b6c4-9c7ac5bcc8d4', requestID });
   }
 
   async submitQuery({ organism, genes, requestID }) {
@@ -75,10 +75,10 @@ export class QueryController {
           } else {
             // 3. Get the results or handle the error
             if (status === 'FINISHED') {
-              const networkID = await this._fetchJobResults(jobID);
+              const resultsID = await this._fetchJobResults(jobID);
               
-              console.log('finished', { networkID, requestID });
-              this.bus.emit('finished', { networkID, requestID });
+              console.log('finished', { resultsID, requestID });
+              this.bus.emit('finished', { resultsID, requestID });
             } else if (status === 'ERROR') {
               const errorMessage = await this._fetchErrorMessage(jobID);
               console.log('error', { requestID, errorMessage });
@@ -151,9 +151,9 @@ export class QueryController {
     });
 
     if (res.ok) {
-      const { networkID } = await res.json();
-      console.log(networkID);
-      return networkID;
+      const { resultsID } = await res.json();
+      console.log(resultsID);
+      return resultsID;
     } else {
       console.log(await res.text());
     }

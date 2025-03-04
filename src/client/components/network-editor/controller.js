@@ -8,6 +8,8 @@ import { SearchController } from './search-controller';
 import { ExportController } from './export-controller';
 import { UndoHandler } from './undo-stack';
 import { useUIStateStore, stateToJson } from './store';
+import { createCX2Style } from './util/cx2-style';
+import { cyJsonToCx2 } from './util/cx2';
 
 
 export const DEFAULT_LAYOUT_OPTIONS = {
@@ -24,7 +26,7 @@ export const DEFAULT_LAYOUT_OPTIONS = {
  *
  * @property {Cytoscape.Core} cy The graph instance
  * @property {EventEmitter} bus The event bus that the controller emits on after every operation
- * @property {String} networkIDStr The network UUID
+ * @property {String} resultsIDStr The results UUID
  */
 export class NetworkEditorController {
   /**
@@ -38,7 +40,7 @@ export class NetworkEditorController {
     /** @type {EventEmitter} */
     this.bus = bus || new EventEmitter();
     /** @type {String} */
-    this.networkIDStr = cy.data('id');
+    this.resultsIDStr = cy.data('id');
 
     this.searchController = new SearchController(cy, this.bus);
     this.exportController = new ExportController(this);
@@ -415,19 +417,12 @@ export class NetworkEditorController {
 
   async savePositionsAndState() {
     if (this.cy.isDemo()) {
-      console.log('demo network, not saving positions');
+      console.log('Demo network, not saving positions!');
       return;
     }
     console.log("saving positions and UI state...");
 
-    //Deleted nodes are not present in the 'positions' document
-    const positions = this.cy.nodes()
-      .map(node => ({ 
-        id: node.data('id'),
-        x:  node.position().x,
-        y:  node.position().y,
-      }));
-
+    const positions = this.getPositions();
     const state = useUIStateStore.getState();
     const stateJson = stateToJson(state);
 
@@ -436,7 +431,7 @@ export class NetworkEditorController {
       state: stateJson
     };
 
-    const res = await fetch(`/api/${this.networkIDStr}/uistate`, {
+    const res = await fetch(`/api/${this.resultsIDStr}/uistate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -452,7 +447,7 @@ export class NetworkEditorController {
     const networkName = newName != null ? newName.trim() : null;
     this.cy.data({ name: networkName });
   
-    fetch(`/api/${this.networkIDStr}`, {
+    fetch(`/api/${this.resultsIDStr}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: networkName })
@@ -460,7 +455,7 @@ export class NetworkEditorController {
   }
 
   async restoreNetwork() {
-    const res = await fetch(`/api/${this.networkIDStr}/positions`, {
+    const res = await fetch(`/api/${this.resultsIDStr}/positions`, {
       method: 'DELETE',
     });
     if(res.ok) {
@@ -468,6 +463,32 @@ export class NetworkEditorController {
     }
   }
 
+
+  async saveExportedNetwork() {
+    if (this.cy.isDemo()) {
+      console.log('Demo network, not saving network snapshot!');
+      return;
+    }
+
+    const resultsID = this.cy.data('id');
+    // Convert the network to CX2 format (must include the node positions)
+    const positions = this.getPositions();
+    const cx2 = cyJsonToCx2(this.cy.json(), positions, createCX2Style(this.cy));
+
+    const body = { network: cx2 };
+    const res = await fetch(`/api/${resultsID}/cx2`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    
+    if (res.ok) {
+      const { networkID } = await res.json();
+      console.log('Exported network snapshot saved:', networkID);
+      return networkID;
+    }
+  }
+    
 
   highlightElements(nodes, highlightNeighbors) {
     let toHl = this.cy.nodes().add(this.cy.edges());
@@ -529,6 +550,17 @@ export class NetworkEditorController {
     const eles = this.cy.elements();
     eles.removeClass('highlighted');
     eles.removeClass('unhighlighted');
+  }
+
+
+  getPositions() {
+    return this.cy.nodes()
+      .map(node => ({ 
+        id: node.data('id'),
+        x:  node.position().x,
+        y:  node.position().y,
+      })
+    );
   }
 
 

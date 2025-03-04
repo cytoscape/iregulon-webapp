@@ -1,16 +1,37 @@
 import _ from 'lodash';
 import chroma from 'chroma-js';
 
-
-export const NODE_COLOR_DEFAULT = '#d5d5d5';
+// Network
+export const NETWORK_BACKGROUND_COLOR = '#ffffff';
+// Nodes
+export const NODE_SHAPE = 'ellipse';
+export const NODE_SIZE_REGULATOR = 60;
+export const NODE_SIZE_REGULATED = 40;
+export const NODE_COLOR = '#d5d5d5';
 export const NODE_COLOR_REGULATOR = '#9555ab';
 export const NODE_COLOR_REGULATED = '#5275ab';
-export const SELECTED_BORDER_COLOR = '#121212';
-export const TEXT_COLOR = '#ffffff';
+export const SELECTED_NODE_BORDER_COLOR = '#121212';
+export const NODE_LABEL_COLOR = '#ffffff';
+export const NODE_LABEL_OPACITY = 1.0;
 export const NODE_OPACITY = 1.0;
-export const TEXT_OPACITY = 1.0;
-export const BORDER_WIDTH = 8;
-export const SELECTED_BORDER_WIDTH = 8;
+export const NODE_BORDER_WIDTH = 8;
+export const NODE_BORDER_OPACITY = 0.0;
+export const NODE_BORDER_COLOR = '#ffffff';
+export const NODE_BORDER_STYLE = 'solid';
+export const NODE_LABEL_FONT_SIZE_REGULATOR = 16;
+export const NODE_LABEL_FONT_SIZE_REGULATED = 10;
+export const NODE_TEXT_OUTLINE_WIDTH_REGULATOR = 3;
+export const NODE_TEXT_OUTLINE_WIDTH_REGULATED = 2;
+
+export const SELECTED_NODE_BORDER_WIDTH = 8;
+// Edges
+export const EDGE_WIDTH = 2;
+export const EDGE_COLOR = '#000000';
+export const EDGE_COLOR_HIGHLIGHT = '#ff0000';
+export const EDGE_OPACITY = 1.0;
+export const EDGE_LINE_STYLE = 'solid';
+export const EDGE_TARGET_ARROW_SHAPE = 'triangle';
+export const SELECTED_EDGE_COLOR = '#ff0000';
 
 
 const CLUSTER_COLORS = [
@@ -50,24 +71,20 @@ const getNodeColor = _.memoize(node => {
   switch (regFunction) {
     case 'regulator': return NODE_COLOR_REGULATOR;
     case 'regulated': return NODE_COLOR_REGULATED;
-    default:          return NODE_COLOR_DEFAULT;
+    default:          return NODE_COLOR;
   }
 }, n => n.id());
 
-const getNodeShape = _.memoize(n => {
-  return n.data('regulatoryFunction') === 'regulator' ? 'ellipse' : 'ellipse';
-}, n => n.id());
-
 const getNodeSize = _.memoize(n => {
-  return n.data('regulatoryFunction') === 'regulator' ? 60 : 40;
+  return n.data('regulatoryFunction') === 'regulator' ? NODE_SIZE_REGULATOR : NODE_SIZE_REGULATED;
 }, n => n.id());
 
 const getNodeFontSize = _.memoize(n => {
-  return n.data('regulatoryFunction') === 'regulator' ? '16px' : '10px';
+  return n.data('regulatoryFunction') === 'regulator' ? NODE_LABEL_FONT_SIZE_REGULATOR : NODE_LABEL_FONT_SIZE_REGULATED;
 }, n => n.id());
 
 const getTextOutlineWidth = _.memoize(n => {
-  return n.data('regulatoryFunction') === 'regulator' ? 3 : 2;
+  return n.data('regulatoryFunction') === 'regulator' ? NODE_TEXT_OUTLINE_WIDTH_REGULATOR : NODE_TEXT_OUTLINE_WIDTH_REGULATED;
 }, n => n.id());
 
 // Edge memoize functions
@@ -81,7 +98,6 @@ const getEdgeColor = _.memoize(e => {
 const memoizeFunctions = [
   getNodeLabel,
   getNodeColor,
-  getNodeShape,
   getNodeSize,
   getNodeFontSize,
   getTextOutlineWidth,
@@ -108,27 +124,28 @@ export function createNetworkStyle(cy) {
     minNES,
     magNES,
     getNodeColor,
-    getNodeShape,
     getEdgeColor,
     cyJSON: [
       {
         selector: 'node',
         style: {
           'opacity': NODE_OPACITY,
-          'border-width': BORDER_WIDTH,
-          'border-opacity': 0,
-          'width':  getNodeSize,
+          'border-width': NODE_BORDER_WIDTH,
+          'border-color': NODE_BORDER_COLOR,
+          'border-opacity': NODE_BORDER_OPACITY,
+          'border-style': NODE_BORDER_STYLE,
+          'width': getNodeSize,
           'height': getNodeSize,
           'font-size': getNodeFontSize,
           'text-valign': 'center',
           'text-wrap': 'wrap',
           'text-max-width': 80,
           'text-outline-width': getTextOutlineWidth,
-          'text-outline-opacity': TEXT_OPACITY,
-          'color': TEXT_COLOR,
-          'background-color':   getNodeColor,
+          'text-outline-opacity': NODE_LABEL_OPACITY,
+          'color': NODE_LABEL_COLOR,
+          'background-color': getNodeColor,
           'text-outline-color': getNodeColor,
-          'shape': getNodeShape,
+          'shape': NODE_SHAPE,
           'z-index': 1,
           'label': getNodeLabel,
         }
@@ -154,11 +171,12 @@ export function createNetworkStyle(cy) {
       {
         selector: 'edge',
         style: {
-          'line-color' : getEdgeColor,
-          'line-opacity': 1.0,
+          'line-color': getEdgeColor,
+          'line-opacity': EDGE_OPACITY,
+          'line-style': EDGE_LINE_STYLE,
           'curve-style': 'bezier',
-          'width': 2,
-          'target-arrow-shape': 'triangle',
+          'width': EDGE_WIDTH,
+          'target-arrow-shape': EDGE_TARGET_ARROW_SHAPE,
           'target-arrow-color': getEdgeColor,
           'z-index': 1,
           'z-index-compare': 'manual'
@@ -167,17 +185,17 @@ export function createNetworkStyle(cy) {
       {
         selector: 'node:selected',
         style: {
-          'border-width': SELECTED_BORDER_WIDTH,
-          'border-color': SELECTED_BORDER_COLOR,
+          'border-width': SELECTED_NODE_BORDER_WIDTH,
+          'border-color': SELECTED_NODE_BORDER_COLOR,
           'border-opacity': 1.0,
-          'text-outline-color': SELECTED_BORDER_COLOR,
+          'text-outline-color': SELECTED_NODE_BORDER_COLOR,
           'z-index': 99999999,
         }
       },
       {
         selector: 'edge:selected',
         style: {
-          'line-color': SELECTED_BORDER_COLOR,
+          'line-color': SELECTED_EDGE_COLOR,
           'line-opacity': 1.0,
           'z-index': 9999999,
         }
