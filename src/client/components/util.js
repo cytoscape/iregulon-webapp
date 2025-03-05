@@ -12,130 +12,154 @@ export const userSelectTextProps = {
 
 const USE_SMOOTH_LINK_SCROLLING = true;
 
+/** DB/motifOrTrack separator */
+const DB_SEP = '-'; // for API v1.3 -- use '__' if v1.4
+
 const motifTrackDBs = [
   // MOTIFs:
   {
     db: 'C2H2-ZFs',
-    prefix: 'c2h2_zfs__',
+    prefix: 'c2h2_zfs',
   },
   {
     db: 'CIS-BP',
-    prefix: 'cisbp__',
+    prefix: 'cisbp',
   },
   {
     db: 'DBcorrDB',
-    prefix: 'dbcorrdb__',
+    prefix: 'dbcorrdb',
   },
   {
     db: 'Elemento',
-    prefix: 'elemento__',
+    prefix: 'elemento',
+  },
+  {
+    db: 'Encode',
+    prefix: 'encode',
   },
   {
     db: 'FactorBook',
-    prefix: 'factorbook__',
-    url: (name) => `https://www.factorbook.org/tf/human/${name.replace('jaspar__', '')}/`,
+    prefix: 'factorbook',
+    url: (name) => `https://www.factorbook.org/tf/human/${name.replace('jaspar' + DB_SEP, '')}/`,
   },
   {
     db: 'FANTOM',
-    prefix: 'fantom__',
+    prefix: 'fantom',
   },
   {
     db: 'FlyFactorSurvey',
-    prefix: 'flyfactorsurvey__',
+    prefix: 'flyfactorsurvey',
   },
   {
     db: 'hDPI',
-    prefix: 'hdpi__',
+    prefix: 'hdpi',
   },
   {
     db: 'HOCOMOCO 10',
-    prefix: 'hocomoco_',
+    prefix: 'hocomoco',
     token: '.H10MO.',
-    url: (name) => `http://hocomoco10.autosome.ru/motif/${name.replace('hocomoco__', '')}/`,
+    url: (name) => `http://hocomoco10.autosome.ru/motif/${name.replace('hocomoco' + DB_SEP, '')}/`,
   },
   {
     db: 'HOCOMOCO 11',
-    prefix: 'hocomoco_',
+    prefix: 'hocomoco',
     token: '.H11MO.',
-    url: (name) => `http://hocomoco11.autosome.ru/motif/${name.replace('hocomoco__', '')}/`,
+    url: (name) => `http://hocomoco11.autosome.ru/motif/${name.replace('hocomoco' + DB_SEP, '')}/`,
   },
   {
     db: 'HOMER',
-    prefix: 'homer__',
+    prefix: 'homer',
   },
   {
     db: 'iDMMPMM',
-    prefix: 'idmmpmm__',
+    prefix: 'idmmpmm',
   },
   {
     db: 'JASPAR',
-    prefix: 'jaspar__',
-    url: (name) => `http://jaspar.genereg.net/matrix/${name.replace('jaspar__', '')}/`,
+    prefix: 'jaspar',
+    url: (name) => `http://jaspar.genereg.net/matrix/${name.replace('jaspar' + DB_SEP, '')}/`,
   },
   {
     db: 'PreDREM',
-    prefix: 'predrem__',
+    prefix: 'predrem',
   },
   {
     db: 'ScerTF',
-    prefix: 'scertf__',
+    prefix: 'scertf',
   },
   {
     db: 'SwissRegulon',
-    prefix: 'swissregulon__',
-    url: (name) => {
+    prefix: 'swissregulon',
+    url: (name, assembly) => {
       if (name.startsWith('swissregulon__hs__') || name.startsWith('swissregulon__mm__')) {
         const org = name.startsWith('swissregulon__hs__') ? 'hg18' : 'mm9';
-        name = name.replace('swissregulon__', '').replace('hs__', '').replace('mm__', '');
-        name = name.replace(/_/g, '%2C');
-        return `http://swissregulon.unibas.ch/wm/?wm=${name}&org=${org}`;
+        let wm = name.replace('swissregulon__', '').replace('hs__', '').replace('mm__', '');
+        wm = name.replace(/_/g, '%2C');
+        return `http://swissregulon.unibas.ch/wm/?wm=${wm}&org=${org}`;
+      } else if (name.startsWith('swissregulon-')) {
+        const org = assembly === 'hg19' ? 'hg18' : assembly; // use 'hg18' instead of 'hg19', because 'hg19' rarely works with our v1.3 data
+        // e.g. swissregulon-TBP.p2, swissregulon-FOXO1-3-4.p2, swissregulon-FOX_F1-F2-J1_.p2
+        let wm = name.replace('swissregulon-', '');
+        // e.g. 'FOX_F1-F2-J1_.p2' >> 'FOX{F1,F2,J1}.p2':
+        wm = wm.replace(/_(\w+)-(\w+)-(\w+)_/, '{$1,$2,$3}');
+        wm = wm.replace(/_(\w+)-(\w+)_/, '{$1,$2}');
+        wm = wm.replace(/_(\w+)_/, '{$1}');
+        wm = wm.replace(/_/g, '%2C');
+        // e.g. 'FOXO1-3-4.p2' >> 'FOXO1,3,4.p2':
+        wm = wm.replace(/(\w+)-(\w+)-(\w+)/, '$1,$2,$3');
+        wm = wm.replace(/(\w+)-(\w+)/, '$1,$2');
+        return `http://swissregulon.unibas.ch/wm/?wm=${wm}&org=${org}`;
       }
       return null;
     },
   },
   {
     db: 'Taipale',
-    prefix: 'taipale__',
+    prefix: 'taipale',
   },
   {
     db: 'Taipale Cyt Meth',
-    prefix: 'taipale_cyt_meth__',
+    prefix: 'taipale_cyt_meth',
   },
   {
     db: 'Taipale TF pairs',
-    prefix: 'taipale_tf_pairs__',
+    prefix: 'taipale_tf_pairs',
   },
   {
-    db: 'TF dimers',
-    prefix: 'tfdimers__',
+    db: 'TF Dimers',
+    prefix: 'tfdimers',
+  },
+  {
+    db: 'Tiffin',
+    prefix: 'tiffin',
   },
   {
     db: 'Transfac Pro',
-    prefix: 'transfac_pro__',
+    prefix: 'transfac_pro',
     url: (name) => {
-      name = name.replace('transfac_pro__', '');
+      name = name.replace('transfac_pro' + DB_SEP, '');
       return `https://portal.genexplain.com/cgi-bin/build_t/idb/1.0/get.cgi?${name}`;
     },
   },
   {
     db: 'Transfac Public',
-    prefix: 'transfac_public__',
+    prefix: 'transfac_public',
     url: (name) => {
-      name = name.replace('transfac_public__', '');
+      name = name.replace('transfac_public' + DB_SEP, '');
       return `https://portal.genexplain.com/cgi-bin/build_t/idb/1.0/get.cgi?${name}`;
     },
   },
   {
     db: 'Transfac Public',
-    prefix: 'transfac_public__',
+    prefix: 'transfac_public',
     url: (name) => {
-      name = name.replace('transfac_public__', '');
+      name = name.replace('transfac_public' + DB_SEP, '');
       return `https://portal.genexplain.com/cgi-bin/build_t/idb/1.0/get.cgi?${name}`;
     },
   },
   {
     db: 'YeTFaSCo',
-    prefix: 'yetfasco__',
+    prefix: 'yetfasco',
   },
   // TRACKs:
   {
@@ -146,15 +170,15 @@ const motifTrackDBs = [
 ];
 
 
-export function motifTrackLinkOut(nameWithCollection) {
+export function motifTrackLinkOut(nameWithCollection, assembly) {
   for (const { db, prefix, token, url } of motifTrackDBs) {
-    if (nameWithCollection.startsWith(prefix)) {
+    if (nameWithCollection.startsWith(prefix + DB_SEP)) {
       if (token) {
         if (nameWithCollection.includes(token)) {
-          return { db, href: url?.(nameWithCollection) };
+          return { db, href: url?.(nameWithCollection, assembly) };
         }
       } else {
-        return { db, href: url?.(nameWithCollection) };
+        return { db, href: url?.(nameWithCollection, assembly) };
       }
     }
   }
@@ -164,7 +188,7 @@ export function motifTrackLinkOut(nameWithCollection) {
 
 export function dbName(nameWithCollection) {
   for (const { db, prefix, token } of motifTrackDBs) {
-    if (nameWithCollection.startsWith(prefix)) {
+    if (nameWithCollection.startsWith(prefix + DB_SEP)) {
       if (token) {
         if (nameWithCollection.includes(token)) {
           return db;
@@ -175,8 +199,8 @@ export function dbName(nameWithCollection) {
     }
   }
 
-  const tokens = nameWithCollection.split('__');
-  let db = token.length > 1 ? tokens[0] : null;
+  const tokens = nameWithCollection.split(DB_SEP);
+  let db = tokens.length > 1 ? tokens[0] : null;
   if (db && db.length > 0) {
     db = db.charAt(0).toUpperCase() + db.slice(1);
   }
@@ -185,7 +209,7 @@ export function dbName(nameWithCollection) {
 }
 
 export function motifName(nameWithCollection) {
-  const couldBe7OrHigherIndex = nameWithCollection.indexOf("__");
+  const couldBe7OrHigherIndex = nameWithCollection.indexOf('__');
   const couldBe3To6Index = nameWithCollection.indexOf("-");
 
   if (couldBe7OrHigherIndex !== -1) {
@@ -327,8 +351,8 @@ export function comparator(a, b, orderBy) {
   if (typeof aVal === 'string' && typeof bVal === 'string') {
     if (orderBy === 'name') {
       // Include the DB name
-      const v1 = a['db'] + '__' + aVal;
-      const v2 = b['db'] + '__' + bVal;
+      const v1 = a['db'] + DB_SEP + aVal;
+      const v2 = b['db'] + DB_SEP + bVal;
       return compareStrings(v1, v2);
     } else if (orderBy === 'clusterCode') {
       // The cluster code is a string that starts with a letter ('M' or 'T'), followed by a number.

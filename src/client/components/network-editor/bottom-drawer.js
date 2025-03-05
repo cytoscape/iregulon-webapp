@@ -42,9 +42,9 @@ const typeOptions = {
   },
 };
 
-function toTableRow(obj, type) {
+function toTableRow(obj, type, assembly) {
   const name = obj.name;
-  const linkOut = type !== 'CLUSTER' ? motifTrackLinkOut(name) : null;
+  const linkOut = type !== 'CLUSTER' ? motifTrackLinkOut(name, assembly) : null;
   
   const row = {};
   row.id = resultId(obj);
@@ -69,10 +69,10 @@ function toTableRow(obj, type) {
   return row;
 }
 
-function toTableData(results, type, sortFn) {
+function toTableData(results, type, assembly, sortFn) {
   const data = [];
   for (const obj of results) {
-    const row = toTableRow(obj, type);
+    const row = toTableRow(obj, type, assembly);
     data.push(row);
   }
   return sortFn ? sortFn(data) : data;
@@ -199,6 +199,8 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const cy = controller.cy;
   const cyEmitter = new EventEmitterProxy(cy);
 
+  const assembly = controller.getAssembly();
+
   const triggerUpdate = () => {
     forceUpdate(prev => prev + 1);
   };
@@ -206,7 +208,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const updateData = () => {
     // Update table data
     const results = controller.fetchResults(type);
-    let data = toTableData(results, type);
+    let data = toTableData(results, type, assembly);
 
     // Filter out rows that don't match the search terms
     const searchTerms = searchValueRef.current ? searchValueRef.current.toLowerCase().trim().split(' ') : [];
@@ -261,7 +263,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     const results = controller.fetchResults(type);
     setMotifCount(controller.countResults('MOTIF'));
     setTrackCount(controller.countResults('TRACK'));
-    setData(toTableData(results, type));
+    setData(toTableData(results, type, assembly));
     setDisabled(false);
   };
 
@@ -292,7 +294,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
       setType(value);
       setSearchValue('');
       const results = controller.fetchResults(value);
-      setData(toTableData(results, value, sortFnRef.current));
+      setData(toTableData(results, value, assembly, sortFnRef.current));
     }
   };
 

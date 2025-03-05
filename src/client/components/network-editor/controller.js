@@ -10,6 +10,7 @@ import { UndoHandler } from './undo-stack';
 import { useUIStateStore, stateToJson } from './store';
 import { createCX2Style } from './util/cx2-style';
 import { cyJsonToCx2 } from './util/cx2';
+import { speciesNomenclatureDef } from '../../../util';
 
 
 export const DEFAULT_LAYOUT_OPTIONS = {
@@ -617,6 +618,15 @@ export class NetworkEditorController {
 
   fetchResults(type) {
     return this.searchController.getResults(type);
+  }
+
+  getAssembly() {
+    const parameters = this.cy?.data('parameters');
+    const nomenclatureCode = parameters?.SpeciesNomenclature;
+    if (nomenclatureCode) {
+      const species = Object.values(speciesNomenclatureDef).find(obj => obj.nomenclatureCode === nomenclatureCode);
+      return species?.assembly;
+    }
   }
 
   countResults(type) {
