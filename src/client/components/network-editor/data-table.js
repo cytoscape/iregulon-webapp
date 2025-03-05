@@ -143,6 +143,9 @@ const useStyles = makeStyles((theme) => ({
   nameCellText: {
     alignItems: 'center',
     textWrap: 'pretty',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
     marginRight: 2,
     cursor: 'pointer',
   },
