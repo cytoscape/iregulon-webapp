@@ -110,9 +110,6 @@ const useBottomDrawerStyles = makeStyles((theme) => ({
   toolbarOpen: {
     paddingLeft: theme.spacing(1.115),
   },
-  hide: {
-    display: 'none',
-  },
   drawer: {
     position: 'absolute',
     top: 'auto',
@@ -152,18 +149,8 @@ const useBottomDrawerStyles = makeStyles((theme) => ({
       duration: theme.transitions.duration.enteringScreen,
     }),
   },
-  list: {
-    width: 250,
-  },
-  fullList: {
-    width: 'auto',
-  },
   grow: {
     flexGrow: 1,
-  },
-  legendText: {
-    fontSize: '0.75em',
-    color: theme.palette.text.secondary,
   },
 }));
 
@@ -518,7 +505,7 @@ function MotifAndTrackSelect({ motifsAndTracks, onChange }) {
         value={value}
         onChange={handleChange}
         autoWidth
-        sx={{ backgroundColor: (theme) => theme.palette.background.paper, fontSize: '0.75rem' }}
+        sx={{ backgroundColor: (theme) => theme.palette.background.paper, fontSize: (theme) => theme.typography.caption.fontSize }}
         renderValue={(val) => (
           <Grid container spacing={2} sx={{ mr: 2 }}>
             <Grid item sx={{ color: (theme) => theme.palette.text.disabled, textAlign: 'right' }}>

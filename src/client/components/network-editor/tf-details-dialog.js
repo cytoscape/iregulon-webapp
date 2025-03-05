@@ -44,7 +44,6 @@ LogoImage.propTypes = {
 //==[ TFDetailDialog ]================================================================================================
 
 export function TFDetailsDialog({ open, tf, motifOrTrack, isMobile, onClose }) {
-  console.log('==> TFDetailsDialog', { tf, motifOrTrack });
   const type = motifOrTrack?.type;
   const geneID = tf?.geneID;
   const species = geneID?.speciesNomenclature;
@@ -166,10 +165,10 @@ function Section({
       </Typography>
       {fields.map((field, i) => (
         <Box key={i} sx={{ display: 'flex', flexDirection: { sm: 'row', xs: 'column' }, justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Typography sx={{ flex: { md: '0 0 33%', sm: '0 0 40%' }, textAlign: { sm: 'right', xs: 'left' }, pr: 2, fontSize: '0.75rem', fontWeight: 'bold' }}>
+          <Typography sx={{ flex: { md: '0 0 33%', sm: '0 0 40%' }, textAlign: { sm: 'right', xs: 'left' }, pr: 2, fontSize: (theme) => theme.typography.caption.fontSize, fontWeight: 'bold' }}>
             { field.label }:
           </Typography>
-          <Typography sx={{ flex: '1 1 auto', fontSize: '0.75rem' }}>
+          <Typography sx={{ flex: '1 1 auto', fontSize: (theme) => theme.typography.caption.fontSize }}>
             { field.value }
           </Typography>
         </Box>

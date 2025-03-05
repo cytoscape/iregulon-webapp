@@ -421,7 +421,7 @@ function GeneTable({
             placement="top-start"
             arrow
           >
-            <Typography component="span" variant="inherit" sx={{ fontSize: '0.75rem' }}>
+            <Typography component="span" variant="inherit" sx={{ fontSize: (theme) => theme.typography.caption.fontSize }}>
               { typeof col.label === 'function' ? col.label() : col.label }
             {col.id === 'name' && data && (
               <Typography component="span" variant="inherit" sx={{ color: (theme) => theme.palette.text.disabled }}>
@@ -468,7 +468,7 @@ function GeneTable({
           <Typography
             component="span"
             variant="inherit"
-            sx={{ fontSize: '0.75rem', color: (theme) => row[col.id] ? 'inherit' : theme.palette.text.disabled }}
+            sx={{ fontSize: (theme) => theme.typography.caption.fontSize, color: (theme) => row[col.id] ? 'inherit' : theme.palette.text.disabled }}
           >
             { col.render(row, col, classes) }
           </Typography>

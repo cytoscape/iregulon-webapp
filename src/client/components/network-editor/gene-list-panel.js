@@ -126,7 +126,7 @@ const useGeneMetadataPanelStyles = makeStyles((theme) => ({
     borderStyle: 'hidden hidden hidden solid',
   },
   linkout: {
-    fontSize: '0.75rem',
+    fontSize: theme.typography.caption.fontSize,
   },
   loadingMsg: {
     color: theme.palette.text.disabled,
@@ -221,7 +221,7 @@ const GeneMetadataPanel = ({ symbol, showSymbol, taxonomy, commonOrganismName, m
           <>
           {source && sourceId && (
             <Grid item xs={12} sx={{marginTop: 1}}>
-              <Typography variant="body2" color="textSecondary" sx={{fontSize: '0.75rem'}}>
+              <Typography variant="body2" color="textSecondary" sx={{ fontSize: (theme) => theme.typography.caption.fontSize }}>
                 Source:&nbsp;&nbsp;
                 <Link
                   href={sourceHref}
@@ -235,7 +235,7 @@ const GeneMetadataPanel = ({ symbol, showSymbol, taxonomy, commonOrganismName, m
           )}
           {synonyms && synonyms.length > 0 && (
             <Grid item xs={12}>
-              <Typography variant="body2" component="div" color="textSecondary" sx={{fontSize: '0.75rem'}}>
+              <Typography variant="body2" component="div" color="textSecondary" sx={{ fontSize: (theme) => theme.typography.caption.fontSize }}>
                 Synonyms:&nbsp;&nbsp;
                 <span>{synonyms.join(', ')}</span>
               </Typography>
@@ -243,14 +243,14 @@ const GeneMetadataPanel = ({ symbol, showSymbol, taxonomy, commonOrganismName, m
           )}
             {/* <Grid item xs={12}>
               <Tooltip title={motifs.join('\n')}>
-              <Typography variant="body2" component="div" color="textSecondary" sx={{fontSize: '0.75rem', mt: 1}}>
+              <Typography variant="body2" component="div" color="textSecondary" sx={{ fontSize: (theme) => theme.typography.caption.fontSize, mt: 1 }}>
                 Motifs:&nbsp;&nbsp;{motifs.length}
               </Typography>
               </Tooltip>
             </Grid>
             <Grid item xs={12}>
               <Tooltip title={tracks.join('\n')}>
-              <Typography variant="body2" color="textSecondary" sx={{fontSize: '0.75rem'}}>
+              <Typography variant="body2" color="textSecondary" sx={{ fontSize: (theme) => theme.typography.caption.fontSize }}>
                 Tracks:&nbsp;&nbsp;{tracks.length}
               </Typography>
               </Tooltip>
