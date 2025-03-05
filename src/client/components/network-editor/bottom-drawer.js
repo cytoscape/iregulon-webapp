@@ -399,7 +399,20 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
               />
           )}
           {currentRow && (
-            <Typography component="span" variant="subtitle2" color="textPrimary" sx={{ml: 2}}>
+            <Typography
+              component="span"
+              variant="subtitle2"
+              color="textPrimary"
+              sx={(theme) => ({
+                ml: 2,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                [theme.breakpoints.only("xs")]: {
+                  fontSize: theme.typography.caption.fontSize,
+                },
+              })}
+            >
               {currentRow.name}
             {currentRow.db && (
               <Typography component="span" variant="caption" color="textSecondary">
@@ -408,32 +421,45 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
             )}
             </Typography>
           )}
-            <ToolbarDivider unrelated />
           {open && currentRow && type === 'CLUSTER' && (
-            <MotifAndTrackSelect motifsAndTracks={currentRow.motifsAndTracks} onChange={onMotifAndTrackSelectChange} />
+            <>
+              <ToolbarDivider unrelated={!isMobile} />
+              <MotifAndTrackSelect motifsAndTracks={currentRow.motifsAndTracks} onChange={onMotifAndTrackSelectChange} />
+            </>
           )}
             <div className={classes.grow} />
           {open && !currentRow && (
-            <ToggleButtonGroup
-              value={type}
-              exclusive
-              onChange={handleTypeChange}
-            >
-            {Object.entries(typeOptions).map(([k, { label, description }]) => 
-              // Hide the 'Motifs' and 'Tracks' buttons if there are no motifs or tracks in the results
-              !(k === 'MOTIF' && motifCount === 0) && !(k === 'TRACK' && trackCount === 0) && (
-              <ToggleButton
-                key={`type-${k}`}
-                value={k}
-                size="small"
-                sx={{ textTransform: 'unset' }}
+            <>
+              <ToolbarDivider unrelated={!isMobile} />
+              <ToggleButtonGroup
+                value={type}
+                exclusive
+                onChange={handleTypeChange}
               >
-                <Tooltip placement="top" title={description}>
-                  <Typography>{ label }</Typography>
-                </Tooltip>
-              </ToggleButton>
-            ))}
-            </ToggleButtonGroup>
+              {Object.entries(typeOptions).map(([k, { label, description }]) => 
+                // Hide the 'Motifs' and 'Tracks' buttons if there are no motifs or tracks in the results
+                !(k === 'MOTIF' && motifCount === 0) && !(k === 'TRACK' && trackCount === 0) && (
+                <ToggleButton
+                  key={`type-${k}`}
+                  value={k}
+                  size="small"
+                  sx={{ textTransform: 'unset' }}
+                >
+                  <Tooltip placement="top" title={description}>
+                    <Typography
+                      sx={(theme) => ({
+                        [theme.breakpoints.only("xs")]: {
+                          fontSize: theme.typography.body2.fontSize,
+                        }
+                      })}
+                    >
+                      { label }
+                    </Typography>
+                  </Tooltip>
+                </ToggleButton>
+              ))}
+              </ToggleButtonGroup>
+            </>
           )}
             <ToolbarDivider />
             <ToolbarButton

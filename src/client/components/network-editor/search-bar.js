@@ -31,6 +31,9 @@ const useStyles = makeStyles((theme) => ({
   inputInput: {
     width: '100%',
     padding: theme.spacing(1, 1, 1, 2),
+    [theme.breakpoints.down('sm')]: {
+      fontSize: theme.typography.body2.fontSize,
+    },
   },
   iconButtonRoot: {
     '&:hover': {
@@ -68,7 +71,7 @@ const SearchBar = ({ value, placeholder, disabled, onChange, onCancelSearch, sty
     <div className={clsx(classes.search, { [classes.searchFocus]: focused })} style={style}>
       <InputBase
         inputRef={inputRef}
-        classes={{root: classes.inputRoot, input: classes.inputInput}}
+        classes={{ root: classes.inputRoot, input: classes.inputInput }}
         inputProps={{'aria-label': 'search'}}
         disabled={Boolean(disabled)}
         placeholder={placeholder || "Search…"}
@@ -80,7 +83,7 @@ const SearchBar = ({ value, placeholder, disabled, onChange, onCancelSearch, sty
           <InputAdornment position="end">
             <IconButton
               size="large"
-              classes={{root: classes.iconButtonRoot}}
+              classes={{ root: classes.iconButtonRoot }}
               disabled={Boolean(disabled)}
               onClick={ value ? handleCancel : focus }
             >
