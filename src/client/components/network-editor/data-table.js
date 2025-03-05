@@ -90,6 +90,9 @@ const useStyles = makeStyles((theme) => ({
     // <------------------------------------------------------------
     borderBottom: `1px solid ${theme.palette.table.divider}`,
     cursor: 'pointer',
+    [theme.breakpoints.down('sm')]: {
+      fontSize: theme.typography.caption.fontSize,
+    },
   },
   currentRow: {
     backgroundColor: `${theme.palette.primary.main} !important`,
@@ -103,18 +106,26 @@ const useStyles = makeStyles((theme) => ({
   rankCell: {
     minWidth: 58,
     maxWidth: 60,
+    [theme.breakpoints.down('sm')]: {
+      minWidth: 36,
+      maxWidth: 48,
+    },
   },
   nameCell: {
     width: '90%',
     maxWidth: 0,
     alignItems: 'center',
   },
+  clusterCell: {
+    minWidth: 85,
+    maxWidth: 90,
+  },
   nesCell: {
-    minWidth: 75,
+    minWidth: 65,
     maxWidth: 80,
   },
   aucCell: {
-    minWidth: 75,
+    minWidth: 65,
     maxWidth: 80,
   },
   candidateTargetGenesCell: {
@@ -156,6 +167,7 @@ const useStyles = makeStyles((theme) => ({
 export const PRECISION = 3;
 
 const NAME_LABELS = { MOTIF: 'Enriched Motif', TRACK: 'Enriched Track', CLUSTER: 'Transcription Factor' };
+const NAME_LABELS_MOBILE = { MOTIF: 'Motif', TRACK: 'Track', CLUSTER: 'TF' };
 
 const COLUMNS = [
   {
@@ -170,7 +182,7 @@ const COLUMNS = [
     id: 'rank',
     numeric: true,
     hideOnMobile: false,
-    label: 'Rank',
+    label: (type, isMobile) => isMobile ? '' : 'Rank',
     tooltip: (type) => `The ${type.toLowerCase()} is ranked using the Normalized Enrichment Score (NES)`,
     show: (type) => type !== 'CLUSTER',
     render: (row, col) => {
@@ -183,15 +195,17 @@ const COLUMNS = [
     id: 'name',
     numeric: false,
     hideOnMobile: false,
-    label: (type) => NAME_LABELS[type],
+    label: (type, isMobile) => isMobile ? NAME_LABELS_MOBILE[type] : NAME_LABELS[type],
     show: () => true,
     render: (row, col, classes) => {
       return (
         <div className={classes.nameCellText}>
         {row.db && (
-          <Typography component="span" variant="caption" sx={{color: theme => theme.palette.text.disabled}}>{ row['db']}:&nbsp;&nbsp;</Typography>
+          <Typography component="span" variant="caption" sx={{ color: theme => theme.palette.text.disabled }}>
+            { row['db'] }:&nbsp;&nbsp;<wbr />
+          </Typography>
         )}
-          {row[col.id] }
+          { row[col.id] }
         {row.href && (
           <Tooltip title={row.db}>
             <Link
@@ -232,29 +246,29 @@ const COLUMNS = [
   {
     id: 'nes',
     numeric: true, 
-    hideOnMobile: false,
+    hideOnMobile: true,
     label: 'NES',
     tooltip: (type) => type === 'CLUSTER' ? "The highest NES of the cluster's motifs/tracks" : 'Normalized Enrichment Score (the higher the score, the better)',
     show: () => true,
-    render: (row, col, classes, controller) => {
+    render: (row, col) => {
       return <>{roundNumber(row[col.id]).toFixed(PRECISION)}</>;
     }
   },
   {
     id: 'auc',
     numeric: true, 
-    hideOnMobile: false,
+    hideOnMobile: true,
     label: 'AUC',
     tooltip: "Area Under the Curve",
     show: (type) => type !== 'CLUSTER',
-    render: (row, col, classes, controller) => {
+    render: (row, col) => {
       return <>{roundNumber(row[col.id]).toFixed(PRECISION)}</>;
     }
   },
   {
     id: 'candidateTargetGenes',
     numeric: true,
-    hideOnMobile: false,
+    hideOnMobile: true,
     label: 'Targets',
     tooltip: (type) => type === 'CLUSTER' ? "Number of unique target genes detected by the TF's motifs/tracks (UNION)" : 'Number of unique target genes',
     show: () => true,
@@ -267,7 +281,7 @@ const COLUMNS = [
   {
     id: 'transcriptionFactors',
     numeric: true,
-    hideOnMobile: false,
+    hideOnMobile: true,
     label: 'TFs',
     tooltip: "Number of associated transcription factors",
     show: (type) => type !== 'CLUSTER',
@@ -280,7 +294,7 @@ const COLUMNS = [
   {
     id: 'motifsAndTracks',
     numeric: true,
-    hideOnMobile: false,
+    hideOnMobile: true,
     label: 'Motifs/Tracks',
     tooltip: 'Number of motifs/tracks that can be associated with the TF',
     show: (type) => type === 'CLUSTER',
@@ -327,7 +341,7 @@ const ContentRow = ({ row, index, controller, isMobile, onCheck, onClick }) => {
   return (
     <>
     {COLUMNS.map((col, idx) => (
-      (!isMobile || !col.hideOnMobile) && col.show(row.type) && (
+      !(isMobile && col.hideOnMobile) && col.show(row.type) && (
         <TableCell
           key={col.id + '_' + index + '_' + idx}
           align={col.numeric ? 'right' : 'left'}
@@ -342,7 +356,7 @@ const ContentRow = ({ row, index, controller, isMobile, onCheck, onClick }) => {
             onClick={() => onCheck(row)}
           /> 
         :
-          col.render(row, col, classes, controller)
+          col.render(row, col, classes)
         }
         </TableCell>
       )
@@ -512,7 +526,7 @@ export function DataTable({
       fixedHeaderContent={() => (
         <TableRow className={classes.headerRow}>
         {COLUMNS.map((col) => (
-          (!isMobile || !col.hideOnMobile) && col.show(type) && (
+          !(isMobile && col.hideOnMobile) && col.show(type) && (
               <TableCell
                 key={col.id}
                 align="left"
@@ -540,19 +554,21 @@ export function DataTable({
                     direction={orderBy === col.id ? order : 'asc'}
                     onClick={(event) => handleRequestSort(event, col.id)}
                   >
-                    { typeof col.label === 'function' ? col.label(type) : col.label }
-                  {col.id === 'name' && data && (
-                    <Typography
-                      component="span"
-                      variant="inherit"
-                      sx={{ color: (theme) => theme.palette.text.disabled }}
-                    >
-                      &nbsp;&nbsp;&#40;{totalCheckedRows > 0 ? 
-                        (allChecked ? 'all' : totalCheckedRows) + ' selected of '
-                        :
-                      ''}{ totalRows }&#41;
-                    </Typography>
-                  )}
+                    <Box component="span" sx={{ display: 'flow' }}>
+                      { typeof col.label === 'function' ? col.label(type, isMobile) : col.label }
+                    {col.id === 'name' && data && (
+                      <Typography
+                        component="span"
+                        variant="inherit"
+                        sx={{ color: (theme) => theme.palette.text.disabled }}
+                      >
+                        &nbsp;&nbsp;&#40;{totalCheckedRows > 0 ? 
+                          (allChecked ? 'all' : totalCheckedRows) + ' selected of '
+                          :
+                        ''}{ totalRows }&#41;
+                      </Typography>
+                    )}
+                    </Box>
                   </TableSortLabel>
                 }
                 </Tooltip>
@@ -566,6 +582,7 @@ export function DataTable({
           row={row}
           index={index}
           controller={controller}
+          isMobile={isMobile}
           onClick={handleRowClick}
           onCheck={handleRowCheck}
         />
