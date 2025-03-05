@@ -1,7 +1,7 @@
 {
   "SpeciesNomenclature": 1,
-  "selectedMotifRankingsDatabase": "hg38__refseq-r80__10kb_up_and_down_tss__mc_v9",
-  "selectedTrackRankingsDatabase": "hg38__refseq-r80__10kb_up_and_down_tss__tc_v1",
+  "selectedMotifRankingsDatabase": "hg19_tss_centered_10kb_7sp_mc_v6",
+  "selectedTrackRankingsDatabase": "hg19_tss_centered_10kb_chip_v1",
   "NESThreshold": 3.0,
   "AUCThreshold": 0.03,
   "rankThreshold": 5000,
