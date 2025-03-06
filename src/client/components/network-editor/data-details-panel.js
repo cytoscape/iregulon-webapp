@@ -5,7 +5,6 @@ import clsx from 'clsx';
 import { dataTableHeight } from '../defaults';
 import { logoPath, getComparator, stableSort, userSelectTextProps } from '../util';
 import { useUIStateStore } from './store';
-import { NetworkEditorController } from './controller';
 
 import { useTheme } from '@mui/material/styles';
 import makeStyles from '@mui/styles/makeStyles';
@@ -53,7 +52,7 @@ const TARGET_COLUMNS = [
     id: 'included', // Special column for icons
     sortable: false,
     numeric: false,
-    hideOnMobile: true,
+    hideOnMobile: false,
     label: <>&nbsp;</>,
     tooltip: (type) => `Whether the selected ${type.toLowerCase()} is annotated for this target`,
     show: (type) => type === 'CLUSTER',
@@ -115,34 +114,13 @@ const TF_COLUMNS = [
     id: 'details', // Special column for icons
     numeric: false,
     sortable: false,
-    hideOnMobile: true,
+    hideOnMobile: false,
     label: <>&nbsp;</>,
     show: (type) => type !== 'CLUSTER',
     render: () => <></>,
   },
 ];
 
-const useDataDetailsPanelStyles = makeStyles((theme) => ({
-  root: {
-    width: '100%',
-    padding: theme.spacing(0.5, 1, 0, 1),
-    height: dataTableHeight(theme),
-    color: theme.palette.text.disabled,
-  },
-  // link: {
-  //   marginLeft: theme.spacing(0.5),
-  //   "&[disabled]": {
-  //     color: theme.palette.text.secondary,
-  //     cursor: "default",
-  //     "&:hover": {
-  //       textDecoration: "none"
-  //     }
-  //   }
-  // },
-  // openInNewIcon: {
-  //   fontSize: '1rem',
-  // },
-}));
 
 export function DataDetailsPanel({
   visible,
@@ -152,7 +130,6 @@ export function DataDetailsPanel({
   onTFCheckChange,
   onOpenTFDetails,
 }) {
-  const classes = useDataDetailsPanelStyles();
   const theme = useTheme();
   
   const targetRows = data.candidateTargetGenes?.map(({ geneID, rank }) => {
@@ -191,19 +168,42 @@ export function DataDetailsPanel({
   };
 
   return (
-    <Paper className={classes.root} sx={{ display: visible ? 'block' : 'none' }}>
-      <Grid container direction="row" spacing={1} sx={{ height: '100%' }}>
-        <Grid item container xs={3} sx={{ height: '100%' }}>
+    <Paper
+      sx={theme => ({
+        display: visible ? 'block' : 'none',
+        width: '100%',
+        p: theme.spacing(0.5, 1, 0, 1),
+        height: dataTableHeight(theme),
+        color: theme.palette.text.disabled,
+        overflowY: isMobile ? 'auto' : 'hidden',
+      })}
+    >
+      <Grid
+        container
+        direction={isMobile ? 'column' : 'row'}
+        spacing={1} 
+        sx={{ height: isMobile ? 'auto' : '100%' }}
+      >
+        <Grid
+          item
+          container
+          xs={isMobile ? 12 : 3}
+          sx={{ height: isMobile ? 'auto' : '100%' }}
+        >
           <Grid item xs={12} sx={{ height: '30%', pb: 0.5 }}>
             <Paper
               variant="outlined"
-              sx={{p: theme.spacing(0.25, 1, 0.25, 1), overflowY: 'auto', height: '100%', borderRadius: 2, ...userSelectTextProps }} 
+              sx={{ p: theme.spacing(0.25, 1, 0.25, 1), overflowY: 'auto', height: '100%', borderRadius: 2, ...userSelectTextProps }} 
             >
               <Typography variant="caption">{ description }</Typography>
             </Paper>
           </Grid>
         {logoImgPath && (
-          <Grid item xs={12} sx={{ height: '70%' }}>
+          <Grid
+            item
+            xs={12}
+            sx={{ height: isMobile ? 'auto' : '70%' }}
+          >
             <Paper variant="outlined" sx={{ height: '100%', width: '100%', borderRadius: '8px', textAlign: 'center', background: '#ffffff' }}>
               <img
                 src={logoImgPath}
@@ -215,7 +215,12 @@ export function DataDetailsPanel({
         )}
         </Grid>
       {targetRows && targetRows.length > 0 && (
-        <Grid item xs={3} flexGrow={1} sx={{ height: '100%' }}>
+        <Grid
+          item
+          xs={isMobile ? 12 : 3}
+          flexGrow={1}
+          sx={{ height: isMobile ? 'auto' : '100%' }}
+        >
           <GeneTable
             parentId={data.id}
             type={subtype}
@@ -229,7 +234,11 @@ export function DataDetailsPanel({
         </Grid>
       )}
       {tfRows && tfRows.length > 0 && (
-        <Grid item xs={6} sx={{height: '100%'}}>
+        <Grid
+          item
+          xs={isMobile ? 12 : 6}
+          sx={{ height: isMobile ? 'auto' : '100%' }}
+        >
           <GeneTable
             parentId={data.id}
             type={subtype}
