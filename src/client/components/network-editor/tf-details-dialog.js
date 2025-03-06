@@ -78,7 +78,7 @@ export function TFDetailsDialog({ open, tf, motifOrTrack, isMobile, onClose }) {
           <Section
             title={`Enriched ${motifOrTrackLabel}`}
             fields={[
-              { label: 'Name', value: motifNameWithDB(motifOrTrack?.nameWithCollection) },
+              { label: 'Name', value: type === 'MOTIF' ? motifNameWithDB(motifOrTrack?.nameWithCollection) : motifOrTrack?.nameWithCollection },
               { label: 'Description', value: motifOrTrack?.description },
               { label: 'NES', value: motifOrTrack?.nes },
             ]}
