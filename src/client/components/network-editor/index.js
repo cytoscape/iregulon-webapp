@@ -19,6 +19,9 @@ import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { RecentNetworksController } from '../recent-networks-controller';
 
+import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, Typography } from '@mui/material';
+import SadFaceIcon from '@mui/icons-material/SentimentVeryDissatisfied';
+
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -63,11 +66,13 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   const uiStatePromise = fetch(`/api/${id}/uistate`);
 
   const networkResult = await networkPromise;
+  const networkStatus = networkResult.status;
+
   if (!networkResult.ok) {
-    location.href = '/';
-    return;
+    console.error('Failed to load network:', networkResult);
+    return networkStatus;
   }
-  
+
   const results = await networkResult.json();
   const isDemo = Boolean(results.demo);
 
@@ -80,19 +85,19 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
   // initializes the search controller
   controller.initializeResults(results); 
 
-  const uiResult = await uiStatePromise;
+  const uiStateResult = await uiStatePromise;
   let stateJson;
-  if(uiResult.ok) {
-    stateJson = await uiResult.json();
+  if (uiStateResult.ok) {
+    stateJson = await uiStateResult.json();
   }
 
-  if(!isDemo && stateJson) {
+  if (!isDemo && stateJson) {
     restoreUIStateAndNetwork(stateJson, controller);
   }
-  if(cy.nodes().length === 0) {
+  if (cy.nodes().length === 0) {
     initializeNetworkWithTopClusters(cy, controller);
-  } 
-  if(stateJson) {
+  }
+  if (stateJson) {
     restorePositions(stateJson, controller);
   }
 
@@ -131,6 +136,8 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
 
   // make the controller accessible from the console for debugging purposes
   window.controller = controller;
+
+  return networkStatus;
 }
 
 
@@ -172,7 +179,7 @@ function initializeNetworkWithTopClusters(cy, controller) {
 
 function restoreUIStateAndNetwork(stateJson, controller) {
   const { state } = stateJson;
-  if(state) {
+  if (state) {
     console.log('got UI state from server');
     try {
       const stateObj = jsonToState(state);
@@ -221,6 +228,8 @@ function Root({ id, theme, recentNetworksController }) {
   const [ controller ] = useState(() => new NetworkEditorController(cy));
   const [ mobile, setMobile ] = useState(() => isMobile(theme));
   const [ tablet, setTablet ] = useState(() => isTablet(theme));
+  const [ errorDialogOpen, setErrorDialogOpen ] = useState(false);
+  const [ errorCode, setErrorCode ] = useState();
   const [ openLeftDrawer, setOpenLeftDrawer ] = useState(() => !isMobile(theme) && !isTablet(theme));
   const [ openRightDrawer, setOpenRightDrawer ] = useState(false);
   const [ openBottomDrawer, setOpenBottomDrawer ] = useState(BOTTOM_DRAWER_OPEN);
@@ -265,9 +274,18 @@ function Root({ id, theme, recentNetworksController }) {
       setOpenLeftDrawer(false);
     }
   };
-
+  
   useEffect(() => {
-    loadNetwork(id, cy, controller, recentNetworksController);
+    const fetchData = async () => {
+      const status = await loadNetwork(id, cy, controller, recentNetworksController);
+      if (status >= 400) {
+        // Display a modal Dialog with the message
+        // and redirect to the home page after the user clicks the 'OK' button
+        setErrorCode(status);
+        setErrorDialogOpen(true);
+      }
+    };
+    fetchData();
     return () => {
       cy.destroy();
     };
@@ -297,6 +315,9 @@ function Root({ id, theme, recentNetworksController }) {
     return () => cy.removeListener('select', onSelect);
   }, []);
 
+  // Redirect to the home page
+  const onErrorDialogClose = () => location.href = '/';
+
   return (
     <div className={classes.root}>
       <svg id="svg_point_factory" style={{ position:'absolute', pointerEvents:'none'}}/>
@@ -313,6 +334,32 @@ function Root({ id, theme, recentNetworksController }) {
         onOpenRightDrawer={onOpenRightDrawer}
         onToggleBottomDrawer={onToggleBottomDrawer}
       />
+      <Dialog open={errorDialogOpen}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <SadFaceIcon sx={{ fontSize: 56, opacity: 0.25, }} />
+          <DialogContentText variant="body1" sx={{ mt: 1, alignItems: 'left', width: '100%' }}>
+          {errorCode === 404 ?
+            <>The network could not be found.</> :
+            <>Something went wrong.</>
+          }
+          </DialogContentText>
+          <DialogContentText variant="body1" sx={{ mb: 1, alignItems: 'left', width: '100%' }}>
+          {errorCode === 404 ?
+            <>Please check the network ID and try again.</> :
+            <>Please try again later.</>
+          }
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={onErrorDialogClose}
+          >
+            Ok
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }
