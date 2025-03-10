@@ -250,7 +250,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
     const results = controller.fetchResults(type);
     setMotifCount(controller.countResults('MOTIF'));
     setTrackCount(controller.countResults('TRACK'));
-    setData(toTableData(results, type, assembly));
+    setData(toTableData(results, type, assembly, sortFnRef.current));
     setDisabled(false);
   };
 
