@@ -1,6 +1,3 @@
-import { token } from 'morgan';
-
-
 export const userSelectTextProps = {
   WebkitTouchCallout: 'default', /* iOS Safari */
   WebkitUserSelect: 'text', /* Safari */

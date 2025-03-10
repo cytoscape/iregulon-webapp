@@ -12,7 +12,6 @@ import {
   Paper,
   Button,
   Typography,
-  Divider,
 } from '@mui/material';
 
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
