@@ -32,26 +32,32 @@ http.post('/submitJob', async function(req, res) {
     params.append(key, value);
     savedParams[key] = value;
   });
+  console.log('Submitting new job...', IREGULON_JOB_SERVICE_URL, savedParams);
 
   const response = await fetch(IREGULON_JOB_SERVICE_URL, {
     method: 'POST',
     headers: { 'User-Agent': IREGULON_USER_AGENT },
     body: params
   });
+  console.log('Finished submitting job: ' + response.status);
 
   if (!response.ok) {
     const body = await response.text();
     const status = response.status;
+    console.log('submitJob ERROR:', body);
     throw new CreateError({ step: 'submitJob', body, status });
   }
 
   const txt = await response.text();
+  console.log('submitJob response text:', txt);
   const jobID = txt?.replace('jobID:', '').trim();
 
   savedParams['jobID'] = jobID;
   savedParams['timestamp'] = new Date();
   jobParams.set(jobID, savedParams); // save the params for later, to store in mongo
  
+  console.log('submitJob RETURN:', jobID);
+
   res.json({ jobID }); // Return the job ID to the client
 
   clearOldJobParams();
@@ -63,6 +69,7 @@ http.post('/submitJob', async function(req, res) {
 http.get('/checkStatus/:jobID', async function(req, res) {
   const jobID = req.params.jobID;
   const params = new URLSearchParams({ jobID });
+  console.log('Checking status of job ' + jobID + '...', IREGULON_STATE_SERVICE_URL);
 
   const response = await fetch(IREGULON_STATE_SERVICE_URL, {
     method: 'POST',
@@ -71,16 +78,19 @@ http.get('/checkStatus/:jobID', async function(req, res) {
     },
     body: params
   });
+  console.log('Finished checking status of job ' + jobID + ': ' + response.status);
 
   if (!response.ok) {
     const body = await response.text();
     const status = response.status;
+    console.log('checkStatus ERROR:', body);
     jobParams.delete(jobID);
     throw new CreateError({ step: 'checkStatus', body, status });
   }
 
   let status = 'UNKNOWN';
   const txt = await response.text();
+  console.log('checkStatus response text:', txt);
   const lines = txt.split('\n');
 
   for (const line of lines) {
@@ -91,6 +101,7 @@ http.get('/checkStatus/:jobID', async function(req, res) {
       break;
     }
   }
+  console.log('checkStatus RETURN for ' + jobID + ':', status);
   
   res.json({ jobID, status }); // Return the current status of the job to the client
 });
@@ -102,7 +113,7 @@ http.get('/getErrorMessage/:jobID', async function(req, res) {
   const jobID = req.params.jobID;
   const params = new URLSearchParams({ jobID });
 
-  console.log('Fetching error message for job ' + jobID + '...');
+  console.log('Fetching error message for job ' + jobID + '...', IREGULON_ERROR_SERVICE_URL);
 
   const response = await fetch(IREGULON_ERROR_SERVICE_URL, {
     method: 'POST',
@@ -111,16 +122,18 @@ http.get('/getErrorMessage/:jobID', async function(req, res) {
     },
     body: params
   });
-  console.log('Finished fetching error message: ' + res.ok);
+  console.log('Finished fetching error message: ' + res.status);
 
   if (!response.ok) {
     const body = await response.text();
     const status = response.status;
+    console.log('getErrorMessage ERROR:', body);
     throw new CreateError({ step: 'getErrorMessage', body, status });
   }
 
   let errorMessage = '';
   const txt = await response.text();
+  console.log('getErrorMessage response text:', txt);
   const lines = txt.split('\n');
 
   for (const line of lines) {
@@ -138,6 +151,7 @@ http.get('/getErrorMessage/:jobID', async function(req, res) {
       }
     }
   }
+  console.log('getErrorMessage RETURN for ' + jobID + ':', errorMessage);
 
   res.json({ jobID, errorMessage });
 });
@@ -150,21 +164,22 @@ http.post('/', async function(req, res) {
   const params = req.body.params;
   const savedParams = jobParams.get(jobID);
 
-  console.log('Fetching results for job ' + jobID + '...', params);
-  console.log(savedParams);
+  console.log('Getting results for job ' + jobID + '...', params);
 
   const { text, results } = await fetchJobResults(jobID, savedParams);
-                
+
   const geneSymbols = params.genes.split(';').map(name => name.trim()).filter(name => name.length > 0);
   const genes = geneSymbols.map(name => ({ name }));
+  console.log('Annotating genes for ' + jobID + '...', genes);
   annotateGenes(genes, results);
 
   jobParams.delete(jobID);
 
   const name = createDefaultNetworkName(params);
+  console.log('Default network name for ' + jobID + ': ' + name);
 
   const resultsID = await Datastore.saveResults({ genes, results, text, name, params: savedParams });
-  console.log(resultsID);
+  console.log('Results saved for ' + jobID, resultsID);
 
   // Return the result of the job
   res.json({ jobID, resultsID });
@@ -172,7 +187,7 @@ http.post('/', async function(req, res) {
 
 
 async function fetchJobResults(jobID, savedParams) {
-  console.log('Fetching results for job ' + jobID + '...');
+  console.log('Fetching results for job ' + jobID + '...', IREGULON_RESULTS_SERVICE_URL, savedParams);
 
   const params = new URLSearchParams({ jobID });
   const res = await fetch(IREGULON_RESULTS_SERVICE_URL, {
@@ -182,16 +197,18 @@ async function fetchJobResults(jobID, savedParams) {
     },
     body: params
   });
-  console.log('Finished fetching results: ' + res.ok);
+  console.log('Finished fetching results: ' + res.status);
 
   if (!res.ok) {
     const body = await res.text();
     const status = res.status;
+    console.log('getErrorMessage ERROR:', body);
     throw new CreateError({ step: 'fetchJobResults', body, status });
   }
 
   const text = await res.text();
   const results = parseMotifsAndTracks(text, savedParams);
+  console.log('fetchJobResults RETURN (text/results lengths) for ' + jobID + ':', text?.length, results?.length);
 
   return { text, results };
 }
