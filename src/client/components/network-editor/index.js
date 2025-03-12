@@ -19,7 +19,7 @@ import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { RecentNetworksController } from '../recent-networks-controller';
 
-import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, Typography } from '@mui/material';
+import { Dialog, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
 import SadFaceIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 
 
@@ -91,7 +91,7 @@ async function loadNetwork(id, cy, controller, recentNetworksController) {
     stateJson = await uiStateResult.json();
   }
 
-  if (!isDemo && stateJson) {
+  if (!isDemo && stateJson && stateJson.state) {
     restoreUIStateAndNetwork(stateJson, controller);
   }
   if (cy.nodes().length === 0) {
@@ -206,7 +206,7 @@ function restoreUIStateAndNetwork(stateJson, controller) {
       console.error('Error restoring UI state:', state, e);
     }
   } else {
-    console.error('Error restoring UI state:', state);
+    console.warn('Cannot restore UI state, no "state" found in JSON:', stateJson);
   }
 }
 

@@ -18,7 +18,6 @@ const NETWORK_CREATE_ERROR_CODE = 450;
 const IREGULON_USER_AGENT = 'iRegulon/1.4 (build: 2024-08-06; Cytoscape: 3.11.0-SNAPSHOT; Mac OS X; 14.5; aarch64)';
 
 const http = Express.Router();
-const jobParams = new Map(); // jobID -> params
 
 
 /*
@@ -26,13 +25,8 @@ const jobParams = new Map(); // jobID -> params
  */
 http.post('/submitJob', async function(req, res) {
   const params = new URLSearchParams();
-  const savedParams = {};
-
-  Object.entries(req.body).forEach(([key, value]) => {
-    params.append(key, value);
-    savedParams[key] = value;
-  });
-  console.log('Submitting new job...', IREGULON_JOB_SERVICE_URL, savedParams);
+  Object.entries(req.body).forEach(([key, value]) => params.append(key, value));
+  console.log('Submitting new job...', IREGULON_JOB_SERVICE_URL, params);
 
   const response = await fetch(IREGULON_JOB_SERVICE_URL, {
     method: 'POST',
@@ -52,15 +46,9 @@ http.post('/submitJob', async function(req, res) {
   console.log('submitJob response text:', txt);
   const jobID = txt?.replace('jobID:', '').trim();
 
-  savedParams['jobID'] = jobID;
-  savedParams['timestamp'] = new Date();
-  jobParams.set(jobID, savedParams); // save the params for later, to store in mongo
- 
   console.log('submitJob RETURN:', jobID);
 
   res.json({ jobID }); // Return the job ID to the client
-
-  clearOldJobParams();
 });
 
 /*
@@ -84,7 +72,6 @@ http.get('/checkStatus/:jobID', async function(req, res) {
     const body = await response.text();
     const status = response.status;
     console.log('checkStatus ERROR:', body);
-    jobParams.delete(jobID);
     throw new CreateError({ step: 'checkStatus', body, status });
   }
 
@@ -161,24 +148,20 @@ http.get('/getErrorMessage/:jobID', async function(req, res) {
  */
 http.post('/', async function(req, res) {
   const jobID = req.body.jobID;
-  const params = req.body.params;
-  const savedParams = jobParams.get(jobID);
-
+  const params = { jobID, ...req.body.params };
   console.log('Getting results for job ' + jobID + '...', params);
 
-  const { text, results } = await fetchJobResults(jobID, savedParams);
+  const { text, results } = await fetchJobResults(jobID, params);
 
   const geneSymbols = params.genes.split(';').map(name => name.trim()).filter(name => name.length > 0);
   const genes = geneSymbols.map(name => ({ name }));
   console.log('Annotating genes for ' + jobID + '...', genes);
   annotateGenes(genes, results);
 
-  jobParams.delete(jobID);
-
   const name = createDefaultNetworkName(params);
   console.log('Default network name for ' + jobID + ': ' + name);
 
-  const resultsID = await Datastore.saveResults({ genes, results, text, name, params: savedParams });
+  const resultsID = await Datastore.saveResults({ genes, results, text, name, params });
   console.log('Results saved for ' + jobID, resultsID);
 
   // Return the result of the job
@@ -186,16 +169,15 @@ http.post('/', async function(req, res) {
 });
 
 
-async function fetchJobResults(jobID, savedParams) {
-  console.log('Fetching results for job ' + jobID + '...', IREGULON_RESULTS_SERVICE_URL, savedParams);
+async function fetchJobResults(jobID, queryParams) {
+  console.log('Fetching results for job ' + jobID + '...', IREGULON_RESULTS_SERVICE_URL);
 
-  const params = new URLSearchParams({ jobID });
   const res = await fetch(IREGULON_RESULTS_SERVICE_URL, {
     method: 'POST',
     headers: {
       'User-Agent': IREGULON_USER_AGENT,
     },
-    body: params
+    body: new URLSearchParams({ jobID })
   });
   console.log('Finished fetching results: ' + res.status);
 
@@ -207,29 +189,10 @@ async function fetchJobResults(jobID, savedParams) {
   }
 
   const text = await res.text();
-  const results = parseMotifsAndTracks(text, savedParams);
+  const results = parseMotifsAndTracks(text, queryParams);
   console.log('fetchJobResults RETURN (text/results lengths) for ' + jobID + ':', text?.length, results?.length);
 
   return { text, results };
-}
-
-/**
- * Prevent a potential memory leak by clearing old jobs.
- */
-function clearOldJobParams() {
-  const maxAge = 1000 * 60 * 60 * 24; // 24 hours
-  const now = new Date();
-  let count = 0;
-  for (const [jobID, params] of jobParams.entries()) {
-    const timestamp = params.timestamp;
-    if (now - timestamp > maxAge) {
-      jobParams.delete(jobID);
-      count++;
-    }
-  }
-  if (count > 0) {
-    console.log('Cleared ' + count + ' old job params.');
-  }
 }
 
 function createPeformanceHook() {
@@ -271,6 +234,5 @@ export function createRouterErrorHandler(err, req, res, next) {
     next(err);
   }
 }
-
 
 export default http;
