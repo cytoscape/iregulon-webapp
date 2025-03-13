@@ -24,7 +24,10 @@ http.get('/params/:id', async function(req, res, next) {
     const results = await Datastore.getResultsForExport(id, { type: 'params' });
 
     Object.entries(results.params).forEach(([key, value]) => {
-      res.write(`${key}\t${value}\n`);
+      // No need to expose the jobID and jobName, since they are meaningless to the user
+      if (key !== 'jobID' && key !== 'jobName') {
+        res.write(`${key}\t${value}\n`);
+      }
     });
     res.write('\n');
     res.end();

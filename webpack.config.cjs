@@ -34,11 +34,13 @@ let conf = {
     alias: {
       '@mui/styled-engine': '@mui/styled-engine-sc'
     },
+    extensions: [ '.js', '.jsx', '.xml' ]
   },
 
   module: {
     rules: [
-      { test: /\.(js|jsx)$/, exclude: /node_modules/, loader: 'babel-loader' }
+      { test: /\.(js|jsx)$/, exclude: /node_modules/, loader: 'babel-loader' },
+      { test: /\.xml$/, use: 'raw-loader' }
     ]
   },
 

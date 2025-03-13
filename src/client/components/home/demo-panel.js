@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import makeStyles from '@mui/styles/makeStyles';
 import { Box, Typography, Link } from '@mui/material';
 
@@ -12,10 +13,10 @@ const useDemoPanelStyles = makeStyles((theme) => ({
   },
 }));
 
-export function DemoPanel() {
+export function DemoPanel({ isMobile }) {
   const classes = useDemoPanelStyles();
   return (
-    <Box>
+    <Box sx={{ py: 2, px: isMobile ? 1 : 3 }}>
       <Typography component="p" variant="body1" className={classes.description}>
         Create a demo network from sample genes.
       </Typography>
@@ -36,3 +37,6 @@ export function DemoPanel() {
     </Box>
   );
 }
+DemoPanel.propTypes = {
+  isMobile: PropTypes.bool,
+};

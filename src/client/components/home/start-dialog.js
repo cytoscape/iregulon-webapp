@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
+import DataConfig from '../../data-config';
 import { organismParams as organisms } from '../../../util';
 import { QueryForm } from './query-form';
 import { DemoPanel } from './demo-panel';
@@ -24,11 +25,6 @@ const useStyles = makeStyles((theme) => ({
       padding: theme.spacing(2, 1),
     },
   },
-  dividers: {
-    [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(2, 1),
-    },
-  },
   progress: {
     display: 'flex',
     flexDirection: 'column',
@@ -42,6 +38,7 @@ const useStyles = makeStyles((theme) => ({
 
 const StartDialog = ({ 
   step,
+  dataConfig,
   isMobile,
   isDemo,
   errorMessages, 
@@ -93,7 +90,7 @@ const StartDialog = ({
   };
 
   return (
-    <Dialog maxWidth={isDemo ? 'xs' : 'sm'} fullScreen={isMobile} open={open}>
+    <Dialog maxWidth={isDemo ? 'xs' : 'md'} fullScreen={isMobile} open={open}>
       <DialogTitle classes={{ root: classes.titleRoot }}>
       {
         {
@@ -103,14 +100,15 @@ const StartDialog = ({
         }[step]()
       }
       </DialogTitle>
-      <DialogContent dividers classes={{ dividers: classes.dividers }}>
+      <DialogContent dividers sx={{ p: 0 }}>
       { 
         {
           'INPUT':   () => isDemo ?
-                            <DemoPanel /> : 
+                            <DemoPanel isMobile={isMobile} /> : 
                             <QueryForm
-                              isMobile={isMobile}
+                              dataConfig={dataConfig}
                               initialOrganism={DEF_ORGANISM}
+                              isMobile={isMobile}
                               onOrganismChanged={hanleOrganismChanged}
                               onGenesChanged={hanleGenesChanged}
                             />,
@@ -145,9 +143,9 @@ const StartDialog = ({
     </Dialog>
   );
 };
-
 StartDialog.propTypes = {
   step: PropTypes.string.isRequired,
+  dataConfig: PropTypes.instanceOf(DataConfig).isRequired,
   isMobile: PropTypes.bool,
   isDemo: PropTypes.bool,
   errorMessages: PropTypes.array,

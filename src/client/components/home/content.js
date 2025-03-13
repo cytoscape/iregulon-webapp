@@ -10,6 +10,7 @@ import { useTheme } from '@mui/material/styles';
 
 import makeStyles from '@mui/styles/makeStyles';
 
+import { DataConfig } from '../../data-config';
 import { RecentNetworksController } from '../recent-networks-controller';
 import { QueryController } from './query-controller';
 import RecentNetworksList from './recent-networks-list';
@@ -188,6 +189,7 @@ export function Content({ recentNetworksController }) {
   /** State */
 
   // the QueryController interacts with this component via an event bus
+  const [ dataConfig ] = useState(() => new DataConfig());
   const [ bus ] = useState(() => new EventEmitter());
   const [ controller ] = useState(() => new QueryController(bus));
   const [ sampleFiles, setSampleFiles ] = useState({ sampleRankFiles: [], sampleExprFiles: [] });
@@ -208,6 +210,11 @@ export function Content({ recentNetworksController }) {
   const updateUploadState = (update) => setJobState(prev => ({ ...prev, ...update }));
 
   /** Effects */
+
+  useEffect(() => {
+    const initialize = async () => await dataConfig.load();
+    initialize();
+  }, []);
 
   useEffect(() => {
     loadSampleFiles().then(setSampleFiles);
@@ -395,6 +402,7 @@ export function Content({ recentNetworksController }) {
     {jobState.step !== STEP.WAITING && (
       <StartDialog
         step={jobState.step}
+        dataConfig={dataConfig}
         isMobile={mobile}
         isDemo={jobState.demo}
         errorMessages={jobState.errorMessages}
