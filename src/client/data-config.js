@@ -13,6 +13,12 @@ export const DEFAULT_UPSTREAM = 5000;
 export const DEFAULT_DOWNSTREAM = 5000;
 
 
+export const searchSpaceTypeDef = {
+  genes: 'Gene-Based',
+  regions: 'Region-Based',
+};
+
+
 export class DataConfig {
 
   constructor(filePath) {
@@ -50,9 +56,85 @@ export class DataConfig {
     }
   }
 
-  getRankingsDatabases() {
+  getAllRankingsDatabases() {
     return this.rankingsDatabases;
   }
+
+  getSearchSpaceTypes(organism) {
+    const types = new Set();
+    for (const db of this.rankingsDatabases) {
+      if (db.species.assembly === organism.speciesNomenclature.assembly) {
+        types.add(db.type);
+      }
+    }
+    return [...types].map(type => ({ id: type, name: searchSpaceTypeDef[type] }));
+  }
+
+  getCollections(organism, searchSpaceType, collectionType) {
+    const arr = [];
+    for (const db of this.rankingsDatabases) {
+      if (db.species.assembly === organism.speciesNomenclature.assembly
+          && db.type === searchSpaceType
+          && db.collection.type === collectionType) {
+        if (arr.findIndex(c => c.id === db.collection.id) === -1) {
+          arr.push(db.collection);
+        }
+      }
+    }
+    arr.sort((a, b) => a.id.localeCompare(b.id));
+    arr.unshift({ id: 'none', name: `-- No ${collectionType} collection --` });
+    return arr;
+  }
+
+  getPutativeRegulatoryRegions(motifCollectionId, trackCollectionId, searchSpaceType) {
+    if (searchSpaceType === 'regions') {
+      return [{ id: 'none', name: '-- No gene putative regulatory region --' }];
+    } else {
+      let hasMotifRankingsDBs = false;
+      let hasTrackRankingsDBs = false;
+      const regRegionMotifSet = new Set();
+      const regRegionTrackSet = new Set();
+      let regRegionSet;
+      for (const db of this.rankingsDatabases) {
+        if (db.type === searchSpaceType) {
+          if (db.collection.type === 'motif' && db.collection.id === motifCollectionId) {
+            regRegionMotifSet.add(db.putativeRegulatoryRegion);
+            hasMotifRankingsDBs = true;
+          }
+          if (db.collection.type === 'track' && db.collection.id === trackCollectionId) {
+            regRegionTrackSet.add(db.putativeRegulatoryRegion);
+            hasTrackRankingsDBs = true;
+          }
+        }
+      }
+      if (hasMotifRankingsDBs && hasTrackRankingsDBs) {
+        // Take only those gene putative regulatory regions that are supported in both the motif and track rankings databases
+        regRegionSet = new Set([...regRegionMotifSet].filter(x => regRegionTrackSet.has(x)));
+      } else if (hasMotifRankingsDBs) {
+        // Take only those gene putative regulatory regions that are supported in the motif rankings databases
+        regRegionSet = regRegionMotifSet;
+      } else {
+        // Take only those gene putative regulatory regions that are supported in the track rankings databases
+        regRegionSet = regRegionTrackSet;
+      }
+      return [...regRegionSet].map(id => this._getDelineationById(id)).reduce((acc, cur) => {
+        acc.push({ id: cur['$']['id'], name: cur['_'] });
+        return acc;
+      }, []);
+    }
+  }
+
+  getRankingsDatabases(organism, searchSpaceType, collectionType, collectionId, regRegionId) {
+    const dbs = this.rankingsDatabases.filter(db => {
+      return db.species.assembly === organism.speciesNomenclature.assembly
+        && db.type === searchSpaceType
+        && db.collection.type === collectionType
+        && db.collection.id === collectionId
+        && db.putativeRegulatoryRegion === regRegionId;
+    });
+    return dbs;
+  }
+
 
   _simplifyStructure(data) {
     // Define parent-to-child mappings
@@ -83,7 +165,7 @@ export class DataConfig {
   }
 
   _createRankingsDatabase(db) {
-    const code = db['$']['id'];
+    const id = db['$']['id'];
     const name = db['name'];
     const type = db['type'];
     let assembly = db['species'];
@@ -92,30 +174,23 @@ export class DataConfig {
     
     const collectionType = db['collection']['$']['type'];
     const collectionRefId = db['collection']['$']['refid'];
-    const collection = this._getCollectionById(collectionType, collectionRefId);
-    let motifCollection = { code: 'none', description: '-- No motif collection --' };
-    let trackCollection = { code: 'none', description: '-- No track collection --' };
-    if (collectionType === 'motif') {
-      motifCollection = this._createMotifTrackCollection(collection, collectionType);
-    } else if (collectionType === 'track') {
-      trackCollection = this._createMotifTrackCollection(collection, collectionType);
-    }
+    const rawCollection = this._getCollectionById(collectionType, collectionRefId);
+    const collection = this._createMotifTrackCollection(rawCollection, collectionType);
 
     const speciesCount = parseInt(db['number-of-species']);
     const nesThreshold = db['default-nes-threshold'] ? parseFloat(db['default-nes-threshold']) : DEFAULT_NES_THRESHOLD;
     const aucThreshold = db['default-auc-threshold'] ? parseFloat(db['default-auc-threshold']) : DEFAULT_AUC_THRESHOLD;
     const rankThreshold = db['default-rank-threshold'] ? parseInt(db['default-rank-threshold']) : DEFAULT_RANK_THRESHOLD;
 
-    let delineationDefault = { id: '', name: '' };
+    let delineationDefault = { id: '', name: '' }; // TODO (?) - Check if this is correct
     if (type === 'genes') {
       const regulatoryRegion = db['delineation']['$']['refid'];
       return {
-        code,
+        id,
         name,
         type,
         species,
-        motifCollection,
-        trackCollection,
+        collection,
         speciesCount,
         putativeRegulatoryRegion: regulatoryRegion,
         gene2regionDelineations: [],
@@ -137,12 +212,11 @@ export class DataConfig {
         }
       }
       return {
-        code,
+        id,
         name,
         type,
         species,
-        motifCollection,
-        trackCollection,
+        collection,
         speciesCount,
         putativeRegulatoryRegion: '',
         gene2regionDelineations: delineations,
@@ -161,11 +235,16 @@ export class DataConfig {
     return collections.find(c => c['$']['id'] === collectionId);
   }
 
+  _getDelineationById(id) {
+    const delineations = this.data?.['regulatory-region-delineations'];
+    return delineations.find(d => d['$']['id'] === id);
+  }
+
   _createMotifTrackCollection(collection, type) {
     return {
       type,
-      code: collection['$']['id'],
-      description: collection['_'],
+      id: collection['$']['id'],
+      name: collection['_'],
       default: collection['$']['default'] === 'true',
     };
   }

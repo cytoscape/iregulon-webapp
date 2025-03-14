@@ -9,6 +9,7 @@ import DataConfig, {
   DEFAULT_OVERLAP,
   DEFAULT_UPSTREAM,
   DEFAULT_DOWNSTREAM,
+  searchSpaceTypeDef,
 } from '../../data-config';
 import { organismParams as organisms } from '../../../util';
 import {
@@ -73,7 +74,7 @@ const formControlLabelSx = (theme, isMobile) => ({
 
 //==[ FormTextField ]=================================================================================================
 
-function FormTextField({ label, initialValue, isMobile, onChange }) {
+function FormTextField({ label, initialValue, disabled=false, isMobile, onChange }) {
   const [ value, setValue ] = useState(initialValue);
   
   const handleChange = (event) => {
@@ -84,6 +85,7 @@ function FormTextField({ label, initialValue, isMobile, onChange }) {
   return (
     <FormControlLabel
       label={label + ':'}
+      disabled={disabled}
       control={
         <TextField
           value={value}
@@ -110,14 +112,21 @@ function FormTextField({ label, initialValue, isMobile, onChange }) {
 FormTextField.propTypes = {
   label: PropTypes.string.isRequired,
   initialValue: PropTypes.any,
+  disabled: PropTypes.bool,
   isMobile: PropTypes.bool,
   onChange: PropTypes.func,
 };
 
 //==[ FormSelect ]====================================================================================================
 
-function FormSelect({ label, options, initialValue, isMobile, onChange }) {
-  const [ value, setValue ] = useState(initialValue);
+function FormSelect({ label, options, initialValue, disabled=false, isMobile, onChange }) {
+  const [ entries, setEntries ] = useState([]);
+  const [ value, setValue ] = useState('');
+
+  useEffect(() => {
+    setEntries(Object.entries(options));
+    setValue(initialValue);
+  }, [options, initialValue]);
 
   const handleChange = (event) => {
     setValue(event.target.value);
@@ -127,6 +136,7 @@ function FormSelect({ label, options, initialValue, isMobile, onChange }) {
   return (
     <FormControlLabel
       label={label + ':'}
+      disabled={disabled || entries.length < 2}
       control={
         <Select
           value={value}
@@ -138,8 +148,16 @@ function FormSelect({ label, options, initialValue, isMobile, onChange }) {
             fontSize: theme.typography.body2.fontSize
           })}
         >
-          {options.map((option) => (
-            <MenuItem key={option} value={option}>{option}</MenuItem>
+          {entries.map(([k, v]) => (
+            <MenuItem
+              key={k}
+              value={k}
+              sx={theme => ({
+                fontSize: theme.typography.body2.fontSize
+              })}
+            >
+                { v }
+            </MenuItem>
           ))}
         </Select>
       }
@@ -150,8 +168,9 @@ function FormSelect({ label, options, initialValue, isMobile, onChange }) {
 }
 FormSelect.propTypes = {
   label: PropTypes.string.isRequired,
-  options: PropTypes.array.isRequired,
+  options: PropTypes.object.isRequired,
   initialValue: PropTypes.string,
+  disabled: PropTypes.bool,
   isMobile: PropTypes.bool,
   onChange: PropTypes.func,
 };
@@ -167,19 +186,37 @@ function parseGeneList(text) {
   return [];
 }
 
-export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismChanged, onGenesChanged }) {
-  const rankingsDBs = dataConfig.getRankingsDatabases();
-  console.log('>>> RANKINGS DATABASES: ', rankingsDBs);
-  
+/**
+ * The array must have objects with 'id' and 'name' properties.
+ */
+function convertToKeyValueOptions(array) {
+  const options = array.reduce((acc, cur) => {
+    acc[cur.id] = cur.name;
+    return acc;
+  }, {});
+  return options;
+}
 
+function getDefaultCollectionValue(collections) {
+  const col = collections.find(c => c.default);
+  return col ? col.id : 'none';
+}
+
+export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismChanged, onGenesChanged }) {
   const [ organismIndex, setOrganismIndex ] = useState(organisms.indexOf(initialOrganism));
   const [ showAdvancedOptions, setShowAdvancedOptions ] = useState(false);
-  const [ searchSpaceType, setSearchSpaceType ] = useState('');
-  const [ motifCollection, setMotifCollection ] = useState('');
-  const [ trackCollection, setTrackCollection ] = useState('');
+  const [ searchSpaceTypeOptions, setSearchSpaceTypeOptions ] = useState(searchSpaceTypeDef);
+  const [ searchSpaceTypeId, setSearchSpaceTypeId ] = useState('');
+  const [ motifCollectionOptions, setMotifCollectionOptions ] = useState({});
+  const [ motifCollectionId, setMotifCollectionId ] = useState('');
+  const [ trackCollectionOptions, setTrackCollectionOptions ] = useState({});
+  const [ trackCollectionId, setTrackCollectionId ] = useState('');
+  const [ regRegionOptions, setRegRegionOptions ] = useState({});
   const [ regRegion, setRegRegion ] = useState('');
-  const [ motifRankingsDb, setMotifRankingsDb ] = useState('');
-  const [ trackRankingsDb, setTrackRankingsDb ] = useState('');
+  const [ motifRankingsDbOptions, setMotifRankingsDbOptions ] = useState({});
+  const [ motifRankingsDbId, setMotifRankingsDbId ] = useState('');
+  const [ trackRankingsDbOptions, setTrackRankingsDbOptions ] = useState({});
+  const [ trackRankingsDbId, setTrackRankingsDbId ] = useState('');
   const [ overlapFraction, setOverlapFraction ] = useState(DEFAULT_OVERLAP);
   const [ regSearchSpace, setRegSearchSpace ] = useState('');
   const [ upstreamRegion, setUpstreamRegion ] = useState(DEFAULT_UPSTREAM);
@@ -193,7 +230,50 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
   const geneInputRef = useRef();
 
   useEffect(() => {
-    // TODO: Set field values for the initial organism
+    const rankingsDBs = dataConfig.getAllRankingsDatabases();
+    console.log('1 >> RANKINGS DATABASES: ', rankingsDBs);
+    // Get initial organism and its default values
+    const org = organisms[organismIndex];
+    const searchSpaceTypes = dataConfig.getSearchSpaceTypes(org);
+    const defSearchSpaceTypeId = searchSpaceTypes[0].id;
+    // Motif/Track Collections
+    const motifCollections = dataConfig.getCollections(org, defSearchSpaceTypeId, 'motif');
+    const defMotifCollectionId = getDefaultCollectionValue(motifCollections);
+    const trackCollections = dataConfig.getCollections(org, defSearchSpaceTypeId, 'track');
+    const defTrackCollectionId = getDefaultCollectionValue(trackCollections);
+    setMotifCollectionOptions(convertToKeyValueOptions(motifCollections));
+    setMotifCollectionId(defMotifCollectionId);
+    setTrackCollectionOptions(convertToKeyValueOptions(trackCollections));
+    setTrackCollectionId(defTrackCollectionId);
+    // Gene Regulatory Regions
+    const regRegions = dataConfig.getPutativeRegulatoryRegions(defMotifCollectionId, defTrackCollectionId, defSearchSpaceTypeId);
+    const defRegRegionId = regRegions.length > 0 ? regRegions[0].id : '';
+    setRegRegionOptions(convertToKeyValueOptions(regRegions));
+    setRegRegion(defRegRegionId);
+    // Rankings Databases
+    const motifRankingsDBs = dataConfig.getRankingsDatabases(org, defSearchSpaceTypeId, 'motif', defMotifCollectionId, defRegRegionId);
+    const trackRankingsDBs = dataConfig.getRankingsDatabases(org, defSearchSpaceTypeId, 'track', defTrackCollectionId, defRegRegionId);
+    const defMotifRankingsDB = motifRankingsDBs[0]; // TODO check if this is correct
+    const defTrackRankingsDB = trackRankingsDBs[0]; // TODO check if this is correct
+    const defRankingDB = (defMotifRankingsDB?.id !== 'none') || defTrackRankingsDB; // TODO check if this is correct
+    setMotifRankingsDbOptions(convertToKeyValueOptions(motifRankingsDBs));
+    setMotifRankingsDbId(defMotifRankingsDB?.id || '');
+    setTrackRankingsDbOptions(convertToKeyValueOptions(trackRankingsDBs));
+    setTrackRankingsDbId(defTrackRankingsDB?.id || '');
+    // Search Space Type
+    setSearchSpaceTypeOptions(convertToKeyValueOptions(searchSpaceTypes));
+    setSearchSpaceTypeId(defSearchSpaceTypeId);
+    // Region-based specific parameters
+    setOverlapFraction(DEFAULT_OVERLAP);
+    setRegSearchSpace('');
+    setUpstreamRegion(DEFAULT_UPSTREAM);
+    setDownstreamRegion(DEFAULT_DOWNSTREAM);
+    // Thresholds
+    setNES(defRankingDB.nesThreshold);
+    setAUC(defRankingDB.aucThreshold);
+    setRank(defRankingDB.rankThreshold);
+    setOrthologousId(DEFAULT_MIN_ORTHOLOGOUS_IDENTITY);
+    setFDR(DEFAULT_MAX_MOTIF_SIMILARITY_FDR);
   }, [organismIndex]);
 
 
@@ -217,22 +297,22 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
   };
 
   const handleSearchSpaceTypeChange = (event) => {
-    setSearchSpaceType(event.target.value);
+    setSearchSpaceTypeId(event.target.value);
   };
   const handleMotifCollectionChange = (event) => {
-    setMotifCollection(event.target.value);
+    setMotifCollectionId(event.target.value);
   };
   const handleTrackCollectionChange = (event) => {
-    setTrackCollection(event.target.value);
+    setTrackCollectionId(event.target.value);
   };
   const handleRegRegionChange = (event) => {
     setRegRegion(event.target.value);
   };
   const handleMotifRankingsDbChange = (event) => {
-    setMotifRankingsDb(event.target.value);
+    setMotifRankingsDbId(event.target.value);
   };
   const handleTrackRankingsDbChange = (event) => {
-    setTrackRankingsDb(event.target.value);
+    setTrackRankingsDbId(event.target.value);
   };
   const handleOverlapFractionChange = (event) => {
     setOverlapFraction(event.target.value);
@@ -370,18 +450,79 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
           sx={{ mt: 1, pb: 1, pl: isMobile ? 3.25 : 0, width: '100%' }}
         >
           <FormGroup row sx={{ width: '100%' }}>
-            <FormSelect label="Type of Search Space" options={['gene-based', 'region-based']} initialValue={searchSpaceType} isMobile={isMobile} onChange={handleSearchSpaceTypeChange} />
-            <FormSelect label="Motif Collection" options={[]} initialValue={motifCollection} isMobile={isMobile} onChange={handleMotifCollectionChange} />
-            <FormSelect label="Track Collection" options={[]} initialValue={trackCollection} isMobile={isMobile} onChange={handleTrackCollectionChange} />
-            <FormSelect label="Putative Regulatory Region" options={[]} initialValue={regRegion} isMobile={isMobile} onChange={handleRegRegionChange} />
-            <FormSelect label="Motif Rankings Database" options={[]} initialValue={motifRankingsDb} isMobile={isMobile} onChange={handleMotifRankingsDbChange} />
-            <FormSelect label="Track Rankings Database" options={[]} initialValue={trackRankingsDb} isMobile={isMobile} onChange={handleTrackRankingsDbChange} />
+            <FormSelect
+              label="Type of Search Space"
+              options={searchSpaceTypeOptions}
+              initialValue={searchSpaceTypeId}
+              isMobile={isMobile}
+              onChange={handleSearchSpaceTypeChange}
+            />
+            <FormSelect
+              label="Motif Collection"
+              options={motifCollectionOptions}
+              initialValue={motifCollectionId}
+              isMobile={isMobile}
+              onChange={handleMotifCollectionChange}
+            />
+            <FormSelect
+              label="Track Collection"
+              options={trackCollectionOptions}
+              initialValue={trackCollectionId}
+              isMobile={isMobile}
+              onChange={handleTrackCollectionChange}
+            />
+            <FormSelect
+              label="Putative Regulatory Region"
+              options={regRegionOptions}
+              initialValue={regRegion}
+              isMobile={isMobile}
+              onChange={handleRegRegionChange}
+            />
+            <FormSelect
+              label="Motif Rankings Database"
+              options={motifRankingsDbOptions}
+              initialValue={motifRankingsDbId}
+              isMobile={isMobile}
+              onChange={handleMotifRankingsDbChange}
+            />
+            <FormSelect
+              label="Track Rankings Database"
+              options={trackRankingsDbOptions}
+              initialValue={trackRankingsDbId}
+              isMobile={isMobile}
+              onChange={handleTrackRankingsDbChange}
+            />
           </FormGroup>
           <FormGroup row sx={{ width: '100%' }}>
-            <FormTextField label="Overlap Fraction" initialValue={overlapFraction} isMobile={isMobile} onChange={handleOverlapFractionChange} />
-            <FormSelect label="Regulatory Search Space" options={[]} initialValue={regSearchSpace} isMobile={isMobile} onChange={handleRegRegionChange} />
-            <FormTextField label="Upstream Region" initialValue={upstreamRegion} isMobile={isMobile} onChange={handleUpstreamRegionChange} />
-            <FormTextField label="Downstream Region" initialValue={downstreamRegion} isMobile={isMobile} onChange={handleDownstreamRegionChange} />
+            <FormTextField
+              label="Overlap Fraction"
+              initialValue={overlapFraction}
+              disabled={searchSpaceTypeId !== 'regions'}
+              isMobile={isMobile}
+              onChange={handleOverlapFractionChange}
+            />
+            <FormSelect
+              label="Regulatory Search Space"
+              options={{}}
+              initialValue={regSearchSpace}
+              disabled={searchSpaceTypeId !== 'regions'}
+              isMobile={isMobile}
+              onChange={handleRegRegionChange}
+            />
+            <FormTextField
+              label="Upstream Region"
+              initialValue={upstreamRegion}
+              disabled={searchSpaceTypeId !== 'regions'}
+              isMobile={isMobile}
+              onChange={handleUpstreamRegionChange}
+            />
+            <FormTextField
+              label="Downstream Region"
+              initialValue={downstreamRegion}
+              disabled={searchSpaceTypeId !== 'regions'}
+              isMobile={isMobile}
+              onChange={handleDownstreamRegionChange}
+            />
           </FormGroup>
           <FormGroup row sx={{ width: '100%' }}>
             <FormTextField label="Enrichment Score Threshold" initialValue={nes} isMobile={isMobile} onChange={handleNESChange} />
