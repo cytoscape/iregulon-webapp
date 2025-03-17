@@ -86,7 +86,7 @@ export class DataConfig {
     return arr;
   }
 
-  getPutativeRegulatoryRegions(motifCollectionId, trackCollectionId, searchSpaceType) {
+  getPutativeRegulatoryRegions(searchSpaceType, motifCollectionId, trackCollectionId) {
     if (searchSpaceType === 'regions') {
       return [{ id: 'none', name: '-- No gene putative regulatory region --' }];
     } else {
@@ -210,6 +210,7 @@ export class DataConfig {
             delineationDefault = delineationCurrent;
           }
         }
+        delineations.push({ id: '_specify', name: 'Specify the Upstream and Downstream Regions...' });
       }
       return {
         id,
