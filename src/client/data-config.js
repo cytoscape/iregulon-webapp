@@ -202,11 +202,11 @@ export class DataConfig {
     } else if (type === 'regions') {
       const delineations = [];
       const mappings = db['mappings'];
-      if (mappings && mappings.mapping > 0) {
-        for (const mapping of mappings.mapping) {
-          const delineationCurrent = { id: mapping['$']['id'], name: mapping['_'] };
+      if (mappings && mappings.mapping.length > 0) {
+        for (const m of mappings.mapping) {
+          const delineationCurrent = { id: m['$']['id'], name: m['_'] };
           delineations.push(delineationCurrent);
-          if (mapping['$']['default'] && mapping['$']['default'].toLowerCase() === 'true') {
+          if (m['$']['default'] && m['$']['default'].toLowerCase() === 'true') {
             delineationDefault = delineationCurrent;
           }
         }
@@ -218,7 +218,7 @@ export class DataConfig {
         species,
         collection,
         speciesCount,
-        putativeRegulatoryRegion: '',
+        putativeRegulatoryRegion: 'none',
         gene2regionDelineations: delineations,
         delineationDefault,
         nesThreshold,
