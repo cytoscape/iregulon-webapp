@@ -58,6 +58,10 @@ const exampleGenes = {
   ],
 };
 
+
+const LABEL_MIN_WIDTH_SM = 300;
+const TXT_FIELD_MAX_WIDTH = 150;
+
 const formControlLabelSx = (theme, isMobile) => ({
   width: '100%',
   ml: 0,
@@ -66,7 +70,7 @@ const formControlLabelSx = (theme, isMobile) => ({
   alignItems: isMobile? 'flex-start' : 'center',
   '& .MuiFormControlLabel-label': {
     fontSize: theme.typography.body2.fontSize,
-    minWidth: { sm: 300 },
+    minWidth: { sm: LABEL_MIN_WIDTH_SM },
     textAlign: isMobile ? 'left' : 'right',
   },
 });
@@ -99,11 +103,14 @@ function FormTextField({ label, initialValue, disabled=false, isMobile, onChange
             spellCheck: false,
             sx: theme => ({
               fontSize: theme.typography.body2.fontSize,
+              textAlign: 'right',
             })
           }}
           sx={theme => ({
             backgroundColor: theme.palette.background.paper,
-            fontSize: theme.typography.body2.fontSize
+            fontSize: theme.typography.body2.fontSize,
+            maxWidth: TXT_FIELD_MAX_WIDTH,
+            mr: `calc(100% - ${LABEL_MIN_WIDTH_SM}px - ${TXT_FIELD_MAX_WIDTH}px)`,
           })}
         />
       }
