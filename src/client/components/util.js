@@ -381,3 +381,7 @@ export function getComparator(order, orderBy) {
     ? (a, b) => comparator(a, b, orderBy)
     : (a, b) => comparator(b, a, orderBy);
 }
+
+export function isNumeric(string) {
+  return /^[+-]?\d+(\.\d+)?$/.test(string);
+}

@@ -12,6 +12,7 @@ import DataConfig, {
   searchSpaceTypeDef,
 } from '../../data-config';
 import { organismParams as organisms } from '../../../util';
+import { isNumeric } from '../util';
 import {
   Box,
   Checkbox,
@@ -77,6 +78,7 @@ const formControlLabelSx = (theme, isMobile) => ({
     maxWidth: { md: LABEL_MAX_WIDTH },
     textAlign: isMobile ? 'left' : 'right',
   },
+  cursor: 'default',
 });
 
 
@@ -109,7 +111,7 @@ function FieldHelpIcon({ title, sx }) {
         fontSize="small"
         sx={{
           visibility: !title ? 'hidden' : 'visible',
-          cursor: 'pointer',
+          cursor: 'default',
           ...sx,
         }}
       />
@@ -123,8 +125,9 @@ FieldHelpIcon.propTypes = {
 
 //==[ FormTextField ]=================================================================================================
 
-function FormTextField({ label, initialValue, helperText, disabled=false, isMobile, onChange }) {
+function FormTextField({ label, initialValue, helperText, disabled=false, isMobile, validationFn, errorMessage, onChange }) {
   const [ value, setValue ] = useState(initialValue);
+  const [ error, setError ] = useState(false);
   
   useEffect(() => {
     setValue(initialValue);
@@ -132,6 +135,9 @@ function FormTextField({ label, initialValue, helperText, disabled=false, isMobi
 
   const handleChange = (event) => {
     setValue(event.target.value);
+    if (validationFn) {
+      setError(!validationFn(event.target.value));
+    }
     onChange(event);
   };
 
@@ -142,12 +148,32 @@ function FormTextField({ label, initialValue, helperText, disabled=false, isMobi
       control={
         <>
         {!isMobile && (
-          <FieldHelpIcon title={helperText} sx={{ mr: `calc(100% - ${LABEL_MAX_WIDTH}px - ${TXT_FIELD_MAX_WIDTH}px - 24px - 4px)` }} />
+          <>
+            {error && errorMessage && (
+              <Typography
+                variant="caption"
+                color="error"
+                sx={{
+                  width: `calc(100% - ${LABEL_MAX_WIDTH}px - ${TXT_FIELD_MAX_WIDTH}px - 24px - 12px)`,
+                }}
+              >
+                { errorMessage }
+              </Typography>
+            )}
+            <FieldHelpIcon
+              title={helperText}
+              sx={{
+                mr: error && errorMessage ? 0 : `calc(100% - ${LABEL_MAX_WIDTH}px - ${TXT_FIELD_MAX_WIDTH}px - 24px - 4px)`
+              }}
+            />
+          </>
         )}
           <TextField
             value={value}
             onChange={handleChange}
             disabled={disabled}
+            autoComplete="off"
+            error={error}
             fullWidth
             size="small"
             inputProps={{
@@ -175,7 +201,10 @@ FormTextField.propTypes = {
   initialValue: PropTypes.any,
   helperText: PropTypes.any,
   disabled: PropTypes.bool,
+  error: PropTypes.bool,
   isMobile: PropTypes.bool,
+  validationFn: PropTypes.func,
+  errorMessage: PropTypes.any,
   onChange: PropTypes.func,
 };
 
@@ -750,6 +779,8 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
               helperText={overlapFractionTooltip}
               initialValue={overlapFraction}
               isMobile={isMobile}
+              validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
+              errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
               onChange={handleOverlapFractionChange}
             />
             <FormSelect
@@ -767,6 +798,8 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
                 helperText={upstreamRegionTooltip}
                 initialValue={upstreamRegion}
                 isMobile={isMobile}
+                validationFn={(v) => v >= 1}
+                errorMessage={<>Must be greater than or equal to <code>1</code></>}
                 onChange={handleUpstreamRegionChange}
               />
               <FormTextField
@@ -774,6 +807,8 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
                 helperText={downstreamRegionTooltip}
                 initialValue={downstreamRegion}
                 isMobile={isMobile}
+                validationFn={(v) => v >= 1}
+                errorMessage={<>Must be greater than or equal to <code>1</code></>}
                 onChange={handleDownstreamRegionChange}
               />
             </>
@@ -786,6 +821,8 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
               helperText={nesTooltip}
               initialValue={nes}
               isMobile={isMobile}
+              validationFn={(v) => v >= 1.5}
+              errorMessage={<>Must be greater than or equal to <code>1.5</code></>}
               onChange={handleNESChange}
             />
             <FormTextField
@@ -793,6 +830,8 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
               helperText={aucTooltip}
               initialValue={auc}
               isMobile={isMobile}
+              validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
+              errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
               onChange={handleAUCChange}
             />
             <FormTextField
@@ -800,6 +839,8 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
               helperText={rankTooltip}
               initialValue={rank}
               isMobile={isMobile}
+              validationFn={(v) => v >= 1}
+              errorMessage={<>Must be greater than or equal to <code>1</code></>}
               onChange={handleRankChange}
             />
           </TitledFormGroup>
@@ -810,6 +851,8 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
               initialValue={orthologousId}
               disabled={!motifCollectionId || motifCollectionId === '' || motifCollectionId === 'none'}
               isMobile={isMobile}
+              validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
+              errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
               onChange={handleOrthologousIdChange}
             />
             <FormTextField
@@ -818,6 +861,8 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
               initialValue={fdr}
               disabled={!motifCollectionId || motifCollectionId === '' || motifCollectionId === 'none'}
               isMobile={isMobile}
+              validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
+              errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
               onChange={handleFDRChange}
             />
           </TitledFormGroup>
