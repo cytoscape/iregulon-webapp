@@ -14,7 +14,9 @@ import DataConfig, {
 import { organismParams as organisms } from '../../../util';
 import {
   Box,
+  Checkbox,
   FormControl,
+  FormControlLabel,
   FormHelperText,
   MenuItem,
   Link,
@@ -23,9 +25,10 @@ import {
   Select,
   TextField,
   Tooltip,
-  Typography, FormControlLabel, Checkbox,
+  Typography,
 } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import HelpIcon from '@mui/icons-material/Help';
 import { FlyIcon, HumanIcon, MouseIcon } from '../svg-icons';
 
 
@@ -58,8 +61,8 @@ const exampleGenes = {
   ],
 };
 
-
-const LABEL_MIN_WIDTH_SM = 300;
+const LABEL_MIN_WIDTH = 120;
+const LABEL_MAX_WIDTH = 300;
 const TXT_FIELD_MAX_WIDTH = 150;
 
 const formControlLabelSx = (theme, isMobile) => ({
@@ -70,14 +73,57 @@ const formControlLabelSx = (theme, isMobile) => ({
   alignItems: isMobile? 'flex-start' : 'center',
   '& .MuiFormControlLabel-label': {
     fontSize: theme.typography.body2.fontSize,
-    minWidth: { sm: LABEL_MIN_WIDTH_SM },
+    minWidth: { sm: LABEL_MIN_WIDTH },
+    maxWidth: { md: LABEL_MAX_WIDTH },
     textAlign: isMobile ? 'left' : 'right',
   },
 });
 
+
+//==[ TooltipLink ]===================================================================================================
+
+function TooltipLink({ href, children }) {
+  return (
+    <Link 
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      sx={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}
+    >
+      { children }
+    </Link>
+  );
+}
+TooltipLink.propTypes = {
+  title: PropTypes.string,
+  href: PropTypes.string,
+  children: PropTypes.node,
+};
+
+//==[ FieldHelpIcon ]=================================================================================================
+
+function FieldHelpIcon({ title, sx }) {
+  return (
+    <Tooltip arrow enterDelay={500} title={title}>
+      <HelpIcon
+        fontSize="small"
+        sx={{
+          visibility: !title ? 'hidden' : 'visible',
+          cursor: 'pointer',
+          ...sx,
+        }}
+      />
+    </Tooltip>
+  );
+}
+FieldHelpIcon.propTypes = {
+  title: PropTypes.any,
+  sx: PropTypes.object,
+};
+
 //==[ FormTextField ]=================================================================================================
 
-function FormTextField({ label, initialValue, disabled=false, isMobile, onChange }) {
+function FormTextField({ label, initialValue, helperText, disabled=false, isMobile, onChange }) {
   const [ value, setValue ] = useState(initialValue);
   
   useEffect(() => {
@@ -94,25 +140,30 @@ function FormTextField({ label, initialValue, disabled=false, isMobile, onChange
       label={label + ':'}
       disabled={disabled}
       control={
-        <TextField
-          value={value}
-          onChange={handleChange}
-          fullWidth
-          size="small"
-          inputProps={{
-            spellCheck: false,
-            sx: theme => ({
+        <>
+        {!isMobile && (
+          <FieldHelpIcon title={helperText} sx={{ mr: `calc(100% - ${LABEL_MAX_WIDTH}px - ${TXT_FIELD_MAX_WIDTH}px - 24px - 4px)` }} />
+        )}
+          <TextField
+            value={value}
+            onChange={handleChange}
+            disabled={disabled}
+            fullWidth
+            size="small"
+            inputProps={{
+              spellCheck: false,
+              sx: theme => ({
+                fontSize: theme.typography.body2.fontSize,
+                textAlign: 'right',
+              })
+            }}
+            sx={theme => ({
+              backgroundColor: theme.palette.background.paper,
               fontSize: theme.typography.body2.fontSize,
-              textAlign: 'right',
-            })
-          }}
-          sx={theme => ({
-            backgroundColor: theme.palette.background.paper,
-            fontSize: theme.typography.body2.fontSize,
-            maxWidth: TXT_FIELD_MAX_WIDTH,
-            mr: `calc(100% - ${LABEL_MIN_WIDTH_SM}px - ${TXT_FIELD_MAX_WIDTH}px)`,
-          })}
-        />
+              maxWidth: TXT_FIELD_MAX_WIDTH,
+            })}
+          />
+        </>
       }
       labelPlacement={isMobile ? 'top' : 'start'}
       sx={(theme) => formControlLabelSx(theme, isMobile)}
@@ -122,6 +173,7 @@ function FormTextField({ label, initialValue, disabled=false, isMobile, onChange
 FormTextField.propTypes = {
   label: PropTypes.string.isRequired,
   initialValue: PropTypes.any,
+  helperText: PropTypes.any,
   disabled: PropTypes.bool,
   isMobile: PropTypes.bool,
   onChange: PropTypes.func,
@@ -129,7 +181,7 @@ FormTextField.propTypes = {
 
 //==[ FormSelect ]====================================================================================================
 
-function FormSelect({ label, options, initialValue, disabled=false, isMobile, onChange }) {
+function FormSelect({ label, options, initialValue, helperText, disabled=false, isMobile, onChange }) {
   const [ entries, setEntries ] = useState([]);
   const [ value, setValue ] = useState('');
 
@@ -148,17 +200,25 @@ function FormSelect({ label, options, initialValue, disabled=false, isMobile, on
       label={label + ':'}
       disabled={disabled || entries.length < 2}
       control={
-        <Select
-          value={value}
-          onChange={handleChange}
-          fullWidth
-          size="small"
-          sx={theme => ({
-            backgroundColor: theme.palette.background.paper,
-            fontSize: theme.typography.body2.fontSize,
-            fontStyle: value === '_specify' ? 'italic' : 'normal',
-          })}
-        >
+        <>
+        {!isMobile && (
+          <FieldHelpIcon title={helperText} />
+        )}
+          <Select
+            value={value}
+            onChange={handleChange}
+            disabled={disabled || entries.length < 2}
+            fullWidth
+            size="small"
+            sx={theme => ({
+              backgroundColor: theme.palette.background.paper,
+              fontSize: theme.typography.body2.fontSize,
+              fontStyle: value === '_specify' ? 'italic' : 'normal',
+              textOverflow: 'ellipsis',
+              overflow: 'hidden',
+              maxWidth: { sm: `calc(100% - ${LABEL_MAX_WIDTH}px - 24px - 4px)`, xs: '100%' },
+            })}
+          >
           {entries.map(([k, v]) => (
             <MenuItem
               key={k}
@@ -168,10 +228,11 @@ function FormSelect({ label, options, initialValue, disabled=false, isMobile, on
                 fontStyle: k === '_specify' ? 'italic' : 'normal',
               })}
             >
-                { v }
+              { v }
             </MenuItem>
           ))}
-        </Select>
+          </Select>
+        </>
       }
       labelPlacement={isMobile ? 'top' : 'start'}
       sx={(theme) => formControlLabelSx(theme, isMobile)}
@@ -182,6 +243,7 @@ FormSelect.propTypes = {
   label: PropTypes.string.isRequired,
   options: PropTypes.object.isRequired,
   initialValue: PropTypes.string,
+  helperText: PropTypes.any,
   disabled: PropTypes.bool,
   isMobile: PropTypes.bool,
   onChange: PropTypes.func,
@@ -199,7 +261,7 @@ function TitledFormGroup({ title, children }) {
         borderRadius: 2,
       }}
     >
-      <Typography component="legend">{ title }</Typography>
+      <Typography component="legend" fontSize="small">{ title }</Typography>
       { children }
     </Box>
   );
@@ -235,6 +297,82 @@ function getDefaultCollectionValue(collections) {
   const col = collections.find(c => c.default);
   return col ? col.id : 'none';
 }
+
+// Tooltips (hekper texts):
+
+const searchSpaceTypeTooltip = <>
+  The type of the regulatory search space:
+  <ul>
+    <li><b>Gene-Based:</b> the putative regulatory regions are defined according to the boundaries
+    of the genes &#40;TSS or TTS&#41;.</li>
+    <li><b>Region-Based:</b> the putative regulatory regions are defined by regulatory features 
+    such as promoter regions, DHS regions, and other non coding annotated regions.</li>
+  </ul>
+</>;
+
+const collectionTooltip = <>
+  More details about our collections <TooltipLink href="http://iregulon.aertslab.org/collections.html#motifcolldesc">here</TooltipLink>.
+</>;
+
+const regRegionTooltip = <>Delineates in more detail the search space, i.e. the putative regulatory region.</>;
+
+const rankingDatabaseTooltip = <>
+  According to the type of the search space and the putative regions, several databases can be queried:
+  <ul>
+    <li>In the <em>gene-based</em> search space, it is possible to use conservation between 7 or 10 species for Motif rankings databases, 
+    but not for Track rankings,</li>
+    <li>In the <em>region-based</em> seach space, available for Drosophila, 136K regulatory non-coding regions using conservation 
+    between 11 species &#40;as described in our <TooltipLink href="https://academic.oup.com/nar/article/40/15/e114/1223009">i-cisTarget paper</TooltipLink>&#41;.</li>
+  </ul>
+</>;
+
+const overlapFractionTooltip = <>
+  The fraction of the putative regulatory region associated with a gene that must overlap with the predefined regions.<br />
+  This parameter must be between 0.0 and 1.0.
+</>;
+
+const regSearchSpaceTooltip = <>
+  Select a predefined regulatory search space or specify the size of the region upstream/downstream of the TSS to use in the mapping to predefined regions.
+</>;
+
+const upstreamRegionTooltip = <>
+  The size of the region &#40;in bp&#41; upstream of the TSS to use in the mapping to predefined regions.
+</>;
+
+const downstreamRegionTooltip = <>
+  The size of the region &#40;in bp&#41; downstream of the TSS to use in the mapping to predefined regions.
+</>;
+
+const nesTooltip = <>
+  This is the minimal NES score to consider a motif as being relevant.
+</>;
+
+const aucTooltip = <>
+  The Area Under the Curve &#40;AUC&#41; values are calculated for all motifs at the beginning of the cumulative gene recovery plot &#40;aka ROC curve&#41;
+  which plots the input gene recovery along the whole genome ranking.<br />
+  This threshold indicates the percentage of the top ranked genes/regions to consider for the AUC calculation.
+</>;
+
+const rankTooltip = <>
+  This is the x-axis cutoff for visualization of the ROC curve.<br />
+  This value corresponds with the top genes shown on the results.
+</>;
+
+const orthologousIdTooltip = <>
+  A threshold on the miniminal identity score to define gene orthology.<br />
+  This %identity was calculated in <TooltipLink href="https://pubmed.ncbi.nlm.nih.gov/19029536/">EnsemblCompara gene trees</TooltipLink> based on
+  whole amino acid sequence alignments &#40;tf2tf associations&#41;.<br />
+  The closer the score to zero, the more homologous genes can be associated to an annotated TF. But when the threshold is set to one,
+  no orthologous information is used.<br />
+  This score must be between 0.0 and 1.0.
+</>;
+
+const fdrTooltip = <>
+  A threshold on the maximal FDR calculated by the TOMTOM p-value for the similarity of the motifs &#40;motif2motif associations&#41;.<br />
+  The closer the score to zero, the more similar motifs will be selected for association to a enriched motif. But when the threshold is set to zero,
+  no motif similarity information is used.<br />
+  The score must be between 0.0 and 1.0.
+</>;  
 
 export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismChanged, onGenesChanged }) {
   const [ organismIndex, setOrganismIndex ] = useState(organisms.indexOf(initialOrganism));
@@ -446,7 +584,6 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
     setFDR(event.target.value);
   };
 
-
   return (
     <Box>
       <Box
@@ -558,7 +695,8 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
         >
           <TitledFormGroup title="Ranking">
             <FormSelect
-              label="Type of Search Space"
+              label="Search Space Type"
+              helperText={searchSpaceTypeTooltip}
               options={searchSpaceTypeOptions}
               initialValue={searchSpaceTypeId}
               isMobile={isMobile}
@@ -566,6 +704,7 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
             />
             <FormSelect
               label="Motif Collection"
+              helperText={collectionTooltip}
               options={motifCollectionOptions}
               initialValue={motifCollectionId}
               isMobile={isMobile}
@@ -573,6 +712,7 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
             />
             <FormSelect
               label="Track Collection"
+              helperText={collectionTooltip}
               options={trackCollectionOptions}
               initialValue={trackCollectionId}
               isMobile={isMobile}
@@ -580,6 +720,7 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
             />
             <FormSelect
               label="Putative Regulatory Region"
+              helperText={regRegionTooltip}
               options={regRegionOptions}
               initialValue={regRegionId}
               isMobile={isMobile}
@@ -587,6 +728,7 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
             />
             <FormSelect
               label="Motif Rankings Database"
+              helperText={rankingDatabaseTooltip}
               options={motifRankingsDbOptions}
               initialValue={motifRankingsDbId}
               isMobile={isMobile}
@@ -594,6 +736,7 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
             />
             <FormSelect
               label="Track Rankings Database"
+              helperText={rankingDatabaseTooltip}
               options={trackRankingsDbOptions}
               initialValue={trackRankingsDbId}
               isMobile={isMobile}
@@ -601,15 +744,17 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
             />
           </TitledFormGroup>
         {searchSpaceTypeId === 'regions' && (
-          <TitledFormGroup title="Region-Based Parameters">
+          <TitledFormGroup title="Region-Based">
             <FormTextField
               label="Overlap Fraction"
+              helperText={overlapFractionTooltip}
               initialValue={overlapFraction}
               isMobile={isMobile}
               onChange={handleOverlapFractionChange}
             />
             <FormSelect
               label="Regulatory Search Space"
+              helperText={regSearchSpaceTooltip}
               options={regSearchSpaceOptions}
               initialValue={regSearchSpaceId}
               isMobile={isMobile}
@@ -619,12 +764,14 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
             <>
               <FormTextField
                 label="Upstream Region"
+                helperText={upstreamRegionTooltip}
                 initialValue={upstreamRegion}
                 isMobile={isMobile}
                 onChange={handleUpstreamRegionChange}
               />
               <FormTextField
                 label="Downstream Region"
+                helperText={downstreamRegionTooltip}
                 initialValue={downstreamRegion}
                 isMobile={isMobile}
                 onChange={handleDownstreamRegionChange}
@@ -633,21 +780,24 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
           )}
           </TitledFormGroup>
         )}
-          <TitledFormGroup title="Recovery">
+          <TitledFormGroup title="Recovery Prediction">
             <FormTextField
               label="Enrichment Score Threshold"
+              helperText={nesTooltip}
               initialValue={nes}
               isMobile={isMobile}
               onChange={handleNESChange}
             />
             <FormTextField
               label="ROC Threshold for AUC Calculation"
+              helperText={aucTooltip}
               initialValue={auc}
               isMobile={isMobile}
               onChange={handleAUCChange}
             />
             <FormTextField
               label="Rank Threshold"
+              helperText={rankTooltip}
               initialValue={rank}
               isMobile={isMobile}
               onChange={handleRankChange}
@@ -656,6 +806,7 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
           <TitledFormGroup title="TF Prediction">
             <FormTextField
               label="Min. Identity Between Orthologous Genes"
+              helperText={orthologousIdTooltip}
               initialValue={orthologousId}
               disabled={!motifCollectionId || motifCollectionId === '' || motifCollectionId === 'none'}
               isMobile={isMobile}
@@ -663,6 +814,7 @@ export function QueryForm({ dataConfig, initialOrganism, isMobile, onOrganismCha
             />
             <FormTextField
               label="Max. FDR on Motif Similarity"
+              helperText={fdrTooltip}
               initialValue={fdr}
               disabled={!motifCollectionId || motifCollectionId === '' || motifCollectionId === 'none'}
               isMobile={isMobile}
