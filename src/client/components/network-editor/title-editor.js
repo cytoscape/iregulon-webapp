@@ -44,9 +44,9 @@ export function TitleEditor({ controller, disabled }) {
   const cancelledRef = useRef(false);
 
   useEffect(() => {
-    const onDataChanged = event => setValue(event.cy.data('name')); 
-    controller.cy.on('data', onDataChanged);
-    return () => controller.cy.removeListener('data', onDataChanged);
+    const onDataChange = event => setValue(event.cy.data('name')); 
+    controller.cy.on('data', onDataChange);
+    return () => controller.cy.removeListener('data', onDataChange);
   }, []);
 
   const handleKeyDown = (event) => {

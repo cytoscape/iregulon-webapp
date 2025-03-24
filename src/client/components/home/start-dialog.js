@@ -52,13 +52,34 @@ const StartDialog = ({
 
   const organismRef = useRef(DEF_ORGANISM);
   const genesRef = useRef([]);
+  const advancedOptionsRef = useRef({});
 
-  const hanleOrganismChanged = (organism) => {
+  const validateForm = () => {
+    let valid = true;
+    if (genesRef.current.length === 0) {
+      valid = false;
+    } else {
+      const advancedOptions = advancedOptionsRef.current;
+      // If neither motif nor track collections are valid, it cannot submit the form
+      const hasMotifCollection = advancedOptions.motifCollectionId !== 'none';
+      const hasTrackCollection = advancedOptions.trackCollectionId !== 'none';
+      if (!hasMotifCollection && !hasTrackCollection) {
+        valid = false;
+      }
+    }
+    setSubmitDisabled(!valid);
+  };
+
+  const handleOrganismChange = (organism) => {
     organismRef.current = organism;
   };
-  const hanleGenesChanged = (genes) => {
+  const handleGenesChange = (genes) => {
     genesRef.current = genes;
-    setSubmitDisabled(genes.length === 0);
+    validateForm();
+  };
+  const handleAdvancedOptionsChange = (options) => {
+    advancedOptionsRef.current = options;
+    validateForm();
   };
 
   const LoadingProgress = () => 
@@ -109,8 +130,9 @@ const StartDialog = ({
                               dataConfig={dataConfig}
                               initialOrganism={DEF_ORGANISM}
                               isMobile={isMobile}
-                              onOrganismChanged={hanleOrganismChanged}
-                              onGenesChanged={hanleGenesChanged}
+                              onOrganismChange={handleOrganismChange}
+                              onGenesChange={handleGenesChange}
+                              onAdvancedOptionsChange={handleAdvancedOptionsChange}
                             />,
           'LOADING': () => <LoadingProgress />,
           'ERROR':   () => <ErrorReport />,

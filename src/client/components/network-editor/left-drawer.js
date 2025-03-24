@@ -224,11 +224,11 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
     setGeneListIndexed(true);
     debouncedSelectionHandler();
   };
-  const onCyNetworkChanged = () => {
+  const onCyNetworkChange = () => {
     // Update the gene list when the network changes (nodes added/removed)
     debouncedSelectionHandler();
   };
-  const onCySelectionChanged = () => {
+  const onCySelectionChange = () => {
     debouncedSelectionHandler();
   };
 
@@ -285,8 +285,8 @@ const LeftDrawer = ({ controller, open, isMobile, isTablet, onClose }) => {
       cancelSearch();
     }, 128);
     
-    cyEmitter.on('add remove', onCyNetworkChanged);
-    cyEmitter.on('select unselect', onCySelectionChanged);
+    cyEmitter.on('add remove', onCyNetworkChange);
+    cyEmitter.on('select unselect', onCySelectionChange);
     cyEmitter.on('select', () => clearSearch());
     cyEmitter.on('tap', evt => {
       if (evt.target === cy && selectedGeneRef.current != null) {

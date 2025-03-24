@@ -87,7 +87,9 @@ export class DataConfig {
   }
 
   getPutativeRegulatoryRegions(searchSpaceType, motifCollectionId, trackCollectionId) {
-    if (searchSpaceType === 'regions') {
+    // If neither motif nor track collections are valid, or if the search space type is 'regions',
+    // set the list of gene putative regulatory regions to contain only 'none'
+    if (searchSpaceType === 'regions' || (motifCollectionId === 'none' && trackCollectionId === 'none')) {
       return [{ id: 'none', name: '-- No gene putative regulatory region --' }];
     } else {
       let hasMotifRankingsDBs = false;
