@@ -277,7 +277,7 @@ export function Content({ recentNetworksController }) {
   /**
    * fileFormat is a separate argument because its a ref in the StartDialog
    */
-  const onSubmit = async ({ demo, organism, genes }) => {
+  const onSubmit = async ({ demo, organism, genes, advancedOptions }) => {
     requestID = uuid.v4();
     updateUploadState({ step: STEP.LOADING });
 
@@ -287,7 +287,7 @@ export function Content({ recentNetworksController }) {
     }
 
     // If validation fails it will call the onError event handler below
-    await controller.submitQuery({ organism, genes, requestID });
+    await controller.submitQuery({ organism, genes, advancedOptions, requestID });
   };
  
   const onError = ({ errors, requestID }) => {

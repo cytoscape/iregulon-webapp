@@ -73,6 +73,35 @@ const StartDialog = ({
     }
     setSubmitDisabled(!valid);
   };
+  const handleSubmit = () => {
+    if (isDemo) {
+      onSubmit({ demo: true });
+    } else {
+      // Convert the advanced options to the correct iRegulon API format
+      const options = advancedOptionsRef.current;
+      console.log('options', options);
+      const advancedOptions = {
+        selectedMotifRankingsDatabase: options.motifRankingsDbId && options.motifRankingsDbId !== '' ? options.motifRankingsDbId : 'none',
+        selectedTrackRankingsDatabase: options.trackRankingsDbId && options.trackRankingsDbId !== '' ? options.trackRankingsDbId : 'none',
+        NESThreshold: options.nes,
+        AUCThreshold: options.auc,
+        rankThreshold: options.rank,
+        minOrthologous: options.orthologousId,
+        maxMotifSimilarityFDR: options.fdr,
+      };
+      if (options.searchSpaceTypeId === 'regions') {
+        advancedOptions.conversionFractionOfOverlap = options.overlapFraction;
+        if (options.regSearchSpaceId && options.regSearchSpaceId !== '' && options.regSearchSpaceId !== '_specify') {
+          advancedOptions.conversionDelineation = options.regSearchSpaceId;
+        } else {
+          advancedOptions.conversionUpstreamRegionInBp = options.upstreamRegion;
+          advancedOptions.conversionDownstreamRegionInBp = options.downstreamRegion;
+        }
+      }
+      console.log('advancedOptions', advancedOptions);
+      onSubmit({ organism: organismRef.current, genes: genesRef.current, advancedOptions });
+    }
+  };
 
   const handleOrganismChange = (organism) => {
     organismRef.current = organism;
@@ -160,7 +189,7 @@ const StartDialog = ({
           color="primary" 
           endIcon={<NavigateNextIcon />} 
           disabled={isDemo ? false : submitDisabled}
-          onClick={() => isDemo ? onSubmit({ demo: true }) : onSubmit({ organism: organismRef.current, genes: genesRef.current })}
+          onClick={handleSubmit}
         >
           Submit
         </Button>
