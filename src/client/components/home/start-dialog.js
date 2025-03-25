@@ -60,11 +60,15 @@ const StartDialog = ({
       valid = false;
     } else {
       const advancedOptions = advancedOptionsRef.current;
-      // If neither motif nor track collections are valid, it cannot submit the form
-      const hasMotifCollection = advancedOptions.motifCollectionId !== 'none';
-      const hasTrackCollection = advancedOptions.trackCollectionId !== 'none';
-      if (!hasMotifCollection && !hasTrackCollection) {
+      if (advancedOptions?.errors && Object.keys(advancedOptions.errors).length > 0) {
         valid = false;
+      } else {
+        // If neither motif nor track collections are valid, it cannot submit the form
+        const hasMotifCollection = advancedOptions?.motifCollectionId !== 'none';
+        const hasTrackCollection = advancedOptions?.trackCollectionId !== 'none';
+        if (!hasMotifCollection && !hasTrackCollection) {
+          valid = false;
+        }
       }
     }
     setSubmitDisabled(!valid);

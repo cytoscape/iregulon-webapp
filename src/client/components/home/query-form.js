@@ -124,7 +124,18 @@ FieldHelpIcon.propTypes = {
 
 //==[ FormTextField ]=================================================================================================
 
-function FormTextField({ name, label, initialValue, helperText, disabled=false, isMobile, validationFn, errorMessage, onChange }) {
+function FormTextField({
+  name,
+  label,
+  initialValue,
+  helperText,
+  disabled=false,
+  isMobile,
+  validationFn,
+  errorMessage,
+  onChange,
+  onError,
+}) {
   const [ value, setValue ] = useState(initialValue);
   const [ error, setError ] = useState(false);
   
@@ -133,10 +144,14 @@ function FormTextField({ name, label, initialValue, helperText, disabled=false, 
   }, [initialValue]);
 
   const handleChange = (event) => {
-    setValue(event.target.value);
+    const newValue = event.target.value;
+    setValue(newValue);
+    let hasError = false;
     if (validationFn) {
-      setError(!validationFn(event.target.value));
+      hasError = !validationFn(newValue);
+      setError(hasError);
     }
+    onError?.(name, hasError); // Notify parent about the error
     onChange(event);
   };
 
@@ -202,11 +217,11 @@ FormTextField.propTypes = {
   initialValue: PropTypes.any,
   helperText: PropTypes.any,
   disabled: PropTypes.bool,
-  error: PropTypes.bool,
   isMobile: PropTypes.bool,
   validationFn: PropTypes.func,
   errorMessage: PropTypes.any,
   onChange: PropTypes.func,
+  onError: PropTypes.func,
 };
 
 //==[ FormSelect ]====================================================================================================
@@ -440,8 +455,10 @@ export function QueryForm({
     orthologousId: DEFAULT_MIN_ORTHOLOGOUS_IDENTITY,
     fdr: DEFAULT_MAX_MOTIF_SIMILARITY_FDR,
   });
+  const [ errors, setErrors ] = useState({}); // Track errors for each field
 
   const organismRef = useRef(organisms[organismIndex]);
+  const errorsRef = useRef(errors);
   const geneInputRef = useRef();
 
   /** Type of Search Space */
@@ -582,6 +599,10 @@ export function QueryForm({
     // TODO use returned values
     const regSearchSpaceId = updateRegionBasedParams(advancedOptionsState.motifRankingsDbId, advancedOptionsState.trackRankingsDbId);
     updateRecoveryStates(curRankingDB);
+    // Reset errors
+    setErrors({});
+    errorsRef.current = {};
+    // Send updated object to parent
     onAdvancedOptionsChange?.({
       ...advancedOptionsState,
       searchSpaceTypeId,
@@ -590,7 +611,8 @@ export function QueryForm({
       regRegionId,
       // motifRankingsDbId: '', // TODO use returned value
       // trackRankingsDbId: '', // TODO use returned value
-      regSearchSpaceId
+      regSearchSpaceId,
+      errors: errorsRef.current,
     }); // Send updated object to parent
   };
 
@@ -688,7 +710,31 @@ export function QueryForm({
       ...prevFormData,
       [name]: value,
     }));
-    onAdvancedOptionsChange?.({ ...advancedOptionsState, [name]: value }); // Send updated object to parent
+    // Send updated object to parent
+    onAdvancedOptionsChange?.({
+      ...advancedOptionsState,
+      [name]: value,
+      errors: errorsRef.current
+    });
+  };
+
+  const handleShowAdvancedOptionsChange = (event) => {
+    const show = event.target.checked;
+    setShowAdvancedOptions(show);
+    if (!show) {
+      reset();
+    }
+  };
+
+  const handleError = (fieldName, hasError) => {
+    setErrors((prevErrors) => {
+      const updatedErrors = { ...prevErrors, [fieldName]: hasError };
+      if (!hasError) {
+        delete updatedErrors[fieldName]; // Remove the field if no error
+      }
+      errorsRef.current = updatedErrors;
+      return updatedErrors;
+    });
   };
   
   return (
@@ -753,6 +799,7 @@ export function QueryForm({
             inputProps={{ spellCheck: false }}
             sx={{ minWidth: { sm: 400 } }}
             onChange={handleGenesChange}
+            onError={handleError}
           />
           <FormHelperText>
             <Tooltip title="Try it with some example genes (prostate cancer)">
@@ -784,7 +831,7 @@ export function QueryForm({
           control={
             <Checkbox
               checked={showAdvancedOptions}
-              onChange={(event) => setShowAdvancedOptions(event.target.checked)}
+              onChange={handleShowAdvancedOptionsChange}
               color="primary"
               size="small"
             />
@@ -867,6 +914,7 @@ export function QueryForm({
               validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
               errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
               onChange={handleAdvancedOptionsChange}
+              onError={handleError}
             />
             <FormSelect
               name="regSearchSpaceId"
@@ -888,6 +936,7 @@ export function QueryForm({
                 validationFn={(v) => v >= 1}
                 errorMessage={<>Must be greater than or equal to <code>1</code></>}
                 onChange={handleAdvancedOptionsChange}
+                onError={handleError}
               />
               <FormTextField
                 name="downstreamRegion"
@@ -898,6 +947,7 @@ export function QueryForm({
                 validationFn={(v) => v >= 1}
                 errorMessage={<>Must be greater than or equal to <code>1</code></>}
                 onChange={handleAdvancedOptionsChange}
+                onError={handleError}
               />
             </>
           )}
@@ -913,6 +963,7 @@ export function QueryForm({
               validationFn={(v) => v >= 1.5}
               errorMessage={<>Must be greater than or equal to <code>1.5</code></>}
               onChange={handleAdvancedOptionsChange}
+              onError={handleError}
             />
             <FormTextField
               name="auc"
@@ -923,6 +974,7 @@ export function QueryForm({
               validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
               errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
               onChange={handleAdvancedOptionsChange}
+              onError={handleError}
             />
             <FormTextField
               name="rank"
@@ -933,6 +985,7 @@ export function QueryForm({
               validationFn={(v) => v >= 1}
               errorMessage={<>Must be greater than or equal to <code>1</code></>}
               onChange={handleAdvancedOptionsChange}
+              onError={handleError}
             />
           </TitledFormGroup>
           <TitledFormGroup title="TF Prediction">
@@ -946,6 +999,7 @@ export function QueryForm({
               validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
               errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
               onChange={handleAdvancedOptionsChange}
+              onError={handleError}
             />
             <FormTextField
               name="fdr"
@@ -957,6 +1011,7 @@ export function QueryForm({
               validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
               errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
               onChange={handleAdvancedOptionsChange}
+              onError={handleError}
             />
           </TitledFormGroup>
         </Box>
