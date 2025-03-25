@@ -517,7 +517,7 @@ export function QueryForm({
     return regRegionId;
   };
   /** Motif/Track Rankings Databases */
-  const updateRankingsDBs = (searchSpaceTypeId, motifCollectionId, trackCollectionId, regRegionId) => {
+  const updateMotifRankingsDB = (searchSpaceTypeId, motifCollectionId, regRegionId) => {
     const motifRankingsDBs = dataConfig.getRankingsDatabases(
       organismRef.current,
       searchSpaceTypeId,
@@ -525,6 +525,16 @@ export function QueryForm({
       motifCollectionId,
       regRegionId
     );
+    const defMotifRankingsDB = motifRankingsDBs[0]; // TODO check if this is correct
+    setMotifRankingsDbOptions(convertToKeyValueOptions(motifRankingsDBs));
+    const motifRankingsDbId = defMotifRankingsDB?.id || '';
+    setAdvancedOptionsState((prevFormData) => ({
+      ...prevFormData,
+      motifRankingsDbId,
+    }));
+    return motifRankingsDbId;
+  };
+  const updateTrackRankingsDB = (searchSpaceTypeId, trackCollectionId, regRegionId) => {
     const trackRankingsDBs = dataConfig.getRankingsDatabases(
       organismRef.current,
       searchSpaceTypeId,
@@ -532,18 +542,14 @@ export function QueryForm({
       trackCollectionId,
       regRegionId
     );
-    const defMotifRankingsDB = motifRankingsDBs[0]; // TODO check if this is correct
     const defTrackRankingsDB = trackRankingsDBs[0]; // TODO check if this is correct
-    setMotifRankingsDbOptions(convertToKeyValueOptions(motifRankingsDBs));
     setTrackRankingsDbOptions(convertToKeyValueOptions(trackRankingsDBs));
+    const trackRankingsDbId = defTrackRankingsDB?.id || '';
     setAdvancedOptionsState((prevFormData) => ({
       ...prevFormData,
-      motifRankingsDbId: defMotifRankingsDB?.id || '',
-      trackRankingsDbId: defTrackRankingsDB?.id || '',
+      trackRankingsDbId,
     }));
-
-    return (defMotifRankingsDB?.id !== 'none') ? defMotifRankingsDB : defTrackRankingsDB; // TODO check if this is correct
-    // TODO split method and return motif or track rankings databases
+    return trackRankingsDbId;
   };
   /** Region-based specific parameters */
   const updateRegionBasedParams = (motifRankingsDbId, trackRankingsDbId) => {
@@ -553,14 +559,18 @@ export function QueryForm({
     const trackRankingsDB = allRankingsDBs.find(db => db.id === trackRankingsDbId);
     // Get the corresponding delineations and the default one
     let delineations = [], delineationDefault;
-    if (motifRankingsDB?.collection?.type === 'motif') {
-      delineations = motifRankingsDB.gene2regionDelineations || [];
+    if (motifRankingsDB?.collection && motifRankingsDB.collection.id !== 'none') {
+      delineations = motifRankingsDB.gene2regionDelineations;
       delineationDefault = motifRankingsDB.delineationDefault;
-    } else if (trackRankingsDB?.collection?.type === 'track') {
-      delineations = trackRankingsDB.gene2regionDelineations || [];
+    } else if (trackRankingsDB?.collection && trackRankingsDB.collection.id !== 'none') {
+      delineations = trackRankingsDB.gene2regionDelineations;
       delineationDefault = trackRankingsDB.delineationDefault;
     }
     const regSearchSpaceId = delineationDefault?.id || '';
+    console.log('>>> motifRankingsDB:', motifRankingsDB);
+    console.log('>>> trackRankingsDB:', trackRankingsDB);
+    console.log('>>> delineations:', delineations);
+    console.log('>>> regSearchSpaceId:', regSearchSpaceId);
     setRegSearchSpaceOptions(convertToKeyValueOptions(delineations));
     setAdvancedOptionsState((prevFormData) => ({
       ...prevFormData,
@@ -568,17 +578,32 @@ export function QueryForm({
     }));
     return regSearchSpaceId;
   };
-  /** Recovery parameters */
-  const updateRecoveryStates = (rankingDB) => {
-    if (rankingDB?.collection) {
+  /** Recovery parameters (thresholds) */
+  const updateRecoveryStates = (motifRankingsDbId, trackRankingsDbId) => {
+    console.log('\n# ', motifRankingsDbId, trackRankingsDbId);
+    let states = {};
+    // Find which rankings database to use
+    let rankingsDB;
+    if (motifRankingsDbId && motifRankingsDbId !== 'none') {
+      rankingsDB = dataConfig.getAllRankingsDatabases().find(db => db.id === motifRankingsDbId);
+      console.log('  # MOTIF ', rankingsDB);
+    } else if (trackRankingsDbId && trackRankingsDbId !== 'none') {
+      rankingsDB = dataConfig.getAllRankingsDatabases().find(db => db.id === trackRankingsDbId);
+      console.log('  # TRACK ', rankingsDB);
+    }
+    // Get the thresholds from the rankings database
+    if (rankingsDB?.collection) {
+      states = {
+        ...(rankingsDB.collection.type === 'motif' && { nes: rankingsDB.nesThreshold }),
+        auc: rankingsDB.aucThreshold,
+        rank: rankingsDB.rankThreshold,
+      };
       setAdvancedOptionsState((prevFormData) => ({
         ...prevFormData,
-        ...(rankingDB.collection.type === 'motif' && { nes: rankingDB.nesThreshold }),
-        auc: rankingDB.aucThreshold,
-        rank: rankingDB.rankThreshold,
+        ...states,
       }));
     }
-    // TODO split method and add returns
+    return states;
   };
 
   const reset = () => {
@@ -595,10 +620,13 @@ export function QueryForm({
     const regRegionId = updateRegulatoryRegion(searchSpaceTypeId, motifCollectionId, trackCollectionId);
     console.log('-- regRegionId:', regRegionId);
     // Now update the motif and track `Rankings Databases` based on the selected motif and track `Collections`, respectively
-    const curRankingDB = updateRankingsDBs(searchSpaceTypeId, motifCollectionId, trackCollectionId, regRegionId);
-    // TODO use returned values
-    const regSearchSpaceId = updateRegionBasedParams(advancedOptionsState.motifRankingsDbId, advancedOptionsState.trackRankingsDbId);
-    updateRecoveryStates(curRankingDB);
+    const motifRankingsDbId = updateMotifRankingsDB(searchSpaceTypeId, motifCollectionId, regRegionId);
+    const trackRankingsDbId = updateTrackRankingsDB(searchSpaceTypeId, trackCollectionId, regRegionId);
+    console.log('-- motifRankingsDbId:', motifRankingsDbId);
+    console.log('-- trackRankingsDbId:', trackRankingsDbId);
+    // Finally, update the region-based parameters and the recovery states
+    const regSearchSpaceId = updateRegionBasedParams(motifRankingsDbId, trackRankingsDbId);
+    const recoveryStates = updateRecoveryStates(motifRankingsDbId, trackRankingsDbId);
     // Reset errors
     setErrors({});
     errorsRef.current = {};
@@ -609,11 +637,12 @@ export function QueryForm({
       motifCollectionId,
       trackCollectionId,
       regRegionId,
-      // motifRankingsDbId: '', // TODO use returned value
-      // trackRankingsDbId: '', // TODO use returned value
+      motifRankingsDbId,
+      trackRankingsDbId,
       regSearchSpaceId,
+      ...recoveryStates,
       errors: errorsRef.current,
-    }); // Send updated object to parent
+    });
   };
 
   useEffect(() => {
@@ -645,66 +674,33 @@ export function QueryForm({
       const motifCollectionId = updateMotifCollections(value);
       const trackCollectionId = updateTrackCollections(value);
       const regRegionId = updateRegulatoryRegion(value, motifCollectionId, trackCollectionId);
-      const curRankingDB = updateRankingsDBs(value, motifCollectionId, trackCollectionId, regRegionId);
-      // TODO use returned values
-      updateRegionBasedParams(advancedOptionsState.motifRankingsDbId, advancedOptionsState.trackRankingsDbId);
-      updateRecoveryStates(curRankingDB);
+      const motifRankingsDbId = updateMotifRankingsDB(value, motifCollectionId, regRegionId);
+      const trackRankingsDbId = updateTrackRankingsDB(value, trackCollectionId, regRegionId);
+      updateRegionBasedParams(motifRankingsDbId, trackRankingsDbId);
+      updateRecoveryStates(motifRankingsDbId, trackRankingsDbId);
     } else if (name === 'motifCollectionId') {
-      const regRegionId = updateRegulatoryRegion(
-        advancedOptionsState.searchSpaceTypeId,
-        value,
-        advancedOptionsState.trackCollectionId
-      );
-      const curRankingDB = updateRankingsDBs(
-        advancedOptionsState.searchSpaceTypeId,
-        value,
-        advancedOptionsState.trackCollectionId,
-        regRegionId
-      );
-      // TODO use returned values
-      updateRegionBasedParams(
-        advancedOptionsState.motifRankingsDbId,
-        advancedOptionsState.trackRankingsDbId
-      );
-      updateRecoveryStates(curRankingDB);
+      const regRegionId = updateRegulatoryRegion(advancedOptionsState.searchSpaceTypeId, value, advancedOptionsState.trackCollectionId);
+      const motifRankingsDbId = updateMotifRankingsDB(advancedOptionsState.searchSpaceTypeId, value, regRegionId);
+      updateRegionBasedParams(motifRankingsDbId, advancedOptionsState.trackRankingsDbId);
+      updateRecoveryStates(motifRankingsDbId, null);
     } else if (name === 'trackCollectionId') {
-      const regRegionId = updateRegulatoryRegion(
-        advancedOptionsState.searchSpaceTypeId,
-        advancedOptionsState.motifCollectionId,
-        value
-      );
-      const curRankingDB = updateRankingsDBs(
-        advancedOptionsState.searchSpaceTypeId,
-        advancedOptionsState.motifCollectionId,
-        value,
-        regRegionId
-      );
-      // TODO use returned values
-      updateRegionBasedParams(
-        advancedOptionsState.motifRankingsDbId,
-        advancedOptionsState.trackRankingsDbId
-      );
-      updateRecoveryStates(curRankingDB);
+      const regRegionId = updateRegulatoryRegion(advancedOptionsState.searchSpaceTypeId, advancedOptionsState.motifCollectionId, value);
+      const trackRankingsDbId = updateTrackRankingsDB(advancedOptionsState.searchSpaceTypeId, value, regRegionId);
+      updateRegionBasedParams(advancedOptionsState.motifRankingsDbId, trackRankingsDbId);
+      updateRecoveryStates(null, trackRankingsDbId);
     } else if (name === 'regRegionId') {
-      const curRankingDB = updateRankingsDBs(
-        advancedOptionsState.searchSpaceTypeId,
-        advancedOptionsState.motifCollectionId,
-        advancedOptionsState.trackCollectionId,
-        value
-      );
-      // TODO use returned values
-      updateRegionBasedParams(
-        advancedOptionsState.motifRankingsDbId,
-        advancedOptionsState.trackRankingsDbId
-      );
-      updateRecoveryStates(curRankingDB);
+      const motifRankingsDbId = updateMotifRankingsDB(advancedOptionsState.searchSpaceTypeId, advancedOptionsState.motifCollectionId, value);
+      const trackRankingsDbId = updateTrackRankingsDB(advancedOptionsState.searchSpaceTypeId, advancedOptionsState.trackCollectionId, value);
+      updateRegionBasedParams(motifRankingsDbId, trackRankingsDbId);
+      updateRecoveryStates(motifRankingsDbId, trackRankingsDbId);
     } else if (name === 'motifRankingsDbId' || name === 'trackRankingsDbId') {
       if (name === 'motifRankingsDbId') {
         updateRegionBasedParams(value, advancedOptionsState.trackRankingsDbId);
+        updateRecoveryStates(value, null);
       } else {
         updateRegionBasedParams(advancedOptionsState.motifRankingsDbId, value);
+        updateRecoveryStates(null, value);
       }
-      updateRecoveryStates(dataConfig.getAllRankingsDatabases().find(db => db.id === value));
     }
     setAdvancedOptionsState((prevFormData) => ({
       ...prevFormData,
