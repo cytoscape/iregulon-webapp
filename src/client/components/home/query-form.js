@@ -516,7 +516,6 @@ export function QueryForm({
   const updateMotifCollections = (searchSpaceTypeId) => {
     // Fetch the `Motif Collections` for the current `Search Space Type` then set and return the default one
     const motifCollections = dataConfig.getCollections(organismRef.current, searchSpaceTypeId, 'motif');
-    console.log('>>> motifCollections:', motifCollections);
     const motifCollectionId = getDefaultCollectionValue(motifCollections);
     setMotifCollectionOptions(convertToKeyValueOptions(motifCollections));
     setAdvancedOptionsState((prevFormData) => ({
@@ -599,10 +598,6 @@ export function QueryForm({
       delineationDefault = trackRankingsDB.delineationDefault;
     }
     const regSearchSpaceId = delineationDefault?.id || '';
-    console.log('>>> motifRankingsDB:', motifRankingsDB);
-    console.log('>>> trackRankingsDB:', trackRankingsDB);
-    console.log('>>> delineations:', delineations);
-    console.log('>>> regSearchSpaceId:', regSearchSpaceId);
     setRegSearchSpaceOptions(convertToKeyValueOptions(delineations));
     setAdvancedOptionsState((prevFormData) => ({
       ...prevFormData,
@@ -612,16 +607,13 @@ export function QueryForm({
   };
   /** Recovery parameters (thresholds) */
   const updateRecoveryStates = (motifRankingsDbId, trackRankingsDbId) => {
-    console.log('\n# ', motifRankingsDbId, trackRankingsDbId);
     let states = {};
     // Find which rankings database to use
     let rankingsDB;
     if (motifRankingsDbId && motifRankingsDbId !== 'none') {
       rankingsDB = dataConfig.getAllRankingsDatabases().find(db => db.id === motifRankingsDbId);
-      console.log('  # MOTIF ', rankingsDB);
     } else if (trackRankingsDbId && trackRankingsDbId !== 'none') {
       rankingsDB = dataConfig.getAllRankingsDatabases().find(db => db.id === trackRankingsDbId);
-      console.log('  # TRACK ', rankingsDB);
     }
     // Get the thresholds from the rankings database
     if (rankingsDB?.collection) {
@@ -640,41 +632,30 @@ export function QueryForm({
 
   const reset = () => {
     // First, update the `Search Space Types` ('genes', 'regions') associated with the selected species
-    console.log('>>> Reset...');
     const searchSpaceTypeId = updateSearchSpaceTypes();
-    console.log('-- searchSpaceTypeId:', searchSpaceTypeId);
     // Next, fetch the `Motif/Track Collections` for the current `Search Space Type`
     const motifCollectionId = updateMotifCollections(searchSpaceTypeId);
-    console.log('-- motifCollectionId:', motifCollectionId);
     const trackCollectionId = updateTrackCollections(searchSpaceTypeId);
-    console.log('-- trackCollectionId:', trackCollectionId);
     // Then update the `Putative Regulatory Region` based on the selected motif and track `Collections`
     const regRegionId = updateRegulatoryRegion(searchSpaceTypeId, motifCollectionId, trackCollectionId);
-    console.log('-- regRegionId:', regRegionId);
     // Now update the motif and track `Rankings Databases` based on the selected motif and track `Collections`, respectively
     const motifRankingsDbId = updateMotifRankingsDB(searchSpaceTypeId, motifCollectionId, regRegionId);
     const trackRankingsDbId = updateTrackRankingsDB(searchSpaceTypeId, trackCollectionId, regRegionId);
-    console.log('-- motifRankingsDbId:', motifRankingsDbId);
-    console.log('-- trackRankingsDbId:', trackRankingsDbId);
     // Finally, update the region-based parameters and the recovery states
-    const regSearchSpaceId = updateRegionBasedParams(motifRankingsDbId, trackRankingsDbId);
-    const recoveryStates = updateRecoveryStates(motifRankingsDbId, trackRankingsDbId);
+    updateRegionBasedParams(motifRankingsDbId, trackRankingsDbId);
+    updateRecoveryStates(motifRankingsDbId, trackRankingsDbId);
     // Reset errors
     setErrors({});
     errorsRef.current = {};
-    // Send updated object to parent
-    onAdvancedOptionsChange?.({
-      ...advancedOptionsState,
-      searchSpaceTypeId,
-      motifCollectionId,
-      trackCollectionId,
-      regRegionId,
-      motifRankingsDbId,
-      trackRankingsDbId,
-      regSearchSpaceId,
-      ...recoveryStates,
-      errors: errorsRef.current,
-    });
+    // Reset the other options to their default values
+    setAdvancedOptionsState((prevFormData) => ({
+      ...prevFormData,
+      overlapFraction: DEFAULT_OVERLAP,
+      upstreamRegion: DEFAULT_UPSTREAM,
+      downstreamRegion: DEFAULT_DOWNSTREAM,
+      orthologousId: DEFAULT_MIN_ORTHOLOGOUS_IDENTITY,
+      fdr: DEFAULT_MAX_MOTIF_SIMILARITY_FDR,
+    }));
   };
 
   useEffect(() => {
@@ -682,6 +663,13 @@ export function QueryForm({
     organismRef.current = organisms[organismIndex];
     reset();
   }, [organismIndex]);
+
+  useEffect(() => {
+    onAdvancedOptionsChange?.({
+      ...advancedOptionsState,
+      errors: errorsRef.current
+    });
+  }, [advancedOptionsState]);
 
   const setExampleGenes = () => {
     // Load example genes for the selected organism
@@ -738,12 +726,6 @@ export function QueryForm({
       ...prevFormData,
       [name]: value,
     }));
-    // Send updated object to parent
-    onAdvancedOptionsChange?.({
-      ...advancedOptionsState,
-      [name]: value,
-      errors: errorsRef.current
-    });
   };
 
   const handleShowAdvancedOptionsChange = (event) => {
