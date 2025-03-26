@@ -63,7 +63,7 @@ const exampleGenes = {
 
 const LABEL_MIN_WIDTH = 120;
 const LABEL_MAX_WIDTH = 300;
-const TXT_FIELD_MAX_WIDTH = 150;
+const TXT_FIELD_MAX_WIDTH = 100;
 
 const formControlLabelSx = (theme, isMobile) => ({
   width: '100%',
@@ -131,8 +131,10 @@ function FormTextField({
   helperText,
   disabled=false,
   isMobile,
+  isTablet,
   validationFn,
   errorMessage,
+  infoMessage,
   onChange,
   onError,
 }) {
@@ -160,28 +162,13 @@ function FormTextField({
       label={label + ':'}
       disabled={disabled}
       control={
-        <>
-        {!isMobile && (
-          <>
-            {error && errorMessage && (
-              <Typography
-                variant="caption"
-                color="error"
-                sx={{
-                  width: `calc(100% - ${LABEL_MAX_WIDTH}px - ${TXT_FIELD_MAX_WIDTH}px - 24px - 12px)`,
-                }}
-              >
-                { errorMessage }
-              </Typography>
-            )}
-            <FieldHelpIcon
-              title={helperText}
-              sx={{
-                mr: error && errorMessage ? 0 : `calc(100% - ${LABEL_MAX_WIDTH}px - ${TXT_FIELD_MAX_WIDTH}px - 24px - 4px)`
-              }}
-            />
-          </>
-        )}
+        <Box sx={{
+          width: isMobile ? '100%' : `calc(100% - ${LABEL_MAX_WIDTH}px)`,
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 1,
+        }}>
           <TextField
             name={name}
             value={value}
@@ -202,9 +189,35 @@ function FormTextField({
               backgroundColor: theme.palette.background.paper,
               fontSize: theme.typography.body2.fontSize,
               maxWidth: TXT_FIELD_MAX_WIDTH,
+              flexGrow: 1,
             })}
           />
-        </>
+        {infoMessage && !error && (
+          <Typography
+            variant="caption"
+            sx={{
+              flexGrow: 1,
+              color: (theme) => theme.palette.text.disabled,
+            }}
+          >
+            { infoMessage }
+          </Typography>
+        )}
+        {error && (errorMessage || infoMessage) && (
+          <Typography
+            variant="caption"
+            color="error"
+            sx={{ flexGrow: 1 }}
+          >
+            { (isMobile || isTablet) && infoMessage ? infoMessage : errorMessage }
+          </Typography>
+        )}
+        {!isMobile && (
+          <FieldHelpIcon
+            title={helperText}
+          />
+        )}
+        </Box>
       }
       labelPlacement={isMobile ? 'top' : 'start'}
       sx={(theme) => formControlLabelSx(theme, isMobile)}
@@ -218,8 +231,10 @@ FormTextField.propTypes = {
   helperText: PropTypes.any,
   disabled: PropTypes.bool,
   isMobile: PropTypes.bool,
+  isTablet: PropTypes.bool,
   validationFn: PropTypes.func,
   errorMessage: PropTypes.any,
+  infoMessage: PropTypes.any,
   onChange: PropTypes.func,
   onError: PropTypes.func,
 };
@@ -375,7 +390,7 @@ const rankingDatabaseTooltip = <>
 
 const overlapFractionTooltip = <>
   The fraction of the putative regulatory region associated with a gene that must overlap with the predefined regions.<br />
-  This parameter must be between 0.0 and 1.0.
+  -- The value must be between 0.0 and 1.0 --
 </>;
 
 const regSearchSpaceTooltip = <>
@@ -383,26 +398,31 @@ const regSearchSpaceTooltip = <>
 </>;
 
 const upstreamRegionTooltip = <>
-  The size of the region &#40;in bp&#41; upstream of the TSS to use in the mapping to predefined regions.
+  The size of the region &#40;in bp&#41; upstream of the TSS to use in the mapping to predefined regions.<br />
+  -- The value must be greater than or equal to 1 --
 </>;
 
 const downstreamRegionTooltip = <>
-  The size of the region &#40;in bp&#41; downstream of the TSS to use in the mapping to predefined regions.
+  The size of the region &#40;in bp&#41; downstream of the TSS to use in the mapping to predefined regions.<br />
+  -- The value must be greater than or equal to 1 --
 </>;
 
 const nesTooltip = <>
-  This is the minimal NES score to consider a motif as being relevant.
+  The minimal NES score to consider a motif as being relevant.<br />
+  -- The value must be greater than or equal to 1.5 --
 </>;
 
 const aucTooltip = <>
   The Area Under the Curve &#40;AUC&#41; values are calculated for all motifs at the beginning of the cumulative gene recovery plot &#40;aka ROC curve&#41;
   which plots the input gene recovery along the whole genome ranking.<br />
-  This threshold indicates the percentage of the top ranked genes/regions to consider for the AUC calculation.
+  This threshold indicates the percentage of the top ranked genes/regions to consider for the AUC calculation.<br />
+  -- The value must be between 0.0 and 1.0 --
 </>;
 
 const rankTooltip = <>
-  This is the x-axis cutoff for visualization of the ROC curve.<br />
-  This value corresponds with the top genes shown on the results.
+  The x-axis cutoff for visualization of the ROC curve.<br />
+  This value corresponds with the top genes shown on the results.<br />
+  -- The value must be greater than or equal to 1 --
 </>;
 
 const orthologousIdTooltip = <>
@@ -411,20 +431,32 @@ const orthologousIdTooltip = <>
   whole amino acid sequence alignments &#40;tf2tf associations&#41;.<br />
   The closer the score to zero, the more homologous genes can be associated to an annotated TF. But when the threshold is set to one,
   no orthologous information is used.<br />
-  This score must be between 0.0 and 1.0.
+  -- The value must be between 0.0 and 1.0 --
 </>;
 
 const fdrTooltip = <>
   A threshold on the maximal FDR calculated by the TOMTOM p-value for the similarity of the motifs &#40;motif2motif associations&#41;.<br />
   The closer the score to zero, the more similar motifs will be selected for association to a enriched motif. But when the threshold is set to zero,
   no motif similarity information is used.<br />
-  The score must be between 0.0 and 1.0.
-</>;  
+  -- The value must be between 0.0 and 1.0 --
+</>; 
+
+const zeroToOneValidationProps = {
+  validationFn: (v) => isNumeric(v) && v >= 0 && v <= 1,
+  errorMessage: <>Must be between <code>0.0</code> and <code>1.0</code></>,
+  infoMessage: <code>&#40;0.0-1.0&#41;</code>,
+};
+const greaterThanOrEqualValidationProps = (min) => ({
+  validationFn: (v) => isNumeric(v) && v >= min,
+  errorMessage: <>Must be greater than or equal to <code>{min}</code></>,
+  infoMessage: <code>&#40;&ge; {min}&#41;</code>,
+});
 
 export function QueryForm({
   dataConfig,
   initialOrganism,
   isMobile,
+  isTablet,
   onOrganismChange,
   onGenesChange,
   onAdvancedOptionsChange,
@@ -907,10 +939,10 @@ export function QueryForm({
               helperText={overlapFractionTooltip}
               initialValue={advancedOptionsState.overlapFraction}
               isMobile={isMobile}
-              validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
-              errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
+              isTablet={isTablet}
               onChange={handleAdvancedOptionsChange}
               onError={handleError}
+              {...zeroToOneValidationProps}
             />
             <FormSelect
               name="regSearchSpaceId"
@@ -929,10 +961,10 @@ export function QueryForm({
                 helperText={upstreamRegionTooltip}
                 initialValue={advancedOptionsState.upstreamRegion}
                 isMobile={isMobile}
-                validationFn={(v) => v >= 1}
-                errorMessage={<>Must be greater than or equal to <code>1</code></>}
+                isTablet={isTablet}
                 onChange={handleAdvancedOptionsChange}
                 onError={handleError}
+                {...greaterThanOrEqualValidationProps(1)}
               />
               <FormTextField
                 name="downstreamRegion"
@@ -940,10 +972,10 @@ export function QueryForm({
                 helperText={downstreamRegionTooltip}
                 initialValue={advancedOptionsState.downstreamRegion}
                 isMobile={isMobile}
-                validationFn={(v) => v >= 1}
-                errorMessage={<>Must be greater than or equal to <code>1</code></>}
+                isTablet={isTablet}
                 onChange={handleAdvancedOptionsChange}
                 onError={handleError}
+                {...greaterThanOrEqualValidationProps(1)}
               />
             </>
           )}
@@ -956,10 +988,10 @@ export function QueryForm({
               helperText={nesTooltip}
               initialValue={advancedOptionsState.nes}
               isMobile={isMobile}
-              validationFn={(v) => v >= 1.5}
-              errorMessage={<>Must be greater than or equal to <code>1.5</code></>}
+              isTablet={isTablet}
               onChange={handleAdvancedOptionsChange}
               onError={handleError}
+              {...greaterThanOrEqualValidationProps(1.5)}
             />
             <FormTextField
               name="auc"
@@ -967,10 +999,10 @@ export function QueryForm({
               helperText={aucTooltip}
               initialValue={advancedOptionsState.auc}
               isMobile={isMobile}
-              validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
-              errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
+              isTablet={isTablet}
               onChange={handleAdvancedOptionsChange}
               onError={handleError}
+              {...zeroToOneValidationProps}
             />
             <FormTextField
               name="rank"
@@ -978,10 +1010,10 @@ export function QueryForm({
               helperText={rankTooltip}
               initialValue={advancedOptionsState.rank}
               isMobile={isMobile}
-              validationFn={(v) => v >= 1}
-              errorMessage={<>Must be greater than or equal to <code>1</code></>}
+              isTablet={isTablet}
               onChange={handleAdvancedOptionsChange}
               onError={handleError}
+              {...greaterThanOrEqualValidationProps(1)}
             />
           </TitledFormGroup>
           <TitledFormGroup title="TF Prediction">
@@ -992,10 +1024,10 @@ export function QueryForm({
               initialValue={advancedOptionsState.orthologousId}
               disabled={!advancedOptionsState.motifCollectionId || advancedOptionsState.motifCollectionId === '' || advancedOptionsState.motifCollectionId === 'none'}
               isMobile={isMobile}
-              validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
-              errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
+              isTablet={isTablet}
               onChange={handleAdvancedOptionsChange}
               onError={handleError}
+              {...zeroToOneValidationProps}
             />
             <FormTextField
               name="fdr"
@@ -1004,10 +1036,10 @@ export function QueryForm({
               initialValue={advancedOptionsState.fdr}
               disabled={!advancedOptionsState.motifCollectionId || advancedOptionsState.motifCollectionId === '' || advancedOptionsState.motifCollectionId === 'none'}
               isMobile={isMobile}
-              validationFn={(v) => isNumeric(v) && v >= 0 && v <= 1}
-              errorMessage={<>Must be between <code>0.0</code> and <code>1.0</code></>}
+              isTablet={isTablet}
               onChange={handleAdvancedOptionsChange}
               onError={handleError}
+              {...zeroToOneValidationProps}
             />
           </TitledFormGroup>
         </Box>
@@ -1020,6 +1052,7 @@ QueryForm.propTypes = {
   dataConfig: PropTypes.instanceOf(DataConfig).isRequired,
   initialOrganism: PropTypes.object.isRequired,
   isMobile: PropTypes.bool,
+  isTablet: PropTypes.bool,
   onOrganismChange: PropTypes.func,
   onGenesChange: PropTypes.func,
   onAdvancedOptionsChange: PropTypes.func,

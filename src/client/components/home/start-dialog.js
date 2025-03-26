@@ -40,6 +40,7 @@ const StartDialog = ({
   step,
   dataConfig,
   isMobile,
+  isTablet,
   isDemo,
   errorMessages, 
   onSubmit,
@@ -163,6 +164,7 @@ const StartDialog = ({
                               dataConfig={dataConfig}
                               initialOrganism={DEF_ORGANISM}
                               isMobile={isMobile}
+                              isTablet={isTablet}
                               onOrganismChange={handleOrganismChange}
                               onGenesChange={handleGenesChange}
                               onAdvancedOptionsChange={handleAdvancedOptionsChange}
@@ -202,6 +204,7 @@ StartDialog.propTypes = {
   step: PropTypes.string.isRequired,
   dataConfig: PropTypes.instanceOf(DataConfig).isRequired,
   isMobile: PropTypes.bool,
+  isTablet: PropTypes.bool,
   isDemo: PropTypes.bool,
   errorMessages: PropTypes.array,
   onSubmit: PropTypes.func.isRequired,

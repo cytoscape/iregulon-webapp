@@ -404,6 +404,7 @@ export function Content({ recentNetworksController }) {
         step={jobState.step}
         dataConfig={dataConfig}
         isMobile={mobile}
+        isTablet={tablet}
         isDemo={jobState.demo}
         errorMessages={jobState.errorMessages}
         onUpload={onUpload}

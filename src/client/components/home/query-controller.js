@@ -47,8 +47,8 @@ export class QueryController {
     const params = {
       jobName: 'iRegulon-Web_' + requestID,
       SpeciesNomenclature: organism.speciesNomenclature.nomenclatureCode,
-      ...advancedOptions,
       genes: genes.join(';'),
+      ...advancedOptions,
     };
 
     console.log('Submitting job with params:', params);
