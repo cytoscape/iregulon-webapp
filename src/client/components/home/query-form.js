@@ -269,16 +269,33 @@ function FormSelect({ name, label, options, initialValue, helperText, disabled=f
             value={value}
             onChange={handleChange}
             disabled={disabled || entries.length < 2}
+            displayEmpty
             fullWidth
             size="small"
             sx={theme => ({
               backgroundColor: theme.palette.background.paper,
               fontSize: theme.typography.body2.fontSize,
               fontStyle: value === '_specify' ? 'italic' : 'normal',
-              textOverflow: 'ellipsis',
-              overflow: 'hidden',
               maxWidth: { sm: `calc(100% - ${LABEL_MAX_WIDTH}px - 24px - 4px)`, xs: '100%' },
             })}
+            renderValue={(value) => {
+              return (
+                <Typography
+                  component="span"
+                  variant="inherit"
+                  sx={{
+                    fontSize: 'inherit',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                {value && value != '' ?
+                  (options[value] || value) : `-- No ${label.toLowerCase()} --`
+                }
+                </Typography>
+              );
+            }}
           >
           {entries.map(([k, v]) => (
             <MenuItem
@@ -767,7 +784,6 @@ export function QueryForm({
             onChange={handleOrganismChange}
             renderValue={(value) => {
               const species = speciesNomenclatureDef[value];
-              console.log('renderValue', value, species);
               return (
                 <Box display="flex" gap={1}>
                   {value !== '' ?
