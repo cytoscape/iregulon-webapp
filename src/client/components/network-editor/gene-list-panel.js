@@ -158,11 +158,8 @@ const GeneMetadataPanel = ({ symbol, showSymbol, taxonomy, commonOrganismName, m
   const queryGeneData = useQuery(
     ['gene-metadata', symbol],
     () =>
-      fetch(`https://api.ncbi.nlm.nih.gov/datasets/v1/gene/symbol/${symbol}/taxon/${taxonomy}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      })
-    .then(res => res.json()),
+      fetch(`/api/gene/${symbol}/taxon/${taxonomy}`)
+      .then(res => res.json()),
     {
       retry: 2,
       retryDelay: 3000,
@@ -177,7 +174,7 @@ const GeneMetadataPanel = ({ symbol, showSymbol, taxonomy, commonOrganismName, m
   let description, source, sourceId, sourceHref, ncbiId, synonyms;
   
   if (!isLoading && !error && data) {
-    const entry = data.genes && data.genes.length > 0 ? data.genes[0] : {};
+    const entry = data.reports && data.reports.length > 0 ? data.reports[0] : {};
 
     if (entry.warnings && entry.warnings.length > 0) {
       error = { message: entry.warnings[0].reason };

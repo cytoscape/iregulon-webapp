@@ -2,6 +2,7 @@ import Express from 'express';
 import fs from 'fs';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
+import fetch from 'node-fetch';
 import Datastore from '../../datastore.js';
 
 
@@ -176,6 +177,29 @@ http.get('/:netId/cx2', async function(req, res, next) {
       res.set('Access-Control-Allow-Origin', '*'); // To prevent CORS policy errors
       res.send(JSON.stringify(doc.cx2));
     }
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Proxy request for querying gene metadata from NCBI API.
+ */
+http.get('/gene/:symbol/taxon/:taxon', async function(req, res, next) {
+  try {
+    const { symbol, taxon } = req.params;
+    const response = await fetch(`https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/${symbol}/taxon/${taxon}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      res.sendStatus(response.status);
+      return;
+    }
+
+    const geneData = await response.json();
+    res.send(geneData);
   } catch (err) {
     next(err);
   }
