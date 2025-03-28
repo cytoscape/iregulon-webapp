@@ -42,11 +42,11 @@ export class QueryController {
     this.bus.emit('finished', { resultsID: '7cea4157-341a-4fc6-b6c4-9c7ac5bcc8d4', requestID });
   }
 
-  async submitQuery({ organism, genes, advancedOptions, requestID }) {
+  async submitQuery({ nomenclatureCode, genes, advancedOptions, requestID }) {
     // 1. Submit the job
     const params = {
       jobName: 'iRegulon-Web_' + requestID,
-      SpeciesNomenclature: organism.speciesNomenclature.nomenclatureCode,
+      SpeciesNomenclature: nomenclatureCode,
       genes: genes.join(';'),
       ...advancedOptions,
     };

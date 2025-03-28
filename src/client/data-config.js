@@ -60,20 +60,20 @@ export class DataConfig {
     return this.rankingsDatabases;
   }
 
-  getSearchSpaceTypes(organism) {
+  getSearchSpaceTypes(assembly) {
     const types = new Set();
     for (const db of this.rankingsDatabases) {
-      if (db.species.assembly === organism.speciesNomenclature.assembly) {
+      if (db.species.assembly === assembly) {
         types.add(db.type);
       }
     }
     return [...types].map(type => ({ id: type, name: searchSpaceTypeDef[type] }));
   }
 
-  getCollections(organism, searchSpaceType, collectionType) {
+  getCollections(assembly, searchSpaceType, collectionType) {
     const arr = [];
     for (const db of this.rankingsDatabases) {
-      if (db.species.assembly === organism.speciesNomenclature.assembly
+      if (db.species.assembly === assembly
           && db.type === searchSpaceType
           && db.collection.type === collectionType) {
         if (arr.findIndex(c => c.id === db.collection.id) === -1) {
@@ -126,9 +126,9 @@ export class DataConfig {
     }
   }
 
-  getRankingsDatabases(organism, searchSpaceType, collectionType, collectionId, regRegionId) {
+  getRankingsDatabases(assembly, searchSpaceType, collectionType, collectionId, regRegionId) {
     const dbs = this.rankingsDatabases.filter(db => {
-      return db.species.assembly === organism.speciesNomenclature.assembly
+      return db.species.assembly === assembly
         && db.type === searchSpaceType
         && db.collection.type === collectionType
         && db.collection.id === collectionId

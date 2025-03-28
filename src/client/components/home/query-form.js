@@ -10,7 +10,7 @@ import DataConfig, {
   DEFAULT_UPSTREAM,
   DEFAULT_DOWNSTREAM,
 } from '../../data-config';
-import { organismParams as organisms } from '../../../util';
+import { speciesNomenclatureDef } from '../../../util';
 import { isNumeric } from '../util';
 import {
   Box,
@@ -454,14 +454,14 @@ const greaterThanOrEqualValidationProps = (min) => ({
 
 export function QueryForm({
   dataConfig,
-  initialOrganism,
+  initialAssemblyCode,
   isMobile,
   isTablet,
-  onOrganismChange,
+  onAssemblyCodeChange,
   onGenesChange,
   onAdvancedOptionsChange,
 }) {
-  const [ organismIndex, setOrganismIndex ] = useState(organisms.indexOf(initialOrganism));
+  const [ assemblyCode, setAssemblyCode ] = useState(initialAssemblyCode);
   const [ showAdvancedOptions, setShowAdvancedOptions ] = useState(false);
   const [ searchSpaceTypeOptions, setSearchSpaceTypeOptions ] = useState([]);
   const [ motifCollectionOptions, setMotifCollectionOptions ] = useState({});
@@ -489,14 +489,14 @@ export function QueryForm({
   });
   const [ errors, setErrors ] = useState({}); // Track errors for each field
 
-  const organismRef = useRef(organisms[organismIndex]);
+  const speciesNomenclatureRef = useRef(speciesNomenclatureDef[assemblyCode]);
   const errorsRef = useRef(errors);
   const geneInputRef = useRef();
 
   /** Type of Search Space */
   const updateSearchSpaceTypes = () => {
     // Retrieve all search space types for the selected organism
-    const searchSpaceTypes = dataConfig.getSearchSpaceTypes(organismRef.current);
+    const searchSpaceTypes = dataConfig.getSearchSpaceTypes(speciesNomenclatureRef.current.assembly);
     // Then set the previously selected search space type or the first one if the new list does not contain that type
     const curSearchSpaceTypeId = advancedOptionsState.searchSpaceTypeId;
     let searchSpaceTypeId;
@@ -515,7 +515,7 @@ export function QueryForm({
   /** Motif Collections */
   const updateMotifCollections = (searchSpaceTypeId) => {
     // Fetch the `Motif Collections` for the current `Search Space Type` then set and return the default one
-    const motifCollections = dataConfig.getCollections(organismRef.current, searchSpaceTypeId, 'motif');
+    const motifCollections = dataConfig.getCollections(speciesNomenclatureRef.current.assembly, searchSpaceTypeId, 'motif');
     const motifCollectionId = getDefaultCollectionValue(motifCollections);
     setMotifCollectionOptions(convertToKeyValueOptions(motifCollections));
     setAdvancedOptionsState((prevFormData) => ({
@@ -527,7 +527,7 @@ export function QueryForm({
   /** Track Collections */
   const updateTrackCollections = (searchSpaceTypeId) => {
     // Fetch the `Track Collections` for the current `Search Space Type` then set and return the default one
-    const trackCollections = dataConfig.getCollections(organismRef.current, searchSpaceTypeId, 'track');
+    const trackCollections = dataConfig.getCollections(speciesNomenclatureRef.current.assembly, searchSpaceTypeId, 'track');
     const trackCollectionId = getDefaultCollectionValue(trackCollections);
     setTrackCollectionOptions(convertToKeyValueOptions(trackCollections));
     setAdvancedOptionsState((prevFormData) => ({
@@ -550,7 +550,7 @@ export function QueryForm({
   /** Motif/Track Rankings Databases */
   const updateMotifRankingsDB = (searchSpaceTypeId, motifCollectionId, regRegionId) => {
     const motifRankingsDBs = dataConfig.getRankingsDatabases(
-      organismRef.current,
+      speciesNomenclatureRef.current.assembly,
       searchSpaceTypeId,
       'motif',
       motifCollectionId,
@@ -567,7 +567,7 @@ export function QueryForm({
   };
   const updateTrackRankingsDB = (searchSpaceTypeId, trackCollectionId, regRegionId) => {
     const trackRankingsDBs = dataConfig.getRankingsDatabases(
-      organismRef.current,
+      speciesNomenclatureRef.current.assembly,
       searchSpaceTypeId,
       'track',
       trackCollectionId,
@@ -660,9 +660,9 @@ export function QueryForm({
 
   useEffect(() => {
     // Get the initial organism and its default values
-    organismRef.current = organisms[organismIndex];
+    speciesNomenclatureRef.current = speciesNomenclatureDef[assemblyCode];
     reset();
-  }, [organismIndex]);
+  }, [assemblyCode]);
 
   useEffect(() => {
     onAdvancedOptionsChange?.({
@@ -673,15 +673,15 @@ export function QueryForm({
 
   const setExampleGenes = () => {
     // Load example genes for the selected organism
-    const genes = exampleGenes[organismRef.current.speciesNomenclature.nomenclatureCode];
+    const genes = exampleGenes[speciesNomenclatureRef.current.nomenclatureCode];
     geneInputRef.current.value = genes.join(' ');
     onGenesChange(genes);
   };
 
   const handleOrganismChange = (event) => {
-    const idx = event.target.value;
-    setOrganismIndex(idx);
-    onOrganismChange(organisms[idx]);
+    const newAssembly = event.target.value;
+    setAssemblyCode(newAssembly);
+    onAssemblyCodeChange(newAssembly);
   };
   const handleGenesChange = (event) => {
     const txt = event.target.value;
@@ -746,6 +746,9 @@ export function QueryForm({
       return updatedErrors;
     });
   };
+
+  /** Show assembly only if there are multiple organisms with the same nomenclature */
+  const showAssembly = (nomenclatureCode) => Object.values(speciesNomenclatureDef).filter(el => el.nomenclatureCode === nomenclatureCode).length > 1;
   
   return (
     <Box>
@@ -760,18 +763,17 @@ export function QueryForm({
           <Select
             variant="outlined"
             displayEmpty
-            value={organismIndex}
+            value={assemblyCode}
             onChange={handleOrganismChange}
-            renderValue={(idx) => {
-              const organism = organisms[idx];
-              // Show assembly only if there are multiple organisms with the same nomenclature
-              const showAssembly = organisms.filter(o => o.speciesNomenclature.nomenclatureCode === organism.speciesNomenclature.nomenclatureCode).length > 1;
+            renderValue={(value) => {
+              const species = speciesNomenclatureDef[value];
+              console.log('renderValue', value, species);
               return (
                 <Box display="flex" gap={1}>
-                  {idx !== '' ?
+                  {value !== '' ?
                     <>
-                      { organismIcons[organism.speciesNomenclature.id]({color: 'inherit', fontSize: 'medium'}) }
-                      { organism.speciesNomenclature.name} {showAssembly && `(${organism.speciesNomenclature.assembly})`}
+                      { organismIcons[species.id]({ color: 'inherit', fontSize: 'medium' }) }
+                      { species.name} {showAssembly(species.nomenclatureCode) && `(${species.assembly})`}
                     </>
                     :
                     <Typography variant="body2">-- Select an organism --</Typography>
@@ -780,17 +782,15 @@ export function QueryForm({
               );
             }}
           >
-            {organisms.map(({ speciesNomenclature }, idx) => {
-              // Show assembly only if there are multiple organisms with the same nomenclature
-              const showAssembly = organisms.filter(o => o.speciesNomenclature.nomenclatureCode === speciesNomenclature.nomenclatureCode).length > 1;
+            {Object.values(speciesNomenclatureDef).map(({ id, name, assembly, nomenclatureCode, nomenclature }) => {
               return (
-                <MenuItem key={speciesNomenclature.id} value={idx}>
+                <MenuItem key={assembly} value={assembly}>
                   <ListItemIcon sx={{ pr: 2, color: (theme) => theme.palette.text.primary }}>
-                    { organismIcons[speciesNomenclature.id]({ color: 'inherit', fontSize: 'large' }) }
+                    { organismIcons[id]({ color: 'inherit', fontSize: 'large' }) }
                   </ListItemIcon>
                   <ListItemText
-                    primary={`${speciesNomenclature.name} ${showAssembly ? `(${speciesNomenclature.assembly})` : ''}`}
-                    secondary={speciesNomenclature.nomenclature}
+                    primary={`${name} ${showAssembly(nomenclatureCode) ? `(${assembly})` : ''}`}
+                    secondary={nomenclature}
                   />
                 </MenuItem>
               );
@@ -1032,10 +1032,10 @@ export function QueryForm({
 }
 QueryForm.propTypes = {
   dataConfig: PropTypes.instanceOf(DataConfig).isRequired,
-  initialOrganism: PropTypes.object.isRequired,
+  initialAssemblyCode: PropTypes.string.isRequired,
   isMobile: PropTypes.bool,
   isTablet: PropTypes.bool,
-  onOrganismChange: PropTypes.func,
+  onAssemblyCodeChange: PropTypes.func,
   onGenesChange: PropTypes.func,
   onAdvancedOptionsChange: PropTypes.func,
 };

@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import DataConfig from '../../data-config';
-import { organismParams as organisms } from '../../../util';
+import { speciesNomenclatureDef } from '../../../util';
 import { QueryForm } from './query-form';
 import { DemoPanel } from './demo-panel';
 
@@ -17,7 +17,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import CircularProgressIcon from '@mui/material/CircularProgress';
 
 
-const DEF_ORGANISM = organisms[0];
+const DEF_SPECIES_NOMENCLATURE = Object.values(speciesNomenclatureDef)[0];
 
 const useStyles = makeStyles((theme) => ({
   titleRoot: {
@@ -51,7 +51,7 @@ const StartDialog = ({
   const classes = useStyles();
   const open = step !== 'WAITING';
 
-  const organismRef = useRef(DEF_ORGANISM);
+  const assemblyRef = useRef(DEF_SPECIES_NOMENCLATURE.assembly);
   const genesRef = useRef([]);
   const advancedOptionsRef = useRef({});
 
@@ -100,12 +100,12 @@ const StartDialog = ({
         }
       }
       console.log('advancedOptions', advancedOptions);
-      onSubmit({ organism: organismRef.current, genes: genesRef.current, advancedOptions });
+      onSubmit({ assembly: assemblyRef.current, genes: genesRef.current, advancedOptions });
     }
   };
 
-  const handleOrganismChange = (organism) => {
-    organismRef.current = organism;
+  const handleAssemblyCodeChange = (assembly) => {
+    assemblyRef.current = assembly;
   };
   const handleGenesChange = (genes) => {
     genesRef.current = genes;
@@ -162,10 +162,10 @@ const StartDialog = ({
                             <DemoPanel isMobile={isMobile} /> : 
                             <QueryForm
                               dataConfig={dataConfig}
-                              initialOrganism={DEF_ORGANISM}
+                              initialAssemblyCode={DEF_SPECIES_NOMENCLATURE.assembly}
                               isMobile={isMobile}
                               isTablet={isTablet}
-                              onOrganismChange={handleOrganismChange}
+                              onAssemblyCodeChange={handleAssemblyCodeChange}
                               onGenesChange={handleGenesChange}
                               onAdvancedOptionsChange={handleAdvancedOptionsChange}
                             />,

@@ -11,6 +11,7 @@ import { useTheme } from '@mui/material/styles';
 import makeStyles from '@mui/styles/makeStyles';
 
 import { DataConfig } from '../../data-config';
+import { speciesNomenclatureDef } from '../../../util';
 import { RecentNetworksController } from '../recent-networks-controller';
 import { QueryController } from './query-controller';
 import RecentNetworksList from './recent-networks-list';
@@ -277,7 +278,7 @@ export function Content({ recentNetworksController }) {
   /**
    * fileFormat is a separate argument because its a ref in the StartDialog
    */
-  const onSubmit = async ({ demo, organism, genes, advancedOptions }) => {
+  const onSubmit = async ({ demo, assembly, genes, advancedOptions }) => {
     requestID = uuid.v4();
     updateUploadState({ step: STEP.LOADING });
 
@@ -286,8 +287,8 @@ export function Content({ recentNetworksController }) {
       return;
     }
 
-    // If validation fails it will call the onError event handler below
-    await controller.submitQuery({ organism, genes, advancedOptions, requestID });
+    const speciesNomenclature = speciesNomenclatureDef[assembly];
+    await controller.submitQuery({ nomenclatureCode: speciesNomenclature.nomenclatureCode, genes, advancedOptions, requestID });
   };
  
   const onError = ({ errors, requestID }) => {
