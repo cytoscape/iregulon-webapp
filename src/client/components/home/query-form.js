@@ -23,6 +23,7 @@ import {
   ListItemIcon,
   ListItemText,
   Select,
+  NativeSelect,
   TextField,
   Tooltip,
   Typography,
@@ -67,7 +68,7 @@ const TXT_FIELD_MAX_WIDTH = 100;
 
 const formControlLabelSx = (theme, isMobile) => ({
   width: '100%',
-  ml: 0,
+  mx: 0,
   my: isMobile ? 0.5 : 0.25,
   gap: isMobile ? 0 : 1,
   alignItems: isMobile? 'flex-start' : 'center',
@@ -262,54 +263,94 @@ function FormSelect({ name, label, options, initialValue, helperText, disabled=f
       control={
         <>
         {!isMobile && (
-          <FieldHelpIcon title={helperText} />
+          <>
+            <FieldHelpIcon title={helperText} />
+            <Select
+              name={name}
+              value={value}
+              onChange={handleChange}
+              disabled={disabled || entries.length < 2}
+              displayEmpty
+              fullWidth
+              size="small"
+              sx={theme => ({
+                backgroundColor: theme.palette.background.paper,
+                fontSize: theme.typography.body2.fontSize,
+                fontStyle: value === '_specify' ? 'italic' : 'normal',
+                maxWidth: { sm: `calc(100% - ${LABEL_MAX_WIDTH}px - 24px - 4px)`, xs: 'calc(100% - 8px)' },
+              })}
+              renderValue={(value) => {
+                return (
+                  <Typography
+                    component="span"
+                    variant="inherit"
+                    sx={{
+                      fontSize: 'inherit',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                  {value && value !== '' ?
+                    (options[value] || value) : `-- No ${label.toLowerCase()} --`
+                  }
+                  </Typography>
+                );
+              }}
+            >
+            {entries.map(([k, v]) => (
+              <MenuItem
+                key={k}
+                value={k}
+                sx={theme => ({
+                  fontSize: theme.typography.body2.fontSize,
+                  fontStyle: k === '_specify' ? 'italic' : 'normal',
+                })}
+              >
+                { v }
+              </MenuItem>
+            ))}
+            </Select>
+          </>
         )}
-          <Select
+        {isMobile && (
+          <NativeSelect
             name={name}
             value={value}
             onChange={handleChange}
             disabled={disabled || entries.length < 2}
-            displayEmpty
+            variant="outlined"
             fullWidth
-            size="small"
+            disableUnderline
             sx={theme => ({
               backgroundColor: theme.palette.background.paper,
-              fontSize: theme.typography.body2.fontSize,
-              fontStyle: value === '_specify' ? 'italic' : 'normal',
-              maxWidth: { sm: `calc(100% - ${LABEL_MAX_WIDTH}px - 24px - 4px)`, xs: '100%' },
+              p: 0,
+              width: 'calc(100% - 2px)',
+              '& .MuiInputBase-input': {
+                backgroundColor: theme.palette.background.paper,
+                border: '1px solid',
+                borderColor: theme.palette.divider,
+                borderRadius: 1,
+                fontSize: theme.typography.body2.fontSize,
+                fontStyle: value === '_specify' ? 'italic' : 'normal',
+                px: 1.5,
+                py: 1,
+                transition: theme.transitions.create(['border-color', 'box-shadow']),
+                '&:hover': {
+                  borderColor: 'unset',
+                },
+                '&:focus': {
+                  borderColor: theme.palette.primary.main,
+                  boxShadow: `0 0 0 1px ${theme.palette.primary.main}`,
+                },
+              },
             })}
-            renderValue={(value) => {
-              return (
-                <Typography
-                  component="span"
-                  variant="inherit"
-                  sx={{
-                    fontSize: 'inherit',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                {value && value != '' ?
-                  (options[value] || value) : `-- No ${label.toLowerCase()} --`
-                }
-                </Typography>
-              );
-            }}
           >
           {entries.map(([k, v]) => (
-            <MenuItem
-              key={k}
-              value={k}
-              sx={theme => ({
-                fontSize: theme.typography.body2.fontSize,
-                fontStyle: k === '_specify' ? 'italic' : 'normal',
-              })}
-            >
-              { v }
-            </MenuItem>
+            <option key={k} value={k}>{ v }</option>
           ))}
-          </Select>
+          </NativeSelect>
+        )}
         </>
       }
       labelPlacement={isMobile ? 'top' : 'start'}
@@ -330,23 +371,38 @@ FormSelect.propTypes = {
 
 //==[ TitledFormGroup ]===============================================================================================
 
-function TitledFormGroup({ title, children }) {
+function TitledFormGroup({ title, isMobile, children }) {
   return (
     <Box
       component="fieldset"
       sx={{
         width: '100%',
-        border: theme => `1px solid ${theme.palette.divider}`,
-        borderRadius: 2,
+        // add these styles only if isMobile: { padding: 0, border: 'none' }
+        ...(isMobile ? { 
+            px: 0,
+            pt: 2,
+            border: 'none',
+            borderTop: theme => `1px solid ${theme.palette.divider}`,
+          } : {
+            border: theme => `1px solid ${theme.palette.divider}`,
+            borderRadius: 2,
+          }),
       }}
     >
-      <Typography component="legend" fontSize="small">{ title }</Typography>
+      <Typography
+        component="legend"
+        fontSize="small"
+        sx={{ textAlign: isMobile ? 'center': 'left' }}
+      >
+        { title }
+      </Typography>
       { children }
     </Box>
   );
 }
 TitledFormGroup.propTypes = {
   title: PropTypes.string.isRequired,
+  isMobile: PropTypes.bool,
   children: PropTypes.node.isRequired,
 };
 
@@ -873,7 +929,7 @@ export function QueryForm({
           gap={2}
           sx={{ mt: 1, pb: 1, width: '100%' }}
         >
-          <TitledFormGroup title="Ranking">
+          <TitledFormGroup title="Ranking" isMobile={isMobile}>
             <FormSelect
               name="searchSpaceTypeId"
               label="Search Space Type"
@@ -930,7 +986,7 @@ export function QueryForm({
             />
           </TitledFormGroup>
         {advancedOptionsState.searchSpaceTypeId === 'regions' && (
-          <TitledFormGroup title="Region-Based">
+          <TitledFormGroup title="Region-Based" isMobile={isMobile}>
             <FormTextField
               name="overlapFraction"
               label="Overlap Fraction"
@@ -979,7 +1035,7 @@ export function QueryForm({
           )}
           </TitledFormGroup>
         )}
-          <TitledFormGroup title="Recovery Prediction">
+          <TitledFormGroup title="Recovery Prediction" isMobile={isMobile}>
             <FormTextField
               name="nes"
               label="Enrichment Score Threshold"
@@ -1014,7 +1070,7 @@ export function QueryForm({
               {...greaterThanOrEqualValidationProps(1)}
             />
           </TitledFormGroup>
-          <TitledFormGroup title="TF Prediction">
+          <TitledFormGroup title="TF Prediction" isMobile={isMobile}>
             <FormTextField
               name="orthologousId"
               label="Min. Identity Between Orthologous Genes"
