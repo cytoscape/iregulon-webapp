@@ -15,7 +15,7 @@ import {
 
 
 const NETWORK_CREATE_ERROR_CODE = 450;
-const IREGULON_USER_AGENT = (req) => `iRegulon Web - ${req.headers['user-agent']}`;
+const IREGULON_USER_AGENT = (req) => `iRegulon/Web - ${req.headers['user-agent']}`;
 
 const http = Express.Router();
 
