@@ -62,7 +62,6 @@ const exampleGenes = {
   ],
 };
 
-const LABEL_MIN_WIDTH = 120;
 const LABEL_MAX_WIDTH = 300;
 const TXT_FIELD_MAX_WIDTH = 100;
 
@@ -74,7 +73,6 @@ const formControlLabelSx = (theme, isMobile) => ({
   alignItems: isMobile? 'flex-start' : 'center',
   '& .MuiFormControlLabel-label': {
     fontSize: theme.typography.body2.fontSize,
-    minWidth: { sm: LABEL_MIN_WIDTH },
     maxWidth: { md: LABEL_MAX_WIDTH },
     textAlign: isMobile ? 'left' : 'right',
   },
@@ -554,10 +552,10 @@ export function QueryForm({
     regSearchSpaceId: '',
     upstreamRegion: DEFAULT_UPSTREAM,
     downstreamRegion: DEFAULT_DOWNSTREAM,
-    nes: DEFAULT_NES_THRESHOLD,
+    nes: DEFAULT_NES_THRESHOLD.toFixed(1),
     auc: DEFAULT_AUC_THRESHOLD,
     rank: DEFAULT_RANK_THRESHOLD,
-    orthologousId: DEFAULT_MIN_ORTHOLOGOUS_IDENTITY,
+    orthologousId: DEFAULT_MIN_ORTHOLOGOUS_IDENTITY.toFixed(1),
     fdr: DEFAULT_MAX_MOTIF_SIMILARITY_FDR,
   });
   const [ errors, setErrors ] = useState({}); // Track errors for each field
@@ -691,7 +689,7 @@ export function QueryForm({
     // Get the thresholds from the rankings database
     if (rankingsDB?.collection) {
       states = {
-        ...(rankingsDB.collection.type === 'motif' && { nes: rankingsDB.nesThreshold }),
+        ...(rankingsDB.collection.type === 'motif' && { nes: rankingsDB.nesThreshold?.toFixed(1) || DEFAULT_NES_THRESHOLD.toFixed(1) }),
         auc: rankingsDB.aucThreshold,
         rank: rankingsDB.rankThreshold,
       };
@@ -726,7 +724,7 @@ export function QueryForm({
       overlapFraction: DEFAULT_OVERLAP,
       upstreamRegion: DEFAULT_UPSTREAM,
       downstreamRegion: DEFAULT_DOWNSTREAM,
-      orthologousId: DEFAULT_MIN_ORTHOLOGOUS_IDENTITY,
+      orthologousId: DEFAULT_MIN_ORTHOLOGOUS_IDENTITY.toFixed(1),
       fdr: DEFAULT_MAX_MOTIF_SIMILARITY_FDR,
     }));
   };

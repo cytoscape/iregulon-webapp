@@ -145,7 +145,16 @@ const StartDialog = ({
   };
 
   return (
-    <Dialog maxWidth={isDemo ? 'xs' : 'md'} fullScreen={isMobile} open={open}>
+    <Dialog
+      maxWidth={isDemo ? 'xs' : 'md'}
+      fullScreen={isMobile}
+      open={open}
+      sx={{
+        '& .MuiDialog-paper': {
+          m: { md: 4, sm: 1 },
+        },
+      }}
+    >
       <DialogTitle classes={{ root: classes.titleRoot }}>
       {
         {
