@@ -15,7 +15,7 @@ import {
 
 
 const NETWORK_CREATE_ERROR_CODE = 450;
-const IREGULON_USER_AGENT = 'iRegulon/1.4 (build: 2024-08-06; Cytoscape: 3.11.0-SNAPSHOT; Mac OS X; 14.5; aarch64)';
+const IREGULON_USER_AGENT = (req) => `iRegulon Web - ${req.headers['user-agent']})`;
 
 const http = Express.Router();
 
@@ -27,10 +27,10 @@ http.post('/submitJob', async function(req, res) {
   const params = new URLSearchParams();
   Object.entries(req.body).forEach(([key, value]) => params.append(key, value));
   console.log('Submitting new job...', IREGULON_JOB_SERVICE_URL, params);
-
+  
   const response = await fetch(IREGULON_JOB_SERVICE_URL, {
     method: 'POST',
-    headers: { 'User-Agent': IREGULON_USER_AGENT },
+    headers: { 'User-Agent': IREGULON_USER_AGENT(req) },
     body: params
   });
   console.log('Finished submitting job: ' + response.status);
@@ -62,7 +62,7 @@ http.get('/checkStatus/:jobID', async function(req, res) {
   const response = await fetch(IREGULON_STATE_SERVICE_URL, {
     method: 'POST',
     headers: {
-      'User-Agent': IREGULON_USER_AGENT,
+      'User-Agent': IREGULON_USER_AGENT(req),
     },
     body: params
   });
@@ -105,7 +105,7 @@ http.get('/getErrorMessage/:jobID', async function(req, res) {
   const response = await fetch(IREGULON_ERROR_SERVICE_URL, {
     method: 'POST',
     headers: {
-      'User-Agent': IREGULON_USER_AGENT,
+      'User-Agent': IREGULON_USER_AGENT(req),
     },
     body: params
   });
@@ -151,7 +151,7 @@ http.post('/', async function(req, res) {
   const params = { jobID, ...req.body.params };
   console.log('Getting results for job ' + jobID + '...', params);
 
-  const { text, results } = await fetchJobResults(jobID, params);
+  const { text, results } = await fetchJobResults(jobID, params, req);
 
   const geneSymbols = params.genes.split(';').map(name => name.trim()).filter(name => name.length > 0);
   const genes = geneSymbols.map(name => ({ name }));
@@ -169,13 +169,13 @@ http.post('/', async function(req, res) {
 });
 
 
-async function fetchJobResults(jobID, queryParams) {
+async function fetchJobResults(jobID, queryParams, req) {
   console.log('Fetching results for job ' + jobID + '...', IREGULON_RESULTS_SERVICE_URL);
 
   const res = await fetch(IREGULON_RESULTS_SERVICE_URL, {
     method: 'POST',
     headers: {
-      'User-Agent': IREGULON_USER_AGENT,
+      'User-Agent': IREGULON_USER_AGENT(req),
     },
     body: new URLSearchParams({ jobID })
   });

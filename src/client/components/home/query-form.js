@@ -627,7 +627,7 @@ export function QueryForm({
       motifCollectionId,
       regRegionId
     );
-    const defMotifRankingsDB = motifRankingsDBs[0]; // TODO check if this is correct
+    const defMotifRankingsDB = motifRankingsDBs[0];
     setMotifRankingsDbOptions(convertToKeyValueOptions(motifRankingsDBs));
     const motifRankingsDbId = defMotifRankingsDB?.id || '';
     setAdvancedOptionsState((prevFormData) => ({
@@ -644,7 +644,7 @@ export function QueryForm({
       trackCollectionId,
       regRegionId
     );
-    const defTrackRankingsDB = trackRankingsDBs[0]; // TODO check if this is correct
+    const defTrackRankingsDB = trackRankingsDBs[0];
     setTrackRankingsDbOptions(convertToKeyValueOptions(trackRankingsDBs));
     const trackRankingsDbId = defTrackRankingsDB?.id || '';
     setAdvancedOptionsState((prevFormData) => ({
