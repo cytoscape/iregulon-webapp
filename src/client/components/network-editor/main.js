@@ -326,17 +326,12 @@ const Main = ({
       isSelected: () => !cy.userPanningEnabled(),
       alwaysShow: true, // always show on desktop/tablet, but still hides on mobile
       unrelated: true,
-    }, {
-      title: getUndoMenuTitle(undoType),
-      icon: <UndoIcon />,
-      onClick: () => controller.undoHandler.undo(),
-      isEnabled: () => undoEnabled,
+    // }, {
+    //   title: getUndoMenuTitle(undoType),
+    //   icon: <UndoIcon />,
+    //   onClick: () => controller.undoHandler.undo(),
+    //   isEnabled: () => undoEnabled,
     },
-    // {
-    //   title: "Delete Selected Nodes",
-    //   icon: <DeleteIcon />,
-    //   onClick: () => controller.deleteSelectedNodes(),
-    // },
     {
       title: "Apply Network Layout",
       icon: <RestoreIcon />,

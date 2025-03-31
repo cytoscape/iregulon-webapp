@@ -27,6 +27,7 @@ http.post('/submitJob', async function(req, res) {
   const params = new URLSearchParams();
   Object.entries(req.body).forEach(([key, value]) => params.append(key, value));
   console.log('Submitting new job...', IREGULON_JOB_SERVICE_URL, params);
+
   const response = await fetch(IREGULON_JOB_SERVICE_URL, {
     method: 'POST',
     headers: { 'User-Agent': IREGULON_USER_AGENT(req) },
