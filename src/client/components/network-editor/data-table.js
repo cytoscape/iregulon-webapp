@@ -275,11 +275,15 @@ const COLUMNS = [
     label: 'Targets',
     tooltip: (type) => type === 'CLUSTER' ? "Number of unique target genes detected by the TF's motifs/tracks (UNION)" : 'Number of unique target genes',
     show: () => true,
-    render: (row, col) => (
-      <Tooltip title={row[col.id].map((tf) => tf.geneID.name).sort((a, b) => a.localeCompare(b)).join(', ')}>
-        <span>{ row[col.id].length }</span>
-      </Tooltip>
-    )
+    render: (row, col) => {
+      // Filter out duplicates
+      const targets = row[col.id].filter((tf, idx, arr) => arr.findIndex(t => t.geneID.name === tf.geneID.name) === idx);
+      return (
+        <Tooltip title={targets.map((tf) => tf.geneID.name).sort((a, b) => a.localeCompare(b)).join(', ')}>
+          <span>{ targets.length }</span>
+        </Tooltip>
+      );
+    }
   },
   {
     id: 'transcriptionFactors',
