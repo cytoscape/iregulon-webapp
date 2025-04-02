@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import EventEmitter from 'eventemitter3';
 import clsx from 'clsx';
-import _ from 'lodash';
 import classNames from 'classnames';
 import uuid from 'uuid';
 
@@ -20,7 +19,6 @@ import Footer from './footer';
 import MobileMenu from './mobile-menu';
 import Faq from './faq';
 import About from './about';
-import { DebugMenu } from './debug-menu';
 import StartDialog from './start-dialog';
 import LinkOut from './link-out';
 
@@ -58,29 +56,6 @@ let cancelledRequests = [];
 
 function showResults(id) {
   location.href = `/document/${id}`;
-}
-
-async function loadSampleFiles() {
-  const res = await fetch('/api/sample-data');
-  const files = await res.json();
-  const [ sampleRankFiles, sampleExprFiles ] = _.partition(files, f => f.endsWith('.rnk'));
-  return {
-    sampleRankFiles,
-    sampleExprFiles
-  };
-}
-
-async function showFileDialog() {
-  var input = document.createElement('input');
-  input.type = 'file';
-
-  return await new Promise(resolve => {
-    input.addEventListener('change', () => {
-      const files = input.files;
-      resolve(files);
-    });
-    input.click();
-  });
 }
 
 //==[ Content ]=======================================================================================================
@@ -208,17 +183,13 @@ export function Content({ recentNetworksController }) {
     demo: null,
     errorMessages: null,
   });
-  const updateUploadState = (update) => setJobState(prev => ({ ...prev, ...update }));
+  const updateJobState = (update) => setJobState(prev => ({ ...prev, ...update }));
 
   /** Effects */
 
   useEffect(() => {
     const initialize = async () => await dataConfig.load();
     initialize();
-  }, []);
-
-  useEffect(() => {
-    loadSampleFiles().then(setSampleFiles);
   }, []);
 
   useEffect(() => {
@@ -266,13 +237,8 @@ export function Content({ recentNetworksController }) {
     }
   };
 
-  const onUpload = async () => { // start of upload
-    const files = await showFileDialog();
-    await controller.upload(files);
-  };
-
   const onLoading = () => {
-    updateUploadState({ step: STEP.LOADING });
+    updateJobState({ step: STEP.LOADING });
   };
 
   /**
@@ -280,7 +246,7 @@ export function Content({ recentNetworksController }) {
    */
   const onSubmit = async ({ demo, assembly, genes, advancedOptions }) => {
     requestID = uuid.v4();
-    updateUploadState({ step: STEP.LOADING });
+    updateJobState({ step: STEP.LOADING });
 
     if (demo) {
       await controller.createDemoNetwork(requestID);
@@ -413,15 +379,10 @@ export function Content({ recentNetworksController }) {
         isTablet={tablet}
         isDemo={jobState.demo}
         errorMessages={jobState.errorMessages}
-        onUpload={onUpload}
         onSubmit={onSubmit}
         onCancelled={onCancel}
       />
     )}
-      <Debug 
-        sampleFiles={sampleFiles} 
-        onLoadSampleNetwork={loadSampleNetwork} 
-      />
     </div>
   );
 }
@@ -568,30 +529,6 @@ GetStartedSection.propTypes = {
   tablet: PropTypes.bool,
   onClickGetStarted: PropTypes.func,
   onClickCreateDemo: PropTypes.any
-};
-
-//==[ Debug ]=========================================================================================================
-
-function Debug({ sampleFiles, onLoadSampleNetwork }) {
-  const { sampleRankFiles, sampleExprFiles } = sampleFiles;
-  return (
-    <DebugMenu>
-      <h3>Examples</h3>
-      {/* <ul>
-      {
-        sampleRankFiles.length > 0 ?
-        sampleRankFiles.map(file => (
-          <li key={file}><Link onClick={() => onLoadSampleNetwork(file, PRE_RANKED)}>{file}</Link></li>
-        )) :
-        <li>Loading...</li>
-      }
-      </ul> */}
-    </DebugMenu>
-  );
-}
-Debug.propTypes = {
-  sampleFiles: PropTypes.object,
-  onLoadSampleNetwork: PropTypes.func,
 };
 
 export default Content;
