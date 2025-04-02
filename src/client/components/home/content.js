@@ -287,8 +287,13 @@ export function Content({ recentNetworksController }) {
       return;
     }
 
-    const speciesNomenclature = speciesNomenclatureDef[assembly];
-    await controller.submitQuery({ nomenclatureCode: speciesNomenclature.nomenclatureCode, genes, advancedOptions, requestID });
+    try {
+      const speciesNomenclature = speciesNomenclatureDef[assembly];
+      await controller.submitQuery({ nomenclatureCode: speciesNomenclature.nomenclatureCode, genes, advancedOptions, requestID });
+    } catch (error) {
+      console.error('Error submitting query:', error);
+      updateJobState({ step: STEP.ERROR, errorMessages: ['Unknown error, please try again later.'] });
+    }
   };
  
   const onError = ({ errors, requestID }) => {
