@@ -8,7 +8,7 @@ import { DemoPanel } from './demo-panel';
 
 import makeStyles from '@mui/styles/makeStyles';
 
-import { Button, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -117,15 +117,15 @@ const StartDialog = ({
   };
 
   const LoadingProgress = () => 
-    <div className={classes.progress}>
+    <Box className={classes.progress} sx={{ py: 2, px: isMobile ? 1 : 3 }}>
       <CircularProgressIcon color="primary" />
       <Typography component="p" variant="body1">Preparing your figure...</Typography>
       <Typography component="p" variant="body1">This will take a couple of minutes.</Typography>
-    </div>;
+    </Box>;
 
   const ErrorReport = () => {
     return (
-      <div className={classes.progress}>
+      <Box className={classes.progress} sx={{ py: 2, px: isMobile ? 1 : 3 }}>
         <WarningIcon fontSize="large" color="error" />
         {
           (!errorMessages || errorMessages.length == 0)
@@ -140,7 +140,7 @@ const StartDialog = ({
               </Typography>
             )
         }
-      </div>
+      </Box>
     );
   };
 
