@@ -216,15 +216,6 @@ export function Content({ recentNetworksController }) {
   const onOpenMobileMenu = () => setOpenMobileMenu(true);
   const onCloseMobileMenu = () => setOpenMobileMenu(false);
 
-  const loadSampleNetwork = async (fileName, format) => {
-    if (jobState.step == STEP.LOADING)
-      return;
-    const file = await controller.fetchSampleData(fileName);
-    if (file) {
-      await controller.upload([file], format);
-    }
-  };
-
   const onClickGetStarted = () => {
     if (jobState.step != STEP.LOADING) {
       setJobState({ step: STEP.INPUT });
