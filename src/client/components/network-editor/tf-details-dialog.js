@@ -15,8 +15,6 @@ import {
 } from '@mui/material';
 
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import SettingsEthernetIcon from '@mui/icons-material/SettingsEthernet';
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import CloseIcon from '@mui/icons-material/Close';
 
 

@@ -188,8 +188,6 @@ http.get('/:netId/cx2', async function(req, res, next) {
  */
 http.get('/gene/:symbol/taxon/:taxon', async function(req, res, next) {
   try {
-    console.log('NCBI_API_KEY:', NCBI_API_KEY?.slice(0, 4) + '...'); // TODO: remove this line in production
-
     const { symbol, taxon } = req.params;
     const response = await fetch(`https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/${symbol}/taxon/${taxon}/dataset_report`, {
       method: 'GET',

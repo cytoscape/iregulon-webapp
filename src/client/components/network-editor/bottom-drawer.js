@@ -165,7 +165,7 @@ export function BottomDrawer({ controller, open, leftDrawerOpen, isMobile, isTab
   const [ currentRow, setCurrentRow ] = useState();
   const [ selectedMotifOrTrack, setSelectedMotifOrTrack ] = useState();
   const [ currentTF, setCurrentTF ] = useState(null);
-  const [ _, forceUpdate ] = useState(0); // Dummy state to force update
+  const [ , forceUpdate ] = useState(0); // Dummy state to force update
 
   const setSelectedTF = useUIStateStore((state) => state.setSelectedTF);
 

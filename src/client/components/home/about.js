@@ -1,10 +1,9 @@
 import React from 'react';
 import makeStyles from '@mui/styles/makeStyles';
 
-import { linkoutProps } from '../defaults';
 import Citation from './citation';
 
-import { Container, Link, Typography } from '@mui/material';
+import { Container, Typography } from '@mui/material';
 
 import { AppLogoIcon } from '../svg-icons';
 

@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import makeStyles from '@mui/styles/makeStyles';
 import { Box, Typography, Link } from '@mui/material';
 
+
 const useDemoPanelStyles = makeStyles((theme) => ({
   thumbnail: {
     backgroundColor: theme.palette.background.network,

@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import _ from 'lodash';
-import clsx from 'clsx';
 
 import { networkURL } from '../util';
 import { RecentNetworksController } from '../recent-networks-controller';

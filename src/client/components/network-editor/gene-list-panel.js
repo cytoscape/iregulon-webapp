@@ -217,7 +217,7 @@ const GeneMetadataPanel = ({ symbol, showSymbol, taxonomy, commonOrganismName, m
               {isLoading ? 'Loading...' : description }
             </Typography>
           {!isLoading && summary && (
-            <Typography variant="body2" color="textSecondary" sx={{ mt: 1, lineHeight: 1.25, fontSize: (theme) => theme.typography.caption.fontSize }}>
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 1, fontSize: (theme) => theme.typography.caption.fontSize }}>
               { summary }
             </Typography>
           )}

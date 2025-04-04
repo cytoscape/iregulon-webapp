@@ -1,6 +1,4 @@
 import EventEmitter from 'eventemitter3';
-import { SENTRY } from '../../env';
-import * as Sentry from "@sentry/browser";
 
 
 export class QueryController {
@@ -15,29 +13,6 @@ export class QueryController {
     this.jobs = new Map();
   }
   
-  captureNondescriptiveErrorInSentry(errorMessage) {
-    // TODO
-    // if (SENTRY) {
-    //   Sentry.captureException(new NondescriptiveHandledError(errorMessage));
-    //   console.error('Reporting browser error to Sentry: ' + errorMessage);
-    // }
-  }
-
-  async fetchSampleData(fileName) {
-    const dataurl = `/sample-data/${fileName}`;
-    const sdRes = await fetch(dataurl);
-    
-    if (!sdRes.ok) {
-      this.bus.emit('error', { errors: ["Error loading sample network"] });
-      this.captureNondescriptiveErrorInSentry('Error loading sample network');
-      return;
-    }
-    
-    const data = await sdRes.text();
-    const file = new File([data], fileName, { type: 'text/plain' });
-    return file;
-  }
-
   async createDemoNetwork(requestID) {
     this.bus.emit('finished', { resultsID: '7cea4157-341a-4fc6-b6c4-9c7ac5bcc8d4', requestID });
   }
