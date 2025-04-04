@@ -171,18 +171,21 @@ const GeneMetadataPanel = ({ symbol, showSymbol, taxonomy, commonOrganismName, m
   const isLoading = queryGeneData.isLoading;
 
   let error = queryGeneData.error;
-  let description, source, sourceId, sourceHref, ncbiId, synonyms;
+  let description, summary, source, sourceId, sourceHref, ncbiId, synonyms;
   
   if (!isLoading && !error && data) {
-    const entry = data.reports && data.reports.length > 0 ? data.reports[0] : {};
-
-    if (entry.warnings && entry.warnings.length > 0) {
-      error = { message: entry.warnings[0].reason };
+    if (data.messages && data.messages.length > 0) {
+      if (data.messages[0].error) {
+        error = { message: data.messages[0].error.message };
+      } else if (data.messages[0].warning) {
+        error = { message: data.messages[0].warning.message };
+      }
     } else {
-      const gene = entry.gene;
-
+      const reports = data.reports && data.reports.length > 0 ? data.reports[0] : {};
+      const gene = reports.gene;
       if (gene) {
         description = gene.description;
+        summary = gene.summary && gene.summary.length > 0 ? gene.summary[0].description : null;
         ncbiId = gene['gene_id'];
         source = gene['nomenclature_authority']?.authority;
         sourceId = gene['nomenclature_authority']?.identifier;
@@ -213,6 +216,11 @@ const GeneMetadataPanel = ({ symbol, showSymbol, taxonomy, commonOrganismName, m
             <Typography variant="body2" color="textSecondary" className={isLoading ? classes.loadingMsg : null}>
               {isLoading ? 'Loading...' : description }
             </Typography>
+          {!isLoading && summary && (
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 1, lineHeight: 1.25, fontSize: (theme) => theme.typography.caption.fontSize }}>
+              { summary }
+            </Typography>
+          )}
           </Grid>
         {!isLoading && (
           <>
