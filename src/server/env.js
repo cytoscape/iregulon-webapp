@@ -28,3 +28,6 @@ export const MONGO_ROOT_NAME = process.env.MONGO_ROOT_NAME;
 // Sentry config
 export const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT;
 export const SENTRY = NODE_ENV === 'production' || (SENTRY_ENVIRONMENT && SENTRY_ENVIRONMENT.startsWith('test'));
+
+// NCBI API config
+export const NCBI_API_KEY = process.env.NCBI_API_KEY;

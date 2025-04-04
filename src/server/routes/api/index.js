@@ -4,6 +4,7 @@ import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fetch from 'node-fetch';
 import Datastore from '../../datastore.js';
+import { NCBI_API_KEY } from '../../env.js';
 
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -50,7 +51,7 @@ http.get('/:id', async function(req, res, next) {
     const { id } = req.params;
     const results = await Datastore.getMotifsAndTracks(id);
     
-    if(!results) {
+    if (!results) {
       res.sendStatus(404);
     } else {
       res.send(JSON.stringify(results));
@@ -114,7 +115,7 @@ http.get('/:id/uistate', async function(req, res, next) {
     const { id } = req.params;
 
     const state = await Datastore.getUIState(id);
-    if(!state) {
+    if (!state) {
       res.sendStatus(404);
     } else {
       res.send(JSON.stringify(state));
@@ -187,10 +188,16 @@ http.get('/:netId/cx2', async function(req, res, next) {
  */
 http.get('/gene/:symbol/taxon/:taxon', async function(req, res, next) {
   try {
+    console.log('NCBI_API_KEY:', NCBI_API_KEY?.slice(0, 4) + '...'); // TODO: remove this line in production
+
     const { symbol, taxon } = req.params;
     const response = await fetch(`https://api.ncbi.nlm.nih.gov/datasets/v2/gene/symbol/${symbol}/taxon/${taxon}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(NCBI_API_KEY && { 'api-key': NCBI_API_KEY }),
+      },
     });
 
     if (!response.ok) {
@@ -208,7 +215,7 @@ http.get('/gene/:symbol/taxon/:taxon', async function(req, res, next) {
 
 export async function writeCursorToResult(cursor, res) {
   res.write('[');
-  if(await cursor.hasNext()) {
+  if (await cursor.hasNext()) {
     const obj = await cursor.next();
     res.write(JSON.stringify(obj));
   }
