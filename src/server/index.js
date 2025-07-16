@@ -35,44 +35,43 @@ const debugLog = debug('iregulon');
 const app = express();
 const server = http.createServer(app);
 
-// TODO:
-// if (SENTRY) {
-//   Sentry.init({
-//     dsn: 'https://91d6fea963a1453abc1075637d2e7c76@o4504571938603008.ingest.sentry.io/4504571946467328',
-//     environment: SENTRY_ENVIRONMENT,
-//     integrations: [
-//       // enable HTTP calls tracing
-//       new Sentry.Integrations.Http({ tracing: true }),
-//       // enable Express.js middleware tracing
-//       new Tracing.Integrations.Express({ app }),
-//       // Capture extra details from custom exceptions
-//       new ExtraErrorData()
-//     ],
+if (SENTRY) {
+  Sentry.init({
+    dsn: 'https://9cf4bde131394719732f9fe94b47e74c@o4504571938603008.ingest.us.sentry.io/4509673361113088',
+    environment: SENTRY_ENVIRONMENT,
+    integrations: [
+      // enable HTTP calls tracing
+      new Sentry.Integrations.Http({ tracing: true }),
+      // enable Express.js middleware tracing
+      new Tracing.Integrations.Express({ app }),
+      // Capture extra details from custom exceptions
+      new ExtraErrorData()
+    ],
 
-//     // Set tracesSampleRate to 1.0 to capture 100%
-//     // of transactions for performance monitoring.
-//     // We recommend adjusting this value in production
-//     tracesSampleRate: 1.0,
+    // Set tracesSampleRate to 1.0 to capture 100%
+    // of transactions for performance monitoring.
+    // We recommend adjusting this value in production
+    tracesSampleRate: 1.0,
 
-//     // Delete the HTTP body data sent from the client because it can be very
-//     // large and Sentry might reject it. The client sends the user's data to Sentry
-//     // as attachments so we don't need to record it here.
-//     beforeSend: (event) => {
-//       delete event.request.data;
-//       return event;
-//     },
-//   });
+    // Delete the HTTP body data sent from the client because it can be very
+    // large and Sentry might reject it. The client sends the user's data to Sentry
+    // as attachments so we don't need to record it here.
+    beforeSend: (event) => {
+      delete event.request.data;
+      return event;
+    },
+  });
 
-//   console.log("Sentry initalized, environment: " + SENTRY_ENVIRONMENT);
-// }
+  console.log("Sentry initalized, environment: " + SENTRY_ENVIRONMENT);
+}
 
-// // RequestHandler creates a separate execution context using domains, so that every
-// // transaction/span/breadcrumb is attached to its own Hub instance
-// if (SENTRY) {
-//   app.use(Sentry.Handlers.requestHandler());
-//   // TracingHandler creates a trace for every incoming request
-//   app.use(Sentry.Handlers.tracingHandler());
-// }
+// RequestHandler creates a separate execution context using domains, so that every
+// transaction/span/breadcrumb is attached to its own Hub instance
+if (SENTRY) {
+  app.use(Sentry.Handlers.requestHandler());
+  // TracingHandler creates a trace for every incoming request
+  app.use(Sentry.Handlers.tracingHandler());
+}
 
 // view engine setup
 app.set('views', path.join(__dirname, '../', 'views'));
