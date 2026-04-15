@@ -168,7 +168,6 @@ export function Content({ recentNetworksController }) {
   const [ dataConfig ] = useState(() => new DataConfig());
   const [ bus ] = useState(() => new EventEmitter());
   const [ controller ] = useState(() => new QueryController(bus));
-  const [ sampleFiles, setSampleFiles ] = useState({ sampleRankFiles: [], sampleExprFiles: [] });
   // state for component interaction
   const [ mobile, setMobile ] = useState(() => isMobileWidth(theme));
   const [ tablet, setTablet ] = useState(() => isTabletWidth(theme));
@@ -261,10 +260,11 @@ export function Content({ recentNetworksController }) {
     setJobState({ step: STEP.ERROR, errorMessages: errors });
   };
 
-  const onCancel = () => {
+  const onCancel = (requestID) => {
     if (requestID) {
-      console.log(`Cancelling request: ${requestID}`);
+      console.log(`Cancelling request: ${requestID}...`);
       cancelledRequests.push(requestID);
+      controller.cancelRequest(requestID);
     }
     setJobState({ step: STEP.WAITING });
   };
@@ -369,9 +369,10 @@ export function Content({ recentNetworksController }) {
         isMobile={mobile}
         isTablet={tablet}
         isDemo={jobState.demo}
+        requestID={requestID}
         errorMessages={jobState.errorMessages}
         onSubmit={onSubmit}
-        onCancelled={onCancel}
+        onCancel={onCancel}
       />
     )}
     </div>

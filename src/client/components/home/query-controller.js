@@ -11,6 +11,8 @@ export class QueryController {
     /** @type {EventEmitter} */
     this.bus = bus || new EventEmitter();
     this.jobs = new Map();
+    this.requestToJobIDs = new Map(); // Map to keep track of which jobID belongs to which requestID
+    this.cancelledJobs = new Set();
   }
   
   async createDemoNetwork(requestID) {
@@ -29,8 +31,10 @@ export class QueryController {
     console.log('Submitting job with params:', params);
 
     const jobID = await this._submitJob(params, requestID);
-          
+    
     if (jobID && jobID.length > 0) {
+      this.requestToJobIDs.set(requestID, jobID);
+      
       // 2. Check the job status
       let status;
       let i = 1;
@@ -42,7 +46,12 @@ export class QueryController {
           console.log(`- ${jobID}: ${status}`);
           i++;
 
-          if (i < 50 && status !== 'FINISHED' && status !== 'ERROR') {
+          if (this.cancelledJobs.has(jobID)) {
+            console.log(`Job ${jobID} has been cancelled. Stopping status checks.`);
+            this.cancelledJobs.delete(jobID);
+            this.requestToJobIDs.delete(requestID);
+            return;
+          } else if (i < 50 && status !== 'FINISHED' && status !== 'ERROR') {
             myLoop();
           } else {
             // 3. Get the results or handle the error
@@ -64,6 +73,15 @@ export class QueryController {
     } else {
       console.log('error', { requestID, errorMessage: 'No jobID returned from iRegulon' });
       this.bus.emit('error', { requestID, errors: ['Unknown error. Please try again later.'] });
+    }
+  }
+
+  cancelRequest(requestID) {
+    if (requestID) {
+      const jobID = this.requestToJobIDs.get(requestID);
+      if (jobID) {
+        this.cancelledJobs.add(jobID);
+      }
     }
   }
 

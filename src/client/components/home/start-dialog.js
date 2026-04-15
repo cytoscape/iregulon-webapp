@@ -42,9 +42,10 @@ const StartDialog = ({
   isMobile,
   isTablet,
   isDemo,
+  requestID,
   errorMessages, 
   onSubmit,
-  onCancelled,
+  onCancel,
 }) => {
   const [ submitDisabled, setSubmitDisabled ] = useState(true);
 
@@ -190,7 +191,7 @@ const StartDialog = ({
         variant="outlined"
         color="primary" 
         startIcon={step !== 'ERROR' ? <CloseIcon /> : null} 
-        onClick={onCancelled}
+        onClick={() => onCancel(requestID)}
       >
         { step === 'ERROR' ? 'OK' : 'Cancel' }
       </Button>
@@ -215,9 +216,10 @@ StartDialog.propTypes = {
   isMobile: PropTypes.bool,
   isTablet: PropTypes.bool,
   isDemo: PropTypes.bool,
+  requestID: PropTypes.string,
   errorMessages: PropTypes.array,
   onSubmit: PropTypes.func.isRequired,
-  onCancelled: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
 };
 
 export default StartDialog;
