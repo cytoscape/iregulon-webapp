@@ -6,7 +6,6 @@ import { DEFAULT_PADDING } from '../defaults';
 import { monkeyPatchMathRandom, restoreMathRandom } from '../../rng';
 import { SearchController } from './search-controller';
 import { ExportController } from './export-controller';
-import { UndoHandler } from './undo-stack';
 import { useUIStateStore, stateToJson } from './store';
 import { createCX2Style } from './util/cx2-style';
 import { cyJsonToCx2 } from './util/cx2';
@@ -45,13 +44,11 @@ export class NetworkEditorController {
 
     this.searchController = new SearchController(cy, this.bus);
     this.exportController = new ExportController(this);
-    this.undoHandler = new UndoHandler(this);
 
     this.networkLoaded = false;
 
     this.bus.on('networkLoaded', () => {
       this.networkLoaded = true;
-      this.undoHandler.init();
     });
 
     window.cy = cy; // for access in the console

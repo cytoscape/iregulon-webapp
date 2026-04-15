@@ -14,7 +14,6 @@ import { Header } from './header';
 import LeftDrawer from './left-drawer';
 import RightDrawer from './right-drawer';
 import BottomDrawer from './bottom-drawer';
-import { TYPE as UNDO_TYPE } from './undo-stack';
 
 import { Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { Paper, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
@@ -27,7 +26,6 @@ import CircularProgressIcon from '@mui/material/CircularProgress';
 import FitScreenIcon from '@mui/icons-material/SettingsOverscan';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-import UndoIcon from '@mui/icons-material/Undo';
 import RestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import KeyboardReturnIcon from '@mui/icons-material/KeyboardReturn';
 import { DragSelectIcon, DownloadIcon, ShareIcon, Cy3LogoIcon } from '../svg-icons';
@@ -166,14 +164,6 @@ RestoreConfirmDialog.propTypes = {
   onCancel: PropTypes.func.isRequired
 };
 
-
-function getUndoMenuTitle(undoType) {
-  switch(undoType) {
-    case UNDO_TYPE.DELETE: return "Undo Delete";
-    case UNDO_TYPE.POSITION: return "Undo Move";
-    default: return "Undo";
-  }
-}
 
 function createPanner({ cy }) {
   const zoomButtonFactor = 1.5;
@@ -326,11 +316,6 @@ const Main = ({
       isSelected: () => !cy.userPanningEnabled(),
       alwaysShow: true, // always show on desktop/tablet, but still hides on mobile
       unrelated: true,
-    // }, {
-    //   title: getUndoMenuTitle(undoType),
-    //   icon: <UndoIcon />,
-    //   onClick: () => controller.undoHandler.undo(),
-    //   isEnabled: () => undoEnabled,
     },
     {
       title: "Apply Network Layout",
